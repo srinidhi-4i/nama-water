@@ -1,0 +1,591 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="533" height="245" viewBox="0 0 533 245">
+  <defs>
+    <filter id="Rectangle_6038" x="0" y="1" width="534" height="244" filterUnits="userSpaceOnUse">
+      <feOffset dy="3" input="SourceAlpha"/>
+      <feGaussianBlur stdDeviation="3" result="blur"/>
+      <feFlood flood-opacity="0.161"/>
+      <feComposite operator="in" in2="blur"/>
+      <feComposite in="SourceGraphic"/>
+    </filter>
+    <filter id="Rectangle_6036" x="0" y="0" width="533" height="245" filterUnits="userSpaceOnUse">
+      <feOffset dy="3" input="SourceAlpha"/>
+      <feGaussianBlur stdDeviation="3" result="blur-2"/>
+      <feFlood flood-opacity="0.161"/>
+      <feComposite operator="in" in2="blur-2"/>
+      <feComposite in="SourceGraphic"/>
+    </filter>
+    <clipPath id="clip-path">
+      <rect width="507" height="223" fill="none"/>
+    </clipPath>
+    <clipPath id="clip-path-2">
+      <g transform="matrix(1, 0, 0, 1, 0, 0)" filter="url(#Rectangle_6038)">
+        <rect id="Rectangle_6038-2" data-name="Rectangle 6038" width="516" height="226" rx="12" transform="translate(-21)" fill="rgba(255,255,255,0.06)" stroke="#cfcfcf" stroke-width="1"/>
+      </g>
+    </clipPath>
+  </defs>
+  <g id="Group_19819" data-name="Group 19819" transform="translate(66 6)">
+    <g transform="matrix(1, 0, 0, 1, -66, -6)" filter="url(#Rectangle_6036)">
+      <g id="Rectangle_6036-2" data-name="Rectangle 6036" transform="translate(9 6)" fill="#fff" stroke="#f0ca57" stroke-width="1">
+        <rect width="515" height="227" rx="12" stroke="none"/>
+        <rect x="0.5" y="0.5" width="514" height="226" rx="11.5" fill="none"/>
+      </g>
+    </g>
+    <g id="Group_19890" data-name="Group 19890">
+      <g id="Repeat_Grid_2" data-name="Repeat Grid 2" transform="translate(-49 4)" opacity="0.16" clip-path="url(#clip-path)">
+        <g id="Group_19810" data-name="Group 19810" transform="translate(-483 -612)">
+          <circle id="Ellipse_79" data-name="Ellipse 79" cx="3" cy="3" r="3" transform="translate(483 612)" fill="#fbe6a7"/>
+          <circle id="Ellipse_80" data-name="Ellipse 80" cx="3" cy="3" r="3" transform="translate(483 630)" fill="#fbe6a7"/>
+          <circle id="Ellipse_82" data-name="Ellipse 82" cx="3" cy="3" r="3" transform="translate(506 635)" fill="#fbe6a7"/>
+          <circle id="Ellipse_81" data-name="Ellipse 81" cx="3" cy="3" r="3" transform="translate(496 620)" fill="#fbe6a7"/>
+        </g>
+        <g id="Group_19810-2" data-name="Group 19810" transform="translate(-444 -612)">
+          <circle id="Ellipse_79-2" data-name="Ellipse 79" cx="3" cy="3" r="3" transform="translate(483 612)" fill="#fbe6a7"/>
+          <circle id="Ellipse_80-2" data-name="Ellipse 80" cx="3" cy="3" r="3" transform="translate(483 630)" fill="#fbe6a7"/>
+          <circle id="Ellipse_82-2" data-name="Ellipse 82" cx="3" cy="3" r="3" transform="translate(506 635)" fill="#fbe6a7"/>
+          <circle id="Ellipse_81-2" data-name="Ellipse 81" cx="3" cy="3" r="3" transform="translate(496 620)" fill="#fbe6a7"/>
+        </g>
+        <g id="Group_19810-3" data-name="Group 19810" transform="translate(-405 -612)">
+          <circle id="Ellipse_79-3" data-name="Ellipse 79" cx="3" cy="3" r="3" transform="translate(483 612)" fill="#fbe6a7"/>
+          <circle id="Ellipse_80-3" data-name="Ellipse 80" cx="3" cy="3" r="3" transform="translate(483 630)" fill="#fbe6a7"/>
+          <circle id="Ellipse_82-3" data-name="Ellipse 82" cx="3" cy="3" r="3" transform="translate(506 635)" fill="#fbe6a7"/>
+          <circle id="Ellipse_81-3" data-name="Ellipse 81" cx="3" cy="3" r="3" transform="translate(496 620)" fill="#fbe6a7"/>
+        </g>
+        <g id="Group_19810-4" data-name="Group 19810" transform="translate(-366 -612)">
+          <circle id="Ellipse_79-4" data-name="Ellipse 79" cx="3" cy="3" r="3" transform="translate(483 612)" fill="#fbe6a7"/>
+          <circle id="Ellipse_80-4" data-name="Ellipse 80" cx="3" cy="3" r="3" transform="translate(483 630)" fill="#fbe6a7"/>
+          <circle id="Ellipse_82-4" data-name="Ellipse 82" cx="3" cy="3" r="3" transform="translate(506 635)" fill="#fbe6a7"/>
+          <circle id="Ellipse_81-4" data-name="Ellipse 81" cx="3" cy="3" r="3" transform="translate(496 620)" fill="#fbe6a7"/>
+        </g>
+        <g id="Group_19810-5" data-name="Group 19810" transform="translate(-327 -612)">
+          <circle id="Ellipse_79-5" data-name="Ellipse 79" cx="3" cy="3" r="3" transform="translate(483 612)" fill="#fbe6a7"/>
+          <circle id="Ellipse_80-5" data-name="Ellipse 80" cx="3" cy="3" r="3" transform="translate(483 630)" fill="#fbe6a7"/>
+          <circle id="Ellipse_82-5" data-name="Ellipse 82" cx="3" cy="3" r="3" transform="translate(506 635)" fill="#fbe6a7"/>
+          <circle id="Ellipse_81-5" data-name="Ellipse 81" cx="3" cy="3" r="3" transform="translate(496 620)" fill="#fbe6a7"/>
+        </g>
+        <g id="Group_19810-6" data-name="Group 19810" transform="translate(-288 -612)">
+          <circle id="Ellipse_79-6" data-name="Ellipse 79" cx="3" cy="3" r="3" transform="translate(483 612)" fill="#fbe6a7"/>
+          <circle id="Ellipse_80-6" data-name="Ellipse 80" cx="3" cy="3" r="3" transform="translate(483 630)" fill="#fbe6a7"/>
+          <circle id="Ellipse_82-6" data-name="Ellipse 82" cx="3" cy="3" r="3" transform="translate(506 635)" fill="#fbe6a7"/>
+          <circle id="Ellipse_81-6" data-name="Ellipse 81" cx="3" cy="3" r="3" transform="translate(496 620)" fill="#fbe6a7"/>
+        </g>
+        <g id="Group_19810-7" data-name="Group 19810" transform="translate(-249 -612)">
+          <circle id="Ellipse_79-7" data-name="Ellipse 79" cx="3" cy="3" r="3" transform="translate(483 612)" fill="#fbe6a7"/>
+          <circle id="Ellipse_80-7" data-name="Ellipse 80" cx="3" cy="3" r="3" transform="translate(483 630)" fill="#fbe6a7"/>
+          <circle id="Ellipse_82-7" data-name="Ellipse 82" cx="3" cy="3" r="3" transform="translate(506 635)" fill="#fbe6a7"/>
+          <circle id="Ellipse_81-7" data-name="Ellipse 81" cx="3" cy="3" r="3" transform="translate(496 620)" fill="#fbe6a7"/>
+        </g>
+        <g id="Group_19810-8" data-name="Group 19810" transform="translate(-210 -612)">
+          <circle id="Ellipse_79-8" data-name="Ellipse 79" cx="3" cy="3" r="3" transform="translate(483 612)" fill="#fbe6a7"/>
+          <circle id="Ellipse_80-8" data-name="Ellipse 80" cx="3" cy="3" r="3" transform="translate(483 630)" fill="#fbe6a7"/>
+          <circle id="Ellipse_82-8" data-name="Ellipse 82" cx="3" cy="3" r="3" transform="translate(506 635)" fill="#fbe6a7"/>
+          <circle id="Ellipse_81-8" data-name="Ellipse 81" cx="3" cy="3" r="3" transform="translate(496 620)" fill="#fbe6a7"/>
+        </g>
+        <g id="Group_19810-9" data-name="Group 19810" transform="translate(-171 -612)">
+          <circle id="Ellipse_79-9" data-name="Ellipse 79" cx="3" cy="3" r="3" transform="translate(483 612)" fill="#fbe6a7"/>
+          <circle id="Ellipse_80-9" data-name="Ellipse 80" cx="3" cy="3" r="3" transform="translate(483 630)" fill="#fbe6a7"/>
+          <circle id="Ellipse_82-9" data-name="Ellipse 82" cx="3" cy="3" r="3" transform="translate(506 635)" fill="#fbe6a7"/>
+          <circle id="Ellipse_81-9" data-name="Ellipse 81" cx="3" cy="3" r="3" transform="translate(496 620)" fill="#fbe6a7"/>
+        </g>
+        <g id="Group_19810-10" data-name="Group 19810" transform="translate(-132 -612)">
+          <circle id="Ellipse_79-10" data-name="Ellipse 79" cx="3" cy="3" r="3" transform="translate(483 612)" fill="#fbe6a7"/>
+          <circle id="Ellipse_80-10" data-name="Ellipse 80" cx="3" cy="3" r="3" transform="translate(483 630)" fill="#fbe6a7"/>
+          <circle id="Ellipse_82-10" data-name="Ellipse 82" cx="3" cy="3" r="3" transform="translate(506 635)" fill="#fbe6a7"/>
+          <circle id="Ellipse_81-10" data-name="Ellipse 81" cx="3" cy="3" r="3" transform="translate(496 620)" fill="#fbe6a7"/>
+        </g>
+        <g id="Group_19810-11" data-name="Group 19810" transform="translate(-93 -612)">
+          <circle id="Ellipse_79-11" data-name="Ellipse 79" cx="3" cy="3" r="3" transform="translate(483 612)" fill="#fbe6a7"/>
+          <circle id="Ellipse_80-11" data-name="Ellipse 80" cx="3" cy="3" r="3" transform="translate(483 630)" fill="#fbe6a7"/>
+          <circle id="Ellipse_82-11" data-name="Ellipse 82" cx="3" cy="3" r="3" transform="translate(506 635)" fill="#fbe6a7"/>
+          <circle id="Ellipse_81-11" data-name="Ellipse 81" cx="3" cy="3" r="3" transform="translate(496 620)" fill="#fbe6a7"/>
+        </g>
+        <g id="Group_19810-12" data-name="Group 19810" transform="translate(-54 -612)">
+          <circle id="Ellipse_79-12" data-name="Ellipse 79" cx="3" cy="3" r="3" transform="translate(483 612)" fill="#fbe6a7"/>
+          <circle id="Ellipse_80-12" data-name="Ellipse 80" cx="3" cy="3" r="3" transform="translate(483 630)" fill="#fbe6a7"/>
+          <circle id="Ellipse_82-12" data-name="Ellipse 82" cx="3" cy="3" r="3" transform="translate(506 635)" fill="#fbe6a7"/>
+          <circle id="Ellipse_81-12" data-name="Ellipse 81" cx="3" cy="3" r="3" transform="translate(496 620)" fill="#fbe6a7"/>
+        </g>
+        <g id="Group_19810-13" data-name="Group 19810" transform="translate(-15 -612)">
+          <circle id="Ellipse_79-13" data-name="Ellipse 79" cx="3" cy="3" r="3" transform="translate(483 612)" fill="#fbe6a7"/>
+          <circle id="Ellipse_80-13" data-name="Ellipse 80" cx="3" cy="3" r="3" transform="translate(483 630)" fill="#fbe6a7"/>
+          <circle id="Ellipse_82-13" data-name="Ellipse 82" cx="3" cy="3" r="3" transform="translate(506 635)" fill="#fbe6a7"/>
+          <circle id="Ellipse_81-13" data-name="Ellipse 81" cx="3" cy="3" r="3" transform="translate(496 620)" fill="#fbe6a7"/>
+        </g>
+        <g id="Group_19810-14" data-name="Group 19810" transform="translate(-483 -576)">
+          <circle id="Ellipse_79-14" data-name="Ellipse 79" cx="3" cy="3" r="3" transform="translate(483 612)" fill="#fbe6a7"/>
+          <circle id="Ellipse_80-14" data-name="Ellipse 80" cx="3" cy="3" r="3" transform="translate(483 630)" fill="#fbe6a7"/>
+          <circle id="Ellipse_82-14" data-name="Ellipse 82" cx="3" cy="3" r="3" transform="translate(506 635)" fill="#fbe6a7"/>
+          <circle id="Ellipse_81-14" data-name="Ellipse 81" cx="3" cy="3" r="3" transform="translate(496 620)" fill="#fbe6a7"/>
+        </g>
+        <g id="Group_19810-15" data-name="Group 19810" transform="translate(-444 -576)">
+          <circle id="Ellipse_79-15" data-name="Ellipse 79" cx="3" cy="3" r="3" transform="translate(483 612)" fill="#fbe6a7"/>
+          <circle id="Ellipse_80-15" data-name="Ellipse 80" cx="3" cy="3" r="3" transform="translate(483 630)" fill="#fbe6a7"/>
+          <circle id="Ellipse_82-15" data-name="Ellipse 82" cx="3" cy="3" r="3" transform="translate(506 635)" fill="#fbe6a7"/>
+          <circle id="Ellipse_81-15" data-name="Ellipse 81" cx="3" cy="3" r="3" transform="translate(496 620)" fill="#fbe6a7"/>
+        </g>
+        <g id="Group_19810-16" data-name="Group 19810" transform="translate(-405 -576)">
+          <circle id="Ellipse_79-16" data-name="Ellipse 79" cx="3" cy="3" r="3" transform="translate(483 612)" fill="#fbe6a7"/>
+          <circle id="Ellipse_80-16" data-name="Ellipse 80" cx="3" cy="3" r="3" transform="translate(483 630)" fill="#fbe6a7"/>
+          <circle id="Ellipse_82-16" data-name="Ellipse 82" cx="3" cy="3" r="3" transform="translate(506 635)" fill="#fbe6a7"/>
+          <circle id="Ellipse_81-16" data-name="Ellipse 81" cx="3" cy="3" r="3" transform="translate(496 620)" fill="#fbe6a7"/>
+        </g>
+        <g id="Group_19810-17" data-name="Group 19810" transform="translate(-366 -576)">
+          <circle id="Ellipse_79-17" data-name="Ellipse 79" cx="3" cy="3" r="3" transform="translate(483 612)" fill="#fbe6a7"/>
+          <circle id="Ellipse_80-17" data-name="Ellipse 80" cx="3" cy="3" r="3" transform="translate(483 630)" fill="#fbe6a7"/>
+          <circle id="Ellipse_82-17" data-name="Ellipse 82" cx="3" cy="3" r="3" transform="translate(506 635)" fill="#fbe6a7"/>
+          <circle id="Ellipse_81-17" data-name="Ellipse 81" cx="3" cy="3" r="3" transform="translate(496 620)" fill="#fbe6a7"/>
+        </g>
+        <g id="Group_19810-18" data-name="Group 19810" transform="translate(-327 -576)">
+          <circle id="Ellipse_79-18" data-name="Ellipse 79" cx="3" cy="3" r="3" transform="translate(483 612)" fill="#fbe6a7"/>
+          <circle id="Ellipse_80-18" data-name="Ellipse 80" cx="3" cy="3" r="3" transform="translate(483 630)" fill="#fbe6a7"/>
+          <circle id="Ellipse_82-18" data-name="Ellipse 82" cx="3" cy="3" r="3" transform="translate(506 635)" fill="#fbe6a7"/>
+          <circle id="Ellipse_81-18" data-name="Ellipse 81" cx="3" cy="3" r="3" transform="translate(496 620)" fill="#fbe6a7"/>
+        </g>
+        <g id="Group_19810-19" data-name="Group 19810" transform="translate(-288 -576)">
+          <circle id="Ellipse_79-19" data-name="Ellipse 79" cx="3" cy="3" r="3" transform="translate(483 612)" fill="#fbe6a7"/>
+          <circle id="Ellipse_80-19" data-name="Ellipse 80" cx="3" cy="3" r="3" transform="translate(483 630)" fill="#fbe6a7"/>
+          <circle id="Ellipse_82-19" data-name="Ellipse 82" cx="3" cy="3" r="3" transform="translate(506 635)" fill="#fbe6a7"/>
+          <circle id="Ellipse_81-19" data-name="Ellipse 81" cx="3" cy="3" r="3" transform="translate(496 620)" fill="#fbe6a7"/>
+        </g>
+        <g id="Group_19810-20" data-name="Group 19810" transform="translate(-249 -576)">
+          <circle id="Ellipse_79-20" data-name="Ellipse 79" cx="3" cy="3" r="3" transform="translate(483 612)" fill="#fbe6a7"/>
+          <circle id="Ellipse_80-20" data-name="Ellipse 80" cx="3" cy="3" r="3" transform="translate(483 630)" fill="#fbe6a7"/>
+          <circle id="Ellipse_82-20" data-name="Ellipse 82" cx="3" cy="3" r="3" transform="translate(506 635)" fill="#fbe6a7"/>
+          <circle id="Ellipse_81-20" data-name="Ellipse 81" cx="3" cy="3" r="3" transform="translate(496 620)" fill="#fbe6a7"/>
+        </g>
+        <g id="Group_19810-21" data-name="Group 19810" transform="translate(-210 -576)">
+          <circle id="Ellipse_79-21" data-name="Ellipse 79" cx="3" cy="3" r="3" transform="translate(483 612)" fill="#fbe6a7"/>
+          <circle id="Ellipse_80-21" data-name="Ellipse 80" cx="3" cy="3" r="3" transform="translate(483 630)" fill="#fbe6a7"/>
+          <circle id="Ellipse_82-21" data-name="Ellipse 82" cx="3" cy="3" r="3" transform="translate(506 635)" fill="#fbe6a7"/>
+          <circle id="Ellipse_81-21" data-name="Ellipse 81" cx="3" cy="3" r="3" transform="translate(496 620)" fill="#fbe6a7"/>
+        </g>
+        <g id="Group_19810-22" data-name="Group 19810" transform="translate(-171 -576)">
+          <circle id="Ellipse_79-22" data-name="Ellipse 79" cx="3" cy="3" r="3" transform="translate(483 612)" fill="#fbe6a7"/>
+          <circle id="Ellipse_80-22" data-name="Ellipse 80" cx="3" cy="3" r="3" transform="translate(483 630)" fill="#fbe6a7"/>
+          <circle id="Ellipse_82-22" data-name="Ellipse 82" cx="3" cy="3" r="3" transform="translate(506 635)" fill="#fbe6a7"/>
+          <circle id="Ellipse_81-22" data-name="Ellipse 81" cx="3" cy="3" r="3" transform="translate(496 620)" fill="#fbe6a7"/>
+        </g>
+        <g id="Group_19810-23" data-name="Group 19810" transform="translate(-132 -576)">
+          <circle id="Ellipse_79-23" data-name="Ellipse 79" cx="3" cy="3" r="3" transform="translate(483 612)" fill="#fbe6a7"/>
+          <circle id="Ellipse_80-23" data-name="Ellipse 80" cx="3" cy="3" r="3" transform="translate(483 630)" fill="#fbe6a7"/>
+          <circle id="Ellipse_82-23" data-name="Ellipse 82" cx="3" cy="3" r="3" transform="translate(506 635)" fill="#fbe6a7"/>
+          <circle id="Ellipse_81-23" data-name="Ellipse 81" cx="3" cy="3" r="3" transform="translate(496 620)" fill="#fbe6a7"/>
+        </g>
+        <g id="Group_19810-24" data-name="Group 19810" transform="translate(-93 -576)">
+          <circle id="Ellipse_79-24" data-name="Ellipse 79" cx="3" cy="3" r="3" transform="translate(483 612)" fill="#fbe6a7"/>
+          <circle id="Ellipse_80-24" data-name="Ellipse 80" cx="3" cy="3" r="3" transform="translate(483 630)" fill="#fbe6a7"/>
+          <circle id="Ellipse_82-24" data-name="Ellipse 82" cx="3" cy="3" r="3" transform="translate(506 635)" fill="#fbe6a7"/>
+          <circle id="Ellipse_81-24" data-name="Ellipse 81" cx="3" cy="3" r="3" transform="translate(496 620)" fill="#fbe6a7"/>
+        </g>
+        <g id="Group_19810-25" data-name="Group 19810" transform="translate(-54 -576)">
+          <circle id="Ellipse_79-25" data-name="Ellipse 79" cx="3" cy="3" r="3" transform="translate(483 612)" fill="#fbe6a7"/>
+          <circle id="Ellipse_80-25" data-name="Ellipse 80" cx="3" cy="3" r="3" transform="translate(483 630)" fill="#fbe6a7"/>
+          <circle id="Ellipse_82-25" data-name="Ellipse 82" cx="3" cy="3" r="3" transform="translate(506 635)" fill="#fbe6a7"/>
+          <circle id="Ellipse_81-25" data-name="Ellipse 81" cx="3" cy="3" r="3" transform="translate(496 620)" fill="#fbe6a7"/>
+        </g>
+        <g id="Group_19810-26" data-name="Group 19810" transform="translate(-15 -576)">
+          <circle id="Ellipse_79-26" data-name="Ellipse 79" cx="3" cy="3" r="3" transform="translate(483 612)" fill="#fbe6a7"/>
+          <circle id="Ellipse_80-26" data-name="Ellipse 80" cx="3" cy="3" r="3" transform="translate(483 630)" fill="#fbe6a7"/>
+          <circle id="Ellipse_82-26" data-name="Ellipse 82" cx="3" cy="3" r="3" transform="translate(506 635)" fill="#fbe6a7"/>
+          <circle id="Ellipse_81-26" data-name="Ellipse 81" cx="3" cy="3" r="3" transform="translate(496 620)" fill="#fbe6a7"/>
+        </g>
+        <g id="Group_19810-27" data-name="Group 19810" transform="translate(-483 -540)">
+          <circle id="Ellipse_79-27" data-name="Ellipse 79" cx="3" cy="3" r="3" transform="translate(483 612)" fill="#fbe6a7"/>
+          <circle id="Ellipse_80-27" data-name="Ellipse 80" cx="3" cy="3" r="3" transform="translate(483 630)" fill="#fbe6a7"/>
+          <circle id="Ellipse_82-27" data-name="Ellipse 82" cx="3" cy="3" r="3" transform="translate(506 635)" fill="#fbe6a7"/>
+          <circle id="Ellipse_81-27" data-name="Ellipse 81" cx="3" cy="3" r="3" transform="translate(496 620)" fill="#fbe6a7"/>
+        </g>
+        <g id="Group_19810-28" data-name="Group 19810" transform="translate(-444 -540)">
+          <circle id="Ellipse_79-28" data-name="Ellipse 79" cx="3" cy="3" r="3" transform="translate(483 612)" fill="#fbe6a7"/>
+          <circle id="Ellipse_80-28" data-name="Ellipse 80" cx="3" cy="3" r="3" transform="translate(483 630)" fill="#fbe6a7"/>
+          <circle id="Ellipse_82-28" data-name="Ellipse 82" cx="3" cy="3" r="3" transform="translate(506 635)" fill="#fbe6a7"/>
+          <circle id="Ellipse_81-28" data-name="Ellipse 81" cx="3" cy="3" r="3" transform="translate(496 620)" fill="#fbe6a7"/>
+        </g>
+        <g id="Group_19810-29" data-name="Group 19810" transform="translate(-405 -540)">
+          <circle id="Ellipse_79-29" data-name="Ellipse 79" cx="3" cy="3" r="3" transform="translate(483 612)" fill="#fbe6a7"/>
+          <circle id="Ellipse_80-29" data-name="Ellipse 80" cx="3" cy="3" r="3" transform="translate(483 630)" fill="#fbe6a7"/>
+          <circle id="Ellipse_82-29" data-name="Ellipse 82" cx="3" cy="3" r="3" transform="translate(506 635)" fill="#fbe6a7"/>
+          <circle id="Ellipse_81-29" data-name="Ellipse 81" cx="3" cy="3" r="3" transform="translate(496 620)" fill="#fbe6a7"/>
+        </g>
+        <g id="Group_19810-30" data-name="Group 19810" transform="translate(-366 -540)">
+          <circle id="Ellipse_79-30" data-name="Ellipse 79" cx="3" cy="3" r="3" transform="translate(483 612)" fill="#fbe6a7"/>
+          <circle id="Ellipse_80-30" data-name="Ellipse 80" cx="3" cy="3" r="3" transform="translate(483 630)" fill="#fbe6a7"/>
+          <circle id="Ellipse_82-30" data-name="Ellipse 82" cx="3" cy="3" r="3" transform="translate(506 635)" fill="#fbe6a7"/>
+          <circle id="Ellipse_81-30" data-name="Ellipse 81" cx="3" cy="3" r="3" transform="translate(496 620)" fill="#fbe6a7"/>
+        </g>
+        <g id="Group_19810-31" data-name="Group 19810" transform="translate(-327 -540)">
+          <circle id="Ellipse_79-31" data-name="Ellipse 79" cx="3" cy="3" r="3" transform="translate(483 612)" fill="#fbe6a7"/>
+          <circle id="Ellipse_80-31" data-name="Ellipse 80" cx="3" cy="3" r="3" transform="translate(483 630)" fill="#fbe6a7"/>
+          <circle id="Ellipse_82-31" data-name="Ellipse 82" cx="3" cy="3" r="3" transform="translate(506 635)" fill="#fbe6a7"/>
+          <circle id="Ellipse_81-31" data-name="Ellipse 81" cx="3" cy="3" r="3" transform="translate(496 620)" fill="#fbe6a7"/>
+        </g>
+        <g id="Group_19810-32" data-name="Group 19810" transform="translate(-288 -540)">
+          <circle id="Ellipse_79-32" data-name="Ellipse 79" cx="3" cy="3" r="3" transform="translate(483 612)" fill="#fbe6a7"/>
+          <circle id="Ellipse_80-32" data-name="Ellipse 80" cx="3" cy="3" r="3" transform="translate(483 630)" fill="#fbe6a7"/>
+          <circle id="Ellipse_82-32" data-name="Ellipse 82" cx="3" cy="3" r="3" transform="translate(506 635)" fill="#fbe6a7"/>
+          <circle id="Ellipse_81-32" data-name="Ellipse 81" cx="3" cy="3" r="3" transform="translate(496 620)" fill="#fbe6a7"/>
+        </g>
+        <g id="Group_19810-33" data-name="Group 19810" transform="translate(-249 -540)">
+          <circle id="Ellipse_79-33" data-name="Ellipse 79" cx="3" cy="3" r="3" transform="translate(483 612)" fill="#fbe6a7"/>
+          <circle id="Ellipse_80-33" data-name="Ellipse 80" cx="3" cy="3" r="3" transform="translate(483 630)" fill="#fbe6a7"/>
+          <circle id="Ellipse_82-33" data-name="Ellipse 82" cx="3" cy="3" r="3" transform="translate(506 635)" fill="#fbe6a7"/>
+          <circle id="Ellipse_81-33" data-name="Ellipse 81" cx="3" cy="3" r="3" transform="translate(496 620)" fill="#fbe6a7"/>
+        </g>
+        <g id="Group_19810-34" data-name="Group 19810" transform="translate(-210 -540)">
+          <circle id="Ellipse_79-34" data-name="Ellipse 79" cx="3" cy="3" r="3" transform="translate(483 612)" fill="#fbe6a7"/>
+          <circle id="Ellipse_80-34" data-name="Ellipse 80" cx="3" cy="3" r="3" transform="translate(483 630)" fill="#fbe6a7"/>
+          <circle id="Ellipse_82-34" data-name="Ellipse 82" cx="3" cy="3" r="3" transform="translate(506 635)" fill="#fbe6a7"/>
+          <circle id="Ellipse_81-34" data-name="Ellipse 81" cx="3" cy="3" r="3" transform="translate(496 620)" fill="#fbe6a7"/>
+        </g>
+        <g id="Group_19810-35" data-name="Group 19810" transform="translate(-171 -540)">
+          <circle id="Ellipse_79-35" data-name="Ellipse 79" cx="3" cy="3" r="3" transform="translate(483 612)" fill="#fbe6a7"/>
+          <circle id="Ellipse_80-35" data-name="Ellipse 80" cx="3" cy="3" r="3" transform="translate(483 630)" fill="#fbe6a7"/>
+          <circle id="Ellipse_82-35" data-name="Ellipse 82" cx="3" cy="3" r="3" transform="translate(506 635)" fill="#fbe6a7"/>
+          <circle id="Ellipse_81-35" data-name="Ellipse 81" cx="3" cy="3" r="3" transform="translate(496 620)" fill="#fbe6a7"/>
+        </g>
+        <g id="Group_19810-36" data-name="Group 19810" transform="translate(-132 -540)">
+          <circle id="Ellipse_79-36" data-name="Ellipse 79" cx="3" cy="3" r="3" transform="translate(483 612)" fill="#fbe6a7"/>
+          <circle id="Ellipse_80-36" data-name="Ellipse 80" cx="3" cy="3" r="3" transform="translate(483 630)" fill="#fbe6a7"/>
+          <circle id="Ellipse_82-36" data-name="Ellipse 82" cx="3" cy="3" r="3" transform="translate(506 635)" fill="#fbe6a7"/>
+          <circle id="Ellipse_81-36" data-name="Ellipse 81" cx="3" cy="3" r="3" transform="translate(496 620)" fill="#fbe6a7"/>
+        </g>
+        <g id="Group_19810-37" data-name="Group 19810" transform="translate(-93 -540)">
+          <circle id="Ellipse_79-37" data-name="Ellipse 79" cx="3" cy="3" r="3" transform="translate(483 612)" fill="#fbe6a7"/>
+          <circle id="Ellipse_80-37" data-name="Ellipse 80" cx="3" cy="3" r="3" transform="translate(483 630)" fill="#fbe6a7"/>
+          <circle id="Ellipse_82-37" data-name="Ellipse 82" cx="3" cy="3" r="3" transform="translate(506 635)" fill="#fbe6a7"/>
+          <circle id="Ellipse_81-37" data-name="Ellipse 81" cx="3" cy="3" r="3" transform="translate(496 620)" fill="#fbe6a7"/>
+        </g>
+        <g id="Group_19810-38" data-name="Group 19810" transform="translate(-54 -540)">
+          <circle id="Ellipse_79-38" data-name="Ellipse 79" cx="3" cy="3" r="3" transform="translate(483 612)" fill="#fbe6a7"/>
+          <circle id="Ellipse_80-38" data-name="Ellipse 80" cx="3" cy="3" r="3" transform="translate(483 630)" fill="#fbe6a7"/>
+          <circle id="Ellipse_82-38" data-name="Ellipse 82" cx="3" cy="3" r="3" transform="translate(506 635)" fill="#fbe6a7"/>
+          <circle id="Ellipse_81-38" data-name="Ellipse 81" cx="3" cy="3" r="3" transform="translate(496 620)" fill="#fbe6a7"/>
+        </g>
+        <g id="Group_19810-39" data-name="Group 19810" transform="translate(-15 -540)">
+          <circle id="Ellipse_79-39" data-name="Ellipse 79" cx="3" cy="3" r="3" transform="translate(483 612)" fill="#fbe6a7"/>
+          <circle id="Ellipse_80-39" data-name="Ellipse 80" cx="3" cy="3" r="3" transform="translate(483 630)" fill="#fbe6a7"/>
+          <circle id="Ellipse_82-39" data-name="Ellipse 82" cx="3" cy="3" r="3" transform="translate(506 635)" fill="#fbe6a7"/>
+          <circle id="Ellipse_81-39" data-name="Ellipse 81" cx="3" cy="3" r="3" transform="translate(496 620)" fill="#fbe6a7"/>
+        </g>
+        <g id="Group_19810-40" data-name="Group 19810" transform="translate(-483 -504)">
+          <circle id="Ellipse_79-40" data-name="Ellipse 79" cx="3" cy="3" r="3" transform="translate(483 612)" fill="#fbe6a7"/>
+          <circle id="Ellipse_80-40" data-name="Ellipse 80" cx="3" cy="3" r="3" transform="translate(483 630)" fill="#fbe6a7"/>
+          <circle id="Ellipse_82-40" data-name="Ellipse 82" cx="3" cy="3" r="3" transform="translate(506 635)" fill="#fbe6a7"/>
+          <circle id="Ellipse_81-40" data-name="Ellipse 81" cx="3" cy="3" r="3" transform="translate(496 620)" fill="#fbe6a7"/>
+        </g>
+        <g id="Group_19810-41" data-name="Group 19810" transform="translate(-444 -504)">
+          <circle id="Ellipse_79-41" data-name="Ellipse 79" cx="3" cy="3" r="3" transform="translate(483 612)" fill="#fbe6a7"/>
+          <circle id="Ellipse_80-41" data-name="Ellipse 80" cx="3" cy="3" r="3" transform="translate(483 630)" fill="#fbe6a7"/>
+          <circle id="Ellipse_82-41" data-name="Ellipse 82" cx="3" cy="3" r="3" transform="translate(506 635)" fill="#fbe6a7"/>
+          <circle id="Ellipse_81-41" data-name="Ellipse 81" cx="3" cy="3" r="3" transform="translate(496 620)" fill="#fbe6a7"/>
+        </g>
+        <g id="Group_19810-42" data-name="Group 19810" transform="translate(-405 -504)">
+          <circle id="Ellipse_79-42" data-name="Ellipse 79" cx="3" cy="3" r="3" transform="translate(483 612)" fill="#fbe6a7"/>
+          <circle id="Ellipse_80-42" data-name="Ellipse 80" cx="3" cy="3" r="3" transform="translate(483 630)" fill="#fbe6a7"/>
+          <circle id="Ellipse_82-42" data-name="Ellipse 82" cx="3" cy="3" r="3" transform="translate(506 635)" fill="#fbe6a7"/>
+          <circle id="Ellipse_81-42" data-name="Ellipse 81" cx="3" cy="3" r="3" transform="translate(496 620)" fill="#fbe6a7"/>
+        </g>
+        <g id="Group_19810-43" data-name="Group 19810" transform="translate(-366 -504)">
+          <circle id="Ellipse_79-43" data-name="Ellipse 79" cx="3" cy="3" r="3" transform="translate(483 612)" fill="#fbe6a7"/>
+          <circle id="Ellipse_80-43" data-name="Ellipse 80" cx="3" cy="3" r="3" transform="translate(483 630)" fill="#fbe6a7"/>
+          <circle id="Ellipse_82-43" data-name="Ellipse 82" cx="3" cy="3" r="3" transform="translate(506 635)" fill="#fbe6a7"/>
+          <circle id="Ellipse_81-43" data-name="Ellipse 81" cx="3" cy="3" r="3" transform="translate(496 620)" fill="#fbe6a7"/>
+        </g>
+        <g id="Group_19810-44" data-name="Group 19810" transform="translate(-327 -504)">
+          <circle id="Ellipse_79-44" data-name="Ellipse 79" cx="3" cy="3" r="3" transform="translate(483 612)" fill="#fbe6a7"/>
+          <circle id="Ellipse_80-44" data-name="Ellipse 80" cx="3" cy="3" r="3" transform="translate(483 630)" fill="#fbe6a7"/>
+          <circle id="Ellipse_82-44" data-name="Ellipse 82" cx="3" cy="3" r="3" transform="translate(506 635)" fill="#fbe6a7"/>
+          <circle id="Ellipse_81-44" data-name="Ellipse 81" cx="3" cy="3" r="3" transform="translate(496 620)" fill="#fbe6a7"/>
+        </g>
+        <g id="Group_19810-45" data-name="Group 19810" transform="translate(-288 -504)">
+          <circle id="Ellipse_79-45" data-name="Ellipse 79" cx="3" cy="3" r="3" transform="translate(483 612)" fill="#fbe6a7"/>
+          <circle id="Ellipse_80-45" data-name="Ellipse 80" cx="3" cy="3" r="3" transform="translate(483 630)" fill="#fbe6a7"/>
+          <circle id="Ellipse_82-45" data-name="Ellipse 82" cx="3" cy="3" r="3" transform="translate(506 635)" fill="#fbe6a7"/>
+          <circle id="Ellipse_81-45" data-name="Ellipse 81" cx="3" cy="3" r="3" transform="translate(496 620)" fill="#fbe6a7"/>
+        </g>
+        <g id="Group_19810-46" data-name="Group 19810" transform="translate(-249 -504)">
+          <circle id="Ellipse_79-46" data-name="Ellipse 79" cx="3" cy="3" r="3" transform="translate(483 612)" fill="#fbe6a7"/>
+          <circle id="Ellipse_80-46" data-name="Ellipse 80" cx="3" cy="3" r="3" transform="translate(483 630)" fill="#fbe6a7"/>
+          <circle id="Ellipse_82-46" data-name="Ellipse 82" cx="3" cy="3" r="3" transform="translate(506 635)" fill="#fbe6a7"/>
+          <circle id="Ellipse_81-46" data-name="Ellipse 81" cx="3" cy="3" r="3" transform="translate(496 620)" fill="#fbe6a7"/>
+        </g>
+        <g id="Group_19810-47" data-name="Group 19810" transform="translate(-210 -504)">
+          <circle id="Ellipse_79-47" data-name="Ellipse 79" cx="3" cy="3" r="3" transform="translate(483 612)" fill="#fbe6a7"/>
+          <circle id="Ellipse_80-47" data-name="Ellipse 80" cx="3" cy="3" r="3" transform="translate(483 630)" fill="#fbe6a7"/>
+          <circle id="Ellipse_82-47" data-name="Ellipse 82" cx="3" cy="3" r="3" transform="translate(506 635)" fill="#fbe6a7"/>
+          <circle id="Ellipse_81-47" data-name="Ellipse 81" cx="3" cy="3" r="3" transform="translate(496 620)" fill="#fbe6a7"/>
+        </g>
+        <g id="Group_19810-48" data-name="Group 19810" transform="translate(-171 -504)">
+          <circle id="Ellipse_79-48" data-name="Ellipse 79" cx="3" cy="3" r="3" transform="translate(483 612)" fill="#fbe6a7"/>
+          <circle id="Ellipse_80-48" data-name="Ellipse 80" cx="3" cy="3" r="3" transform="translate(483 630)" fill="#fbe6a7"/>
+          <circle id="Ellipse_82-48" data-name="Ellipse 82" cx="3" cy="3" r="3" transform="translate(506 635)" fill="#fbe6a7"/>
+          <circle id="Ellipse_81-48" data-name="Ellipse 81" cx="3" cy="3" r="3" transform="translate(496 620)" fill="#fbe6a7"/>
+        </g>
+        <g id="Group_19810-49" data-name="Group 19810" transform="translate(-132 -504)">
+          <circle id="Ellipse_79-49" data-name="Ellipse 79" cx="3" cy="3" r="3" transform="translate(483 612)" fill="#fbe6a7"/>
+          <circle id="Ellipse_80-49" data-name="Ellipse 80" cx="3" cy="3" r="3" transform="translate(483 630)" fill="#fbe6a7"/>
+          <circle id="Ellipse_82-49" data-name="Ellipse 82" cx="3" cy="3" r="3" transform="translate(506 635)" fill="#fbe6a7"/>
+          <circle id="Ellipse_81-49" data-name="Ellipse 81" cx="3" cy="3" r="3" transform="translate(496 620)" fill="#fbe6a7"/>
+        </g>
+        <g id="Group_19810-50" data-name="Group 19810" transform="translate(-93 -504)">
+          <circle id="Ellipse_79-50" data-name="Ellipse 79" cx="3" cy="3" r="3" transform="translate(483 612)" fill="#fbe6a7"/>
+          <circle id="Ellipse_80-50" data-name="Ellipse 80" cx="3" cy="3" r="3" transform="translate(483 630)" fill="#fbe6a7"/>
+          <circle id="Ellipse_82-50" data-name="Ellipse 82" cx="3" cy="3" r="3" transform="translate(506 635)" fill="#fbe6a7"/>
+          <circle id="Ellipse_81-50" data-name="Ellipse 81" cx="3" cy="3" r="3" transform="translate(496 620)" fill="#fbe6a7"/>
+        </g>
+        <g id="Group_19810-51" data-name="Group 19810" transform="translate(-54 -504)">
+          <circle id="Ellipse_79-51" data-name="Ellipse 79" cx="3" cy="3" r="3" transform="translate(483 612)" fill="#fbe6a7"/>
+          <circle id="Ellipse_80-51" data-name="Ellipse 80" cx="3" cy="3" r="3" transform="translate(483 630)" fill="#fbe6a7"/>
+          <circle id="Ellipse_82-51" data-name="Ellipse 82" cx="3" cy="3" r="3" transform="translate(506 635)" fill="#fbe6a7"/>
+          <circle id="Ellipse_81-51" data-name="Ellipse 81" cx="3" cy="3" r="3" transform="translate(496 620)" fill="#fbe6a7"/>
+        </g>
+        <g id="Group_19810-52" data-name="Group 19810" transform="translate(-15 -504)">
+          <circle id="Ellipse_79-52" data-name="Ellipse 79" cx="3" cy="3" r="3" transform="translate(483 612)" fill="#fbe6a7"/>
+          <circle id="Ellipse_80-52" data-name="Ellipse 80" cx="3" cy="3" r="3" transform="translate(483 630)" fill="#fbe6a7"/>
+          <circle id="Ellipse_82-52" data-name="Ellipse 82" cx="3" cy="3" r="3" transform="translate(506 635)" fill="#fbe6a7"/>
+          <circle id="Ellipse_81-52" data-name="Ellipse 81" cx="3" cy="3" r="3" transform="translate(496 620)" fill="#fbe6a7"/>
+        </g>
+        <g id="Group_19810-53" data-name="Group 19810" transform="translate(-483 -468)">
+          <circle id="Ellipse_79-53" data-name="Ellipse 79" cx="3" cy="3" r="3" transform="translate(483 612)" fill="#fbe6a7"/>
+          <circle id="Ellipse_80-53" data-name="Ellipse 80" cx="3" cy="3" r="3" transform="translate(483 630)" fill="#fbe6a7"/>
+          <circle id="Ellipse_82-53" data-name="Ellipse 82" cx="3" cy="3" r="3" transform="translate(506 635)" fill="#fbe6a7"/>
+          <circle id="Ellipse_81-53" data-name="Ellipse 81" cx="3" cy="3" r="3" transform="translate(496 620)" fill="#fbe6a7"/>
+        </g>
+        <g id="Group_19810-54" data-name="Group 19810" transform="translate(-444 -468)">
+          <circle id="Ellipse_79-54" data-name="Ellipse 79" cx="3" cy="3" r="3" transform="translate(483 612)" fill="#fbe6a7"/>
+          <circle id="Ellipse_80-54" data-name="Ellipse 80" cx="3" cy="3" r="3" transform="translate(483 630)" fill="#fbe6a7"/>
+          <circle id="Ellipse_82-54" data-name="Ellipse 82" cx="3" cy="3" r="3" transform="translate(506 635)" fill="#fbe6a7"/>
+          <circle id="Ellipse_81-54" data-name="Ellipse 81" cx="3" cy="3" r="3" transform="translate(496 620)" fill="#fbe6a7"/>
+        </g>
+        <g id="Group_19810-55" data-name="Group 19810" transform="translate(-405 -468)">
+          <circle id="Ellipse_79-55" data-name="Ellipse 79" cx="3" cy="3" r="3" transform="translate(483 612)" fill="#fbe6a7"/>
+          <circle id="Ellipse_80-55" data-name="Ellipse 80" cx="3" cy="3" r="3" transform="translate(483 630)" fill="#fbe6a7"/>
+          <circle id="Ellipse_82-55" data-name="Ellipse 82" cx="3" cy="3" r="3" transform="translate(506 635)" fill="#fbe6a7"/>
+          <circle id="Ellipse_81-55" data-name="Ellipse 81" cx="3" cy="3" r="3" transform="translate(496 620)" fill="#fbe6a7"/>
+        </g>
+        <g id="Group_19810-56" data-name="Group 19810" transform="translate(-366 -468)">
+          <circle id="Ellipse_79-56" data-name="Ellipse 79" cx="3" cy="3" r="3" transform="translate(483 612)" fill="#fbe6a7"/>
+          <circle id="Ellipse_80-56" data-name="Ellipse 80" cx="3" cy="3" r="3" transform="translate(483 630)" fill="#fbe6a7"/>
+          <circle id="Ellipse_82-56" data-name="Ellipse 82" cx="3" cy="3" r="3" transform="translate(506 635)" fill="#fbe6a7"/>
+          <circle id="Ellipse_81-56" data-name="Ellipse 81" cx="3" cy="3" r="3" transform="translate(496 620)" fill="#fbe6a7"/>
+        </g>
+        <g id="Group_19810-57" data-name="Group 19810" transform="translate(-327 -468)">
+          <circle id="Ellipse_79-57" data-name="Ellipse 79" cx="3" cy="3" r="3" transform="translate(483 612)" fill="#fbe6a7"/>
+          <circle id="Ellipse_80-57" data-name="Ellipse 80" cx="3" cy="3" r="3" transform="translate(483 630)" fill="#fbe6a7"/>
+          <circle id="Ellipse_82-57" data-name="Ellipse 82" cx="3" cy="3" r="3" transform="translate(506 635)" fill="#fbe6a7"/>
+          <circle id="Ellipse_81-57" data-name="Ellipse 81" cx="3" cy="3" r="3" transform="translate(496 620)" fill="#fbe6a7"/>
+        </g>
+        <g id="Group_19810-58" data-name="Group 19810" transform="translate(-288 -468)">
+          <circle id="Ellipse_79-58" data-name="Ellipse 79" cx="3" cy="3" r="3" transform="translate(483 612)" fill="#fbe6a7"/>
+          <circle id="Ellipse_80-58" data-name="Ellipse 80" cx="3" cy="3" r="3" transform="translate(483 630)" fill="#fbe6a7"/>
+          <circle id="Ellipse_82-58" data-name="Ellipse 82" cx="3" cy="3" r="3" transform="translate(506 635)" fill="#fbe6a7"/>
+          <circle id="Ellipse_81-58" data-name="Ellipse 81" cx="3" cy="3" r="3" transform="translate(496 620)" fill="#fbe6a7"/>
+        </g>
+        <g id="Group_19810-59" data-name="Group 19810" transform="translate(-249 -468)">
+          <circle id="Ellipse_79-59" data-name="Ellipse 79" cx="3" cy="3" r="3" transform="translate(483 612)" fill="#fbe6a7"/>
+          <circle id="Ellipse_80-59" data-name="Ellipse 80" cx="3" cy="3" r="3" transform="translate(483 630)" fill="#fbe6a7"/>
+          <circle id="Ellipse_82-59" data-name="Ellipse 82" cx="3" cy="3" r="3" transform="translate(506 635)" fill="#fbe6a7"/>
+          <circle id="Ellipse_81-59" data-name="Ellipse 81" cx="3" cy="3" r="3" transform="translate(496 620)" fill="#fbe6a7"/>
+        </g>
+        <g id="Group_19810-60" data-name="Group 19810" transform="translate(-210 -468)">
+          <circle id="Ellipse_79-60" data-name="Ellipse 79" cx="3" cy="3" r="3" transform="translate(483 612)" fill="#fbe6a7"/>
+          <circle id="Ellipse_80-60" data-name="Ellipse 80" cx="3" cy="3" r="3" transform="translate(483 630)" fill="#fbe6a7"/>
+          <circle id="Ellipse_82-60" data-name="Ellipse 82" cx="3" cy="3" r="3" transform="translate(506 635)" fill="#fbe6a7"/>
+          <circle id="Ellipse_81-60" data-name="Ellipse 81" cx="3" cy="3" r="3" transform="translate(496 620)" fill="#fbe6a7"/>
+        </g>
+        <g id="Group_19810-61" data-name="Group 19810" transform="translate(-171 -468)">
+          <circle id="Ellipse_79-61" data-name="Ellipse 79" cx="3" cy="3" r="3" transform="translate(483 612)" fill="#fbe6a7"/>
+          <circle id="Ellipse_80-61" data-name="Ellipse 80" cx="3" cy="3" r="3" transform="translate(483 630)" fill="#fbe6a7"/>
+          <circle id="Ellipse_82-61" data-name="Ellipse 82" cx="3" cy="3" r="3" transform="translate(506 635)" fill="#fbe6a7"/>
+          <circle id="Ellipse_81-61" data-name="Ellipse 81" cx="3" cy="3" r="3" transform="translate(496 620)" fill="#fbe6a7"/>
+        </g>
+        <g id="Group_19810-62" data-name="Group 19810" transform="translate(-132 -468)">
+          <circle id="Ellipse_79-62" data-name="Ellipse 79" cx="3" cy="3" r="3" transform="translate(483 612)" fill="#fbe6a7"/>
+          <circle id="Ellipse_80-62" data-name="Ellipse 80" cx="3" cy="3" r="3" transform="translate(483 630)" fill="#fbe6a7"/>
+          <circle id="Ellipse_82-62" data-name="Ellipse 82" cx="3" cy="3" r="3" transform="translate(506 635)" fill="#fbe6a7"/>
+          <circle id="Ellipse_81-62" data-name="Ellipse 81" cx="3" cy="3" r="3" transform="translate(496 620)" fill="#fbe6a7"/>
+        </g>
+        <g id="Group_19810-63" data-name="Group 19810" transform="translate(-93 -468)">
+          <circle id="Ellipse_79-63" data-name="Ellipse 79" cx="3" cy="3" r="3" transform="translate(483 612)" fill="#fbe6a7"/>
+          <circle id="Ellipse_80-63" data-name="Ellipse 80" cx="3" cy="3" r="3" transform="translate(483 630)" fill="#fbe6a7"/>
+          <circle id="Ellipse_82-63" data-name="Ellipse 82" cx="3" cy="3" r="3" transform="translate(506 635)" fill="#fbe6a7"/>
+          <circle id="Ellipse_81-63" data-name="Ellipse 81" cx="3" cy="3" r="3" transform="translate(496 620)" fill="#fbe6a7"/>
+        </g>
+        <g id="Group_19810-64" data-name="Group 19810" transform="translate(-54 -468)">
+          <circle id="Ellipse_79-64" data-name="Ellipse 79" cx="3" cy="3" r="3" transform="translate(483 612)" fill="#fbe6a7"/>
+          <circle id="Ellipse_80-64" data-name="Ellipse 80" cx="3" cy="3" r="3" transform="translate(483 630)" fill="#fbe6a7"/>
+          <circle id="Ellipse_82-64" data-name="Ellipse 82" cx="3" cy="3" r="3" transform="translate(506 635)" fill="#fbe6a7"/>
+          <circle id="Ellipse_81-64" data-name="Ellipse 81" cx="3" cy="3" r="3" transform="translate(496 620)" fill="#fbe6a7"/>
+        </g>
+        <g id="Group_19810-65" data-name="Group 19810" transform="translate(-15 -468)">
+          <circle id="Ellipse_79-65" data-name="Ellipse 79" cx="3" cy="3" r="3" transform="translate(483 612)" fill="#fbe6a7"/>
+          <circle id="Ellipse_80-65" data-name="Ellipse 80" cx="3" cy="3" r="3" transform="translate(483 630)" fill="#fbe6a7"/>
+          <circle id="Ellipse_82-65" data-name="Ellipse 82" cx="3" cy="3" r="3" transform="translate(506 635)" fill="#fbe6a7"/>
+          <circle id="Ellipse_81-65" data-name="Ellipse 81" cx="3" cy="3" r="3" transform="translate(496 620)" fill="#fbe6a7"/>
+        </g>
+        <g id="Group_19810-66" data-name="Group 19810" transform="translate(-483 -432)">
+          <circle id="Ellipse_79-66" data-name="Ellipse 79" cx="3" cy="3" r="3" transform="translate(483 612)" fill="#fbe6a7"/>
+          <circle id="Ellipse_80-66" data-name="Ellipse 80" cx="3" cy="3" r="3" transform="translate(483 630)" fill="#fbe6a7"/>
+          <circle id="Ellipse_82-66" data-name="Ellipse 82" cx="3" cy="3" r="3" transform="translate(506 635)" fill="#fbe6a7"/>
+          <circle id="Ellipse_81-66" data-name="Ellipse 81" cx="3" cy="3" r="3" transform="translate(496 620)" fill="#fbe6a7"/>
+        </g>
+        <g id="Group_19810-67" data-name="Group 19810" transform="translate(-444 -432)">
+          <circle id="Ellipse_79-67" data-name="Ellipse 79" cx="3" cy="3" r="3" transform="translate(483 612)" fill="#fbe6a7"/>
+          <circle id="Ellipse_80-67" data-name="Ellipse 80" cx="3" cy="3" r="3" transform="translate(483 630)" fill="#fbe6a7"/>
+          <circle id="Ellipse_82-67" data-name="Ellipse 82" cx="3" cy="3" r="3" transform="translate(506 635)" fill="#fbe6a7"/>
+          <circle id="Ellipse_81-67" data-name="Ellipse 81" cx="3" cy="3" r="3" transform="translate(496 620)" fill="#fbe6a7"/>
+        </g>
+        <g id="Group_19810-68" data-name="Group 19810" transform="translate(-405 -432)">
+          <circle id="Ellipse_79-68" data-name="Ellipse 79" cx="3" cy="3" r="3" transform="translate(483 612)" fill="#fbe6a7"/>
+          <circle id="Ellipse_80-68" data-name="Ellipse 80" cx="3" cy="3" r="3" transform="translate(483 630)" fill="#fbe6a7"/>
+          <circle id="Ellipse_82-68" data-name="Ellipse 82" cx="3" cy="3" r="3" transform="translate(506 635)" fill="#fbe6a7"/>
+          <circle id="Ellipse_81-68" data-name="Ellipse 81" cx="3" cy="3" r="3" transform="translate(496 620)" fill="#fbe6a7"/>
+        </g>
+        <g id="Group_19810-69" data-name="Group 19810" transform="translate(-366 -432)">
+          <circle id="Ellipse_79-69" data-name="Ellipse 79" cx="3" cy="3" r="3" transform="translate(483 612)" fill="#fbe6a7"/>
+          <circle id="Ellipse_80-69" data-name="Ellipse 80" cx="3" cy="3" r="3" transform="translate(483 630)" fill="#fbe6a7"/>
+          <circle id="Ellipse_82-69" data-name="Ellipse 82" cx="3" cy="3" r="3" transform="translate(506 635)" fill="#fbe6a7"/>
+          <circle id="Ellipse_81-69" data-name="Ellipse 81" cx="3" cy="3" r="3" transform="translate(496 620)" fill="#fbe6a7"/>
+        </g>
+        <g id="Group_19810-70" data-name="Group 19810" transform="translate(-327 -432)">
+          <circle id="Ellipse_79-70" data-name="Ellipse 79" cx="3" cy="3" r="3" transform="translate(483 612)" fill="#fbe6a7"/>
+          <circle id="Ellipse_80-70" data-name="Ellipse 80" cx="3" cy="3" r="3" transform="translate(483 630)" fill="#fbe6a7"/>
+          <circle id="Ellipse_82-70" data-name="Ellipse 82" cx="3" cy="3" r="3" transform="translate(506 635)" fill="#fbe6a7"/>
+          <circle id="Ellipse_81-70" data-name="Ellipse 81" cx="3" cy="3" r="3" transform="translate(496 620)" fill="#fbe6a7"/>
+        </g>
+        <g id="Group_19810-71" data-name="Group 19810" transform="translate(-288 -432)">
+          <circle id="Ellipse_79-71" data-name="Ellipse 79" cx="3" cy="3" r="3" transform="translate(483 612)" fill="#fbe6a7"/>
+          <circle id="Ellipse_80-71" data-name="Ellipse 80" cx="3" cy="3" r="3" transform="translate(483 630)" fill="#fbe6a7"/>
+          <circle id="Ellipse_82-71" data-name="Ellipse 82" cx="3" cy="3" r="3" transform="translate(506 635)" fill="#fbe6a7"/>
+          <circle id="Ellipse_81-71" data-name="Ellipse 81" cx="3" cy="3" r="3" transform="translate(496 620)" fill="#fbe6a7"/>
+        </g>
+        <g id="Group_19810-72" data-name="Group 19810" transform="translate(-249 -432)">
+          <circle id="Ellipse_79-72" data-name="Ellipse 79" cx="3" cy="3" r="3" transform="translate(483 612)" fill="#fbe6a7"/>
+          <circle id="Ellipse_80-72" data-name="Ellipse 80" cx="3" cy="3" r="3" transform="translate(483 630)" fill="#fbe6a7"/>
+          <circle id="Ellipse_82-72" data-name="Ellipse 82" cx="3" cy="3" r="3" transform="translate(506 635)" fill="#fbe6a7"/>
+          <circle id="Ellipse_81-72" data-name="Ellipse 81" cx="3" cy="3" r="3" transform="translate(496 620)" fill="#fbe6a7"/>
+        </g>
+        <g id="Group_19810-73" data-name="Group 19810" transform="translate(-210 -432)">
+          <circle id="Ellipse_79-73" data-name="Ellipse 79" cx="3" cy="3" r="3" transform="translate(483 612)" fill="#fbe6a7"/>
+          <circle id="Ellipse_80-73" data-name="Ellipse 80" cx="3" cy="3" r="3" transform="translate(483 630)" fill="#fbe6a7"/>
+          <circle id="Ellipse_82-73" data-name="Ellipse 82" cx="3" cy="3" r="3" transform="translate(506 635)" fill="#fbe6a7"/>
+          <circle id="Ellipse_81-73" data-name="Ellipse 81" cx="3" cy="3" r="3" transform="translate(496 620)" fill="#fbe6a7"/>
+        </g>
+        <g id="Group_19810-74" data-name="Group 19810" transform="translate(-171 -432)">
+          <circle id="Ellipse_79-74" data-name="Ellipse 79" cx="3" cy="3" r="3" transform="translate(483 612)" fill="#fbe6a7"/>
+          <circle id="Ellipse_80-74" data-name="Ellipse 80" cx="3" cy="3" r="3" transform="translate(483 630)" fill="#fbe6a7"/>
+          <circle id="Ellipse_82-74" data-name="Ellipse 82" cx="3" cy="3" r="3" transform="translate(506 635)" fill="#fbe6a7"/>
+          <circle id="Ellipse_81-74" data-name="Ellipse 81" cx="3" cy="3" r="3" transform="translate(496 620)" fill="#fbe6a7"/>
+        </g>
+        <g id="Group_19810-75" data-name="Group 19810" transform="translate(-132 -432)">
+          <circle id="Ellipse_79-75" data-name="Ellipse 79" cx="3" cy="3" r="3" transform="translate(483 612)" fill="#fbe6a7"/>
+          <circle id="Ellipse_80-75" data-name="Ellipse 80" cx="3" cy="3" r="3" transform="translate(483 630)" fill="#fbe6a7"/>
+          <circle id="Ellipse_82-75" data-name="Ellipse 82" cx="3" cy="3" r="3" transform="translate(506 635)" fill="#fbe6a7"/>
+          <circle id="Ellipse_81-75" data-name="Ellipse 81" cx="3" cy="3" r="3" transform="translate(496 620)" fill="#fbe6a7"/>
+        </g>
+        <g id="Group_19810-76" data-name="Group 19810" transform="translate(-93 -432)">
+          <circle id="Ellipse_79-76" data-name="Ellipse 79" cx="3" cy="3" r="3" transform="translate(483 612)" fill="#fbe6a7"/>
+          <circle id="Ellipse_80-76" data-name="Ellipse 80" cx="3" cy="3" r="3" transform="translate(483 630)" fill="#fbe6a7"/>
+          <circle id="Ellipse_82-76" data-name="Ellipse 82" cx="3" cy="3" r="3" transform="translate(506 635)" fill="#fbe6a7"/>
+          <circle id="Ellipse_81-76" data-name="Ellipse 81" cx="3" cy="3" r="3" transform="translate(496 620)" fill="#fbe6a7"/>
+        </g>
+        <g id="Group_19810-77" data-name="Group 19810" transform="translate(-54 -432)">
+          <circle id="Ellipse_79-77" data-name="Ellipse 79" cx="3" cy="3" r="3" transform="translate(483 612)" fill="#fbe6a7"/>
+          <circle id="Ellipse_80-77" data-name="Ellipse 80" cx="3" cy="3" r="3" transform="translate(483 630)" fill="#fbe6a7"/>
+          <circle id="Ellipse_82-77" data-name="Ellipse 82" cx="3" cy="3" r="3" transform="translate(506 635)" fill="#fbe6a7"/>
+          <circle id="Ellipse_81-77" data-name="Ellipse 81" cx="3" cy="3" r="3" transform="translate(496 620)" fill="#fbe6a7"/>
+        </g>
+        <g id="Group_19810-78" data-name="Group 19810" transform="translate(-15 -432)">
+          <circle id="Ellipse_79-78" data-name="Ellipse 79" cx="3" cy="3" r="3" transform="translate(483 612)" fill="#fbe6a7"/>
+          <circle id="Ellipse_80-78" data-name="Ellipse 80" cx="3" cy="3" r="3" transform="translate(483 630)" fill="#fbe6a7"/>
+          <circle id="Ellipse_82-78" data-name="Ellipse 82" cx="3" cy="3" r="3" transform="translate(506 635)" fill="#fbe6a7"/>
+          <circle id="Ellipse_81-78" data-name="Ellipse 81" cx="3" cy="3" r="3" transform="translate(496 620)" fill="#fbe6a7"/>
+        </g>
+        <g id="Group_19810-79" data-name="Group 19810" transform="translate(-483 -396)">
+          <circle id="Ellipse_79-79" data-name="Ellipse 79" cx="3" cy="3" r="3" transform="translate(483 612)" fill="#fbe6a7"/>
+          <circle id="Ellipse_80-79" data-name="Ellipse 80" cx="3" cy="3" r="3" transform="translate(483 630)" fill="#fbe6a7"/>
+          <circle id="Ellipse_82-79" data-name="Ellipse 82" cx="3" cy="3" r="3" transform="translate(506 635)" fill="#fbe6a7"/>
+          <circle id="Ellipse_81-79" data-name="Ellipse 81" cx="3" cy="3" r="3" transform="translate(496 620)" fill="#fbe6a7"/>
+        </g>
+        <g id="Group_19810-80" data-name="Group 19810" transform="translate(-444 -396)">
+          <circle id="Ellipse_79-80" data-name="Ellipse 79" cx="3" cy="3" r="3" transform="translate(483 612)" fill="#fbe6a7"/>
+          <circle id="Ellipse_80-80" data-name="Ellipse 80" cx="3" cy="3" r="3" transform="translate(483 630)" fill="#fbe6a7"/>
+          <circle id="Ellipse_82-80" data-name="Ellipse 82" cx="3" cy="3" r="3" transform="translate(506 635)" fill="#fbe6a7"/>
+          <circle id="Ellipse_81-80" data-name="Ellipse 81" cx="3" cy="3" r="3" transform="translate(496 620)" fill="#fbe6a7"/>
+        </g>
+        <g id="Group_19810-81" data-name="Group 19810" transform="translate(-405 -396)">
+          <circle id="Ellipse_79-81" data-name="Ellipse 79" cx="3" cy="3" r="3" transform="translate(483 612)" fill="#fbe6a7"/>
+          <circle id="Ellipse_80-81" data-name="Ellipse 80" cx="3" cy="3" r="3" transform="translate(483 630)" fill="#fbe6a7"/>
+          <circle id="Ellipse_82-81" data-name="Ellipse 82" cx="3" cy="3" r="3" transform="translate(506 635)" fill="#fbe6a7"/>
+          <circle id="Ellipse_81-81" data-name="Ellipse 81" cx="3" cy="3" r="3" transform="translate(496 620)" fill="#fbe6a7"/>
+        </g>
+        <g id="Group_19810-82" data-name="Group 19810" transform="translate(-366 -396)">
+          <circle id="Ellipse_79-82" data-name="Ellipse 79" cx="3" cy="3" r="3" transform="translate(483 612)" fill="#fbe6a7"/>
+          <circle id="Ellipse_80-82" data-name="Ellipse 80" cx="3" cy="3" r="3" transform="translate(483 630)" fill="#fbe6a7"/>
+          <circle id="Ellipse_82-82" data-name="Ellipse 82" cx="3" cy="3" r="3" transform="translate(506 635)" fill="#fbe6a7"/>
+          <circle id="Ellipse_81-82" data-name="Ellipse 81" cx="3" cy="3" r="3" transform="translate(496 620)" fill="#fbe6a7"/>
+        </g>
+        <g id="Group_19810-83" data-name="Group 19810" transform="translate(-327 -396)">
+          <circle id="Ellipse_79-83" data-name="Ellipse 79" cx="3" cy="3" r="3" transform="translate(483 612)" fill="#fbe6a7"/>
+          <circle id="Ellipse_80-83" data-name="Ellipse 80" cx="3" cy="3" r="3" transform="translate(483 630)" fill="#fbe6a7"/>
+          <circle id="Ellipse_82-83" data-name="Ellipse 82" cx="3" cy="3" r="3" transform="translate(506 635)" fill="#fbe6a7"/>
+          <circle id="Ellipse_81-83" data-name="Ellipse 81" cx="3" cy="3" r="3" transform="translate(496 620)" fill="#fbe6a7"/>
+        </g>
+        <g id="Group_19810-84" data-name="Group 19810" transform="translate(-288 -396)">
+          <circle id="Ellipse_79-84" data-name="Ellipse 79" cx="3" cy="3" r="3" transform="translate(483 612)" fill="#fbe6a7"/>
+          <circle id="Ellipse_80-84" data-name="Ellipse 80" cx="3" cy="3" r="3" transform="translate(483 630)" fill="#fbe6a7"/>
+          <circle id="Ellipse_82-84" data-name="Ellipse 82" cx="3" cy="3" r="3" transform="translate(506 635)" fill="#fbe6a7"/>
+          <circle id="Ellipse_81-84" data-name="Ellipse 81" cx="3" cy="3" r="3" transform="translate(496 620)" fill="#fbe6a7"/>
+        </g>
+        <g id="Group_19810-85" data-name="Group 19810" transform="translate(-249 -396)">
+          <circle id="Ellipse_79-85" data-name="Ellipse 79" cx="3" cy="3" r="3" transform="translate(483 612)" fill="#fbe6a7"/>
+          <circle id="Ellipse_80-85" data-name="Ellipse 80" cx="3" cy="3" r="3" transform="translate(483 630)" fill="#fbe6a7"/>
+          <circle id="Ellipse_82-85" data-name="Ellipse 82" cx="3" cy="3" r="3" transform="translate(506 635)" fill="#fbe6a7"/>
+          <circle id="Ellipse_81-85" data-name="Ellipse 81" cx="3" cy="3" r="3" transform="translate(496 620)" fill="#fbe6a7"/>
+        </g>
+        <g id="Group_19810-86" data-name="Group 19810" transform="translate(-210 -396)">
+          <circle id="Ellipse_79-86" data-name="Ellipse 79" cx="3" cy="3" r="3" transform="translate(483 612)" fill="#fbe6a7"/>
+          <circle id="Ellipse_80-86" data-name="Ellipse 80" cx="3" cy="3" r="3" transform="translate(483 630)" fill="#fbe6a7"/>
+          <circle id="Ellipse_82-86" data-name="Ellipse 82" cx="3" cy="3" r="3" transform="translate(506 635)" fill="#fbe6a7"/>
+          <circle id="Ellipse_81-86" data-name="Ellipse 81" cx="3" cy="3" r="3" transform="translate(496 620)" fill="#fbe6a7"/>
+        </g>
+        <g id="Group_19810-87" data-name="Group 19810" transform="translate(-171 -396)">
+          <circle id="Ellipse_79-87" data-name="Ellipse 79" cx="3" cy="3" r="3" transform="translate(483 612)" fill="#fbe6a7"/>
+          <circle id="Ellipse_80-87" data-name="Ellipse 80" cx="3" cy="3" r="3" transform="translate(483 630)" fill="#fbe6a7"/>
+          <circle id="Ellipse_82-87" data-name="Ellipse 82" cx="3" cy="3" r="3" transform="translate(506 635)" fill="#fbe6a7"/>
+          <circle id="Ellipse_81-87" data-name="Ellipse 81" cx="3" cy="3" r="3" transform="translate(496 620)" fill="#fbe6a7"/>
+        </g>
+        <g id="Group_19810-88" data-name="Group 19810" transform="translate(-132 -396)">
+          <circle id="Ellipse_79-88" data-name="Ellipse 79" cx="3" cy="3" r="3" transform="translate(483 612)" fill="#fbe6a7"/>
+          <circle id="Ellipse_80-88" data-name="Ellipse 80" cx="3" cy="3" r="3" transform="translate(483 630)" fill="#fbe6a7"/>
+          <circle id="Ellipse_82-88" data-name="Ellipse 82" cx="3" cy="3" r="3" transform="translate(506 635)" fill="#fbe6a7"/>
+          <circle id="Ellipse_81-88" data-name="Ellipse 81" cx="3" cy="3" r="3" transform="translate(496 620)" fill="#fbe6a7"/>
+        </g>
+        <g id="Group_19810-89" data-name="Group 19810" transform="translate(-93 -396)">
+          <circle id="Ellipse_79-89" data-name="Ellipse 79" cx="3" cy="3" r="3" transform="translate(483 612)" fill="#fbe6a7"/>
+          <circle id="Ellipse_80-89" data-name="Ellipse 80" cx="3" cy="3" r="3" transform="translate(483 630)" fill="#fbe6a7"/>
+          <circle id="Ellipse_82-89" data-name="Ellipse 82" cx="3" cy="3" r="3" transform="translate(506 635)" fill="#fbe6a7"/>
+          <circle id="Ellipse_81-89" data-name="Ellipse 81" cx="3" cy="3" r="3" transform="translate(496 620)" fill="#fbe6a7"/>
+        </g>
+        <g id="Group_19810-90" data-name="Group 19810" transform="translate(-54 -396)">
+          <circle id="Ellipse_79-90" data-name="Ellipse 79" cx="3" cy="3" r="3" transform="translate(483 612)" fill="#fbe6a7"/>
+          <circle id="Ellipse_80-90" data-name="Ellipse 80" cx="3" cy="3" r="3" transform="translate(483 630)" fill="#fbe6a7"/>
+          <circle id="Ellipse_82-90" data-name="Ellipse 82" cx="3" cy="3" r="3" transform="translate(506 635)" fill="#fbe6a7"/>
+          <circle id="Ellipse_81-90" data-name="Ellipse 81" cx="3" cy="3" r="3" transform="translate(496 620)" fill="#fbe6a7"/>
+        </g>
+        <g id="Group_19810-91" data-name="Group 19810" transform="translate(-15 -396)">
+          <circle id="Ellipse_79-91" data-name="Ellipse 79" cx="3" cy="3" r="3" transform="translate(483 612)" fill="#fbe6a7"/>
+          <circle id="Ellipse_80-91" data-name="Ellipse 80" cx="3" cy="3" r="3" transform="translate(483 630)" fill="#fbe6a7"/>
+          <circle id="Ellipse_82-91" data-name="Ellipse 82" cx="3" cy="3" r="3" transform="translate(506 635)" fill="#fbe6a7"/>
+          <circle id="Ellipse_81-91" data-name="Ellipse 81" cx="3" cy="3" r="3" transform="translate(496 620)" fill="#fbe6a7"/>
+        </g>
+      </g>
+      <g id="Group_152" data-name="Group 152" transform="translate(-36 1)" clip-path="url(#clip-path-2)">
+        <path id="Subtraction_3" data-name="Subtraction 3" d="M32.5,65A32.509,32.509,0,0,1,19.849,2.554a32.508,32.508,0,0,1,25.3,59.892A32.3,32.3,0,0,1,32.5,65Zm0-58.787A26.47,26.47,0,0,0,5.909,32.5a26.593,26.593,0,0,0,53.182,0A26.47,26.47,0,0,0,32.5,6.213Z" transform="translate(152 149)" fill="#f0ca57" opacity="0.51"/>
+        <path id="Subtraction_4" data-name="Subtraction 4" d="M16.5,33A16.5,16.5,0,0,1,10.077,1.3,16.5,16.5,0,0,1,22.922,31.7,16.4,16.4,0,0,1,16.5,33Zm0-29.846A13.439,13.439,0,0,0,3,16.5a13.5,13.5,0,0,0,27,0A13.439,13.439,0,0,0,16.5,3.154Z" transform="translate(371 189)" fill="#f0ca57" opacity="0.45"/>
+        <path id="Subtraction_5" data-name="Subtraction 5" d="M35,70A35.009,35.009,0,0,1,21.376,2.751a35.009,35.009,0,0,1,27.247,64.5A34.781,34.781,0,0,1,35,70ZM35,6.691A28.506,28.506,0,0,0,6.363,35a28.638,28.638,0,0,0,57.273,0A28.506,28.506,0,0,0,35,6.691Z" transform="translate(434 -21)" fill="#f0ca57" opacity="0.45"/>
+        <path id="Subtraction_6" data-name="Subtraction 6" d="M158,216a119.879,119.879,0,0,1-23.983-2.418,118.347,118.347,0,0,1-42.551-17.906A119.347,119.347,0,0,1,48.351,143.32a118.4,118.4,0,0,1-6.934-22.338,120.16,120.16,0,0,1,0-47.965A118.348,118.348,0,0,1,59.323,30.466,119.348,119.348,0,0,1,111.68-12.649a118.4,118.4,0,0,1,22.338-6.934,120.159,120.159,0,0,1,47.965,0A118.348,118.348,0,0,1,224.534-1.677a119.347,119.347,0,0,1,43.114,52.357,118.4,118.4,0,0,1,6.934,22.338,120.157,120.157,0,0,1,0,47.965,118.347,118.347,0,0,1-17.906,42.551,119.348,119.348,0,0,1-52.357,43.114,118.4,118.4,0,0,1-22.338,6.934A119.878,119.878,0,0,1,158,216Z" transform="translate(-107 -10)" fill="#f0ca57" opacity="0.45"/>
+        <path id="Subtraction_2" data-name="Subtraction 2" d="M13,26A13,13,0,0,1,7.94,1.022,13,13,0,0,1,18.06,24.978,12.919,12.919,0,0,1,13,26ZM13,2.485A10.588,10.588,0,0,0,2.364,13a10.637,10.637,0,0,0,21.273,0A10.588,10.588,0,0,0,13,2.485Z" transform="translate(185 11)" fill="#f0ca57" opacity="0.37"/>
+      </g>
+    </g>
+  </g>
+</svg>

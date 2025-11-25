@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="75.158" height="99.73" viewBox="0 0 75.158 99.73">
+  <defs>
+    <clipPath id="clip-path">
+      <rect width="72.318" height="79.306" fill="none"/>
+    </clipPath>
+  </defs>
+  <g id="Group_19281" data-name="Group 19281" transform="translate(1)">
+    <path id="Path_74917" data-name="Path 74917" d="M0-14.652,21.812-30h29.36L73.158-14.652V63.111A4.093,4.093,0,0,1,69.066,67.2H4.093A4.093,4.093,0,0,1,0,63.111Z" transform="translate(0 31.527)" fill="none" stroke="#2e2925" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"/>
+    <g id="Repeat_Grid_1" data-name="Repeat Grid 1" transform="translate(0.314 17.608)" clip-path="url(#clip-path)">
+      <g transform="translate(-817.5 -1549)">
+        <line id="Line_22" data-name="Line 22" x2="142" transform="translate(817.5 1549.5)" fill="none" stroke="#2e2925" stroke-width="1"/>
+      </g>
+      <g transform="translate(-817.5 -1528)">
+        <line id="Line_22-2" data-name="Line 22" x2="142" transform="translate(817.5 1549.5)" fill="none" stroke="#2e2925" stroke-width="1"/>
+      </g>
+      <g transform="translate(-817.5 -1507)">
+        <line id="Line_22-3" data-name="Line 22" x2="142" transform="translate(817.5 1549.5)" fill="none" stroke="#2e2925" stroke-width="1"/>
+      </g>
+      <g transform="translate(-817.5 -1486)">
+        <line id="Line_22-4" data-name="Line 22" x2="142" transform="translate(817.5 1549.5)" fill="none" stroke="#2e2925" stroke-width="1"/>
+      </g>
+    </g>
+    <g id="Rectangle_5864" data-name="Rectangle 5864" transform="translate(11.634)" fill="#fff" stroke="#2e2925" stroke-width="2">
+      <rect width="49.68" height="6.917" rx="3.459" stroke="none"/>
+      <rect x="1" y="1" width="47.68" height="4.917" rx="2.459" fill="none"/>
+    </g>
+  </g>
+</svg>
