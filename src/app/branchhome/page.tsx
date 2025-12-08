@@ -10,13 +10,7 @@ import { Sidebar } from "@/components/layout/Sidebar"
 import { Footer } from "@/components/layout/Footer"
 import Image from "next/image"
 
-interface MenuItem {
-  MenuID: number
-  MenuNameEn: string
-  MenuNameAr: string
-  MenuURL: string
-  ApplicationNameEn: string
-}
+import { MenuItem } from '@/types/menu';
 
 export default function BranchHomePage() {
   const router = useRouter()
@@ -89,28 +83,63 @@ export default function BranchHomePage() {
         MenuID: 3,
         MenuNameEn: "Search Customer",
         MenuNameAr: "البحث عن العميل",
-        MenuURL: "/searchcustomer",
+        MenuURL: "/branchoperations",
         ApplicationNameEn: "Branch Operations"
       },
       {
         MenuID: 4,
-        MenuNameEn: "Notifications",
-        MenuNameAr: "الإشعارات",
-        MenuURL: "/notifications",
-        ApplicationNameEn: "Notification Center"
+        MenuNameEn: "Bill Management",
+        MenuNameAr: "إدارة الفواتير",
+        MenuURL: "/branchoperations",
+        ApplicationNameEn: "Branch Operations"
       },
       {
         MenuID: 5,
-        MenuNameEn: "Water Shutdown List",
-        MenuNameAr: "قائمة إيقاف المياه",
+        MenuNameEn: "Notification Template",
+        MenuNameAr: "قوالب الإشعارات",
+        MenuURL: "/notificationtemplate",
+        ApplicationNameEn: "Notification Center"
+      },
+      {
+        MenuID: 6,
+        MenuNameEn: "Custom Notification",
+        MenuNameAr: "إشعار مخصص",
+        MenuURL: "/customnotification",
+        ApplicationNameEn: "Notification Center"
+      },
+      {
+        MenuID: 7,
+        MenuNameEn: "Water Shutdown Notifications",
+        MenuNameAr: "إشعارات إيقاف المياه",
         MenuURL: "/watershutdown",
         ApplicationNameEn: "Water Shutdown"
       },
       {
-        MenuID: 6,
+        MenuID: 8,
+        MenuNameEn: "Water Shutdown Templates",
+        MenuNameAr: "قوالب إيقاف المياه",
+        MenuURL: "/watershutdown/templates",
+        ApplicationNameEn: "Water Shutdown"
+      },
+      {
+        MenuID: 9,
         MenuNameEn: "Wetland Booking",
         MenuNameAr: "حجز الأراضي الرطبة",
         MenuURL: "/wetlandbooking",
+        ApplicationNameEn: "Wetland"
+      },
+      {
+        MenuID: 10,
+        MenuNameEn: "Wetland Slot Creation",
+        MenuNameAr: "إنشاء فترات الأراضي الرطبة",
+        MenuURL: "/wetland/slots",
+        ApplicationNameEn: "Wetland"
+      },
+      {
+        MenuID: 11,
+        MenuNameEn: "Holiday Calendar",
+        MenuNameAr: "تقويم العطلات",
+        MenuURL: "/wetland/holidays",
         ApplicationNameEn: "Wetland"
       }
     ]
@@ -121,7 +150,7 @@ export default function BranchHomePage() {
   }
 
   return (
-    <div className="flex flex-col h-screen overflow-hidden">
+    <div className="flex flex-col min-h-screen">
       {/* Header */}
       <Header language={language} onLanguageChange={handleLanguageChange} />
 
@@ -129,12 +158,12 @@ export default function BranchHomePage() {
       <LogoSection />
 
       {/* Main Layout: Sidebar + Content */}
-      <div className="flex flex-1 overflow-hidden">
+      <div className="flex flex-1">
         {/* Sidebar */}
         <Sidebar menuItems={menuItems} language={language} />
 
         {/* Main Content Area */}
-        <main className="flex-1 relative overflow-hidden">
+        <main className="flex-1 relative min-h-[600px]">
           {/* Background Image */}
           <div className="absolute inset-0">
             <Image

@@ -15,7 +15,20 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: "Nama Water Services",
-  description: "Nama Water Services Portal",
+  description: "Nama Water Services Portal - Branch Operations and Customer Service",
+  icons: {
+    icon: [
+      { url: "/Assets/Images/global/nama_logo.png" },
+      { url: "/Assets/Images/global/nama_logo.png", sizes: "32x32", type: "image/png" },
+      { url: "/Assets/Images/global/nama_logo.png", sizes: "16x16", type: "image/png" },
+    ],
+    apple: "/Assets/Images/global/nama_logo.png",
+  },
+  openGraph: {
+    title: "Nama Water Services",
+    description: "Nama Water Services Portal - Branch Operations and Customer Service",
+    images: ["/Assets/Images/global/nama_logo.png"],
+  },
 };
 
 export default function RootLayout({

@@ -73,7 +73,7 @@ class ApiClient {
             case 1010: // Invalid outstanding amount
             case 1011: // Custom error
             case 1014: // Custom error
-                throw new Error(data.Data || data.Message || 'An error occurred')
+                throw new Error(String(data.Data) || data.Message || 'An error occurred')
 
             case 1012: // Timeout
             case 408: // Request timeout
@@ -92,16 +92,51 @@ class ApiClient {
     }
 
     private handleError(error: any): Promise<never> {
-        if (error.response) {
+        // Safely log error details
+        try {
+            console.error('API Error Details:', {
+                url: error?.config?.url || 'unknown',
+                method: error?.config?.method || 'unknown',
+                status: error?.response?.status || 'no status',
+                statusText: error?.response?.statusText || 'no status text',
+                data: error?.response?.data || 'no data',
+                message: error?.message || 'no message',
+                errorType: error?.name || 'unknown error type'
+            })
+        } catch (logError) {
+            console.error('Error logging failed:', logError)
+        }
+
+        if (error?.response) {
             // Server responded with error status
-            const message = error.response.data?.Message || error.response.statusText || 'Server error'
+            const status = error.response.status
+            const data = error.response.data
+
+            // Handle different HTTP status codes
+            if (status === 401 || status === 403) {
+                // Unauthorized - redirect to login
+                if (typeof window !== 'undefined') {
+                    localStorage.clear()
+                    sessionStorage.clear()
+                    window.location.href = '/login'
+                }
+                return Promise.reject(new Error('Session expired. Please login again.'))
+            }
+
+            // Try to extract meaningful error message
+            const message = data?.Message || data?.message || error.response.statusText || `Server error (${status})`
             return Promise.reject(new Error(message))
-        } else if (error.request) {
+        } else if (error?.request) {
             // Request made but no response
+            console.error('No response received from server')
             return Promise.reject(new Error('No response from server. Please check your connection.'))
-        } else {
-            // Something else happened
+        } else if (error instanceof Error) {
+            // Standard JavaScript error
             return Promise.reject(error)
+        } else {
+            // Unknown error type
+            console.error('Unknown error type:', error)
+            return Promise.reject(new Error('An unexpected error occurred'))
         }
     }
 
@@ -147,7 +182,9 @@ class ApiClient {
 
     // Simple API call without data (matching React app getAPIResponse pattern)
     async simplePost<T>(url: string): Promise<T> {
-        return this.client.post(url, null, {
+        // Create an empty FormData object to properly generate the multipart boundary
+        const formData = new FormData()
+        return this.client.post(url, formData, {
             headers: {
                 'Content-Type': 'multipart/form-data',
             },

@@ -1,75 +1,103 @@
-"use client"
-
-import { useState } from "react"
-import Link from "next/link"
-import { usePathname } from "next/navigation"
-import { ChevronRight, ChevronLeft, Home } from "lucide-react"
-import { cn } from "@/lib/utils"
-
-interface MenuItem {
-  MenuID: number
-  MenuNameEn: string
-  MenuNameAr: string
-  MenuURL: string
-  ApplicationNameEn: string
-}
+import React, { useState } from 'react'
+import Link from 'next/link'
+import { usePathname } from 'next/navigation'
+import { ChevronRight, ChevronLeft, Home } from 'lucide-react'
+import { cn } from '@/lib/utils'
+import { MenuItem } from '@/types/menu'
 
 interface SidebarProps {
-  menuItems?: MenuItem[]
-  language?: "EN" | "AR"
+  menuItems: MenuItem[]
+  language?: 'EN' | 'AR'
 }
 
-export function Sidebar({ menuItems = [], language = "EN" }: SidebarProps) {
+export function Sidebar({ menuItems, language = 'EN' }: SidebarProps) {
   const [isCollapsed, setIsCollapsed] = useState(false)
   const [openMenu, setOpenMenu] = useState<string | null>(null)
   const pathname = usePathname()
 
-  // Group menu items by application
-  const groupedMenus = menuItems.reduce((acc: Record<string, MenuItem[]>, item) => {
+  // Group menu items by application name
+  const groupedMenus: Record<string, MenuItem[]> = menuItems.reduce((acc, item) => {
     const appName = item.ApplicationNameEn
     if (!acc[appName]) {
       acc[appName] = []
     }
     acc[appName].push(item)
     return acc
-  }, {})
+  }, {} as Record<string, MenuItem[]>)
 
   const toggleMenu = (appName: string) => {
     setOpenMenu(openMenu === appName ? null : appName)
   }
 
   const renderIcon = (appName: string) => {
-    // Return SVG icons based on application name
     switch (appName) {
-      case "Appointment":
+      case 'Appointment':
         return (
-          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 200 200" className="fill-current">
-            <path d="M15.963,107.065a6.239,6.239,0,0,1-6.193-6.193V42.54h99.38V80.276l6.769,1.872V26.409a13,13,0,0,0-12.963-12.963H91.434V6.677A4.18,4.18,0,0,0,87.257,2.5H77.751a4.18,4.18,0,0,0-4.177,4.177V13.59H45.345V6.677A4.18,4.18,0,0,0,41.168,2.5H31.662a4.18,4.18,0,0,0-4.177,4.177V13.59H15.963A13,13,0,0,0,3,26.553v74.319a13,13,0,0,0,12.963,12.963H80.2l-1.872-6.769H15.963Z" transform="translate(29 29.5)" />
+          <svg xmlns="http://www.w3.org/2000/svg" width="25" height="25" viewBox="0 0 200 200" className="fill-current">
+            <defs>
+              <clipPath id="clip-appointment-booking">
+                <rect width="200" height="200"/>
+              </clipPath>
+            </defs>
+            <g clipPath="url(#clip-appointment-booking)">
+              <g transform="translate(29 29.5)">
+                <g transform="translate(3 2.5)">
+                  <path d="M15.963,107.065a6.239,6.239,0,0,1-6.193-6.193V42.54h99.38V80.276l6.769,1.872V26.409a13,13,0,0,0-12.963-12.963H91.434V6.677A4.18,4.18,0,0,0,87.257,2.5H77.751a4.18,4.18,0,0,0-4.177,4.177V13.59H45.345V6.677A4.18,4.18,0,0,0,41.168,2.5H31.662a4.18,4.18,0,0,0-4.177,4.177V13.59H15.963A13,13,0,0,0,3,26.553v74.319a13,13,0,0,0,12.963,12.963H80.2l-1.872-6.769H15.963Z" transform="translate(-3 -2.5)"/>
+                  <path d="M35.108,41.057A3.5,3.5,0,0,0,31.651,37.6H18.257A3.5,3.5,0,0,0,14.8,41.057V51.715a3.5,3.5,0,0,0,3.457,3.457H31.651a3.5,3.5,0,0,0,3.457-3.457Z" transform="translate(2.195 12.954)"/>
+                  <path d="M55.408,41.057A3.5,3.5,0,0,0,51.951,37.6H38.557A3.5,3.5,0,0,0,35.1,41.057V51.715a3.5,3.5,0,0,0,3.457,3.457H51.951a3.5,3.5,0,0,0,3.457-3.457Z" transform="translate(11.133 12.954)"/>
+                  <path d="M58.957,37.744A3.5,3.5,0,0,0,55.5,41.2V51.859a3.5,3.5,0,0,0,3.457,3.457H72.351a3.5,3.5,0,0,0,3.457-3.457v-10.8A3.5,3.5,0,0,0,72.351,37.6H58.957Z" transform="translate(20.115 12.954)"/>
+                  <path d="M31.651,55.7H18.257A3.5,3.5,0,0,0,14.8,59.157V69.815a3.5,3.5,0,0,0,3.457,3.457H31.651a3.5,3.5,0,0,0,3.457-3.457V59.157A3.5,3.5,0,0,0,31.651,55.7Z" transform="translate(2.195 20.923)"/>
+                  <path d="M51.951,55.7H38.557A3.5,3.5,0,0,0,35.1,59.157V69.815a3.5,3.5,0,0,0,3.457,3.457H51.951a3.5,3.5,0,0,0,3.457-3.457V59.157A3.5,3.5,0,0,0,51.951,55.7Z" transform="translate(11.133 20.923)"/>
+                  <path d="M114.161,100.082,96.733,82.654l12.1-7.057a3.235,3.235,0,0,0-.72-5.905L59.862,56.441a3.3,3.3,0,0,0-4.033,4.033l13.251,48.106a3.2,3.2,0,0,0,5.905.72l7.057-12.1L99.47,114.629a3.217,3.217,0,0,0,4.609,0l10.082-10.082A3.048,3.048,0,0,0,114.161,100.082Z" transform="translate(20.219 21.191)"/>
+                </g>
+              </g>
+            </g>
           </svg>
         )
-      case "Branch Operations":
+      case 'Wetland':
         return (
-          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="22" viewBox="0 0 21.743 26.35" className="stroke-current fill-none">
-            <circle cx="5" cy="5" r="5" transform="translate(7.543 1.491)" strokeWidth="1.5" />
-            <path d="M18.21,17.3A8.426,8.426,0,0,0,4,23.426v3.83h7.66" transform="translate(0 -3.275)" strokeWidth="1.5" />
+          <svg xmlns="http://www.w3.org/2000/svg" width="25" height="25" viewBox="0 0 200 200" className="fill-current">
+            <defs>
+              <clipPath id="clip-path-wetland">
+                <rect width="156.873" height="156.825" transform="translate(-7 -7)" stroke="currentColor" strokeWidth="4"/>
+              </clipPath>
+            </defs>
+            <g transform="translate(29 29)">
+              <g clipPath="url(#clip-path-wetland)">
+                <path d="M71.418,142.825a71.413,71.413,0,1,1,71.455-71.336,71.429,71.429,0,0,1-71.455,71.336M26.378,21.547C45.467,33.286,56.466,50.3,60.351,72.1a1.4,1.4,0,0,0,.211.014,2.577,2.577,0,0,0,.318-.047,28.8,28.8,0,0,0,6.044-1.994,18.839,18.839,0,0,0,9.518-9.12c1.06-2.222,2.277-4.378,3.55-6.487a18.906,18.906,0,0,1,9.784-8.238A51.446,51.446,0,0,1,98.4,44.068c1.129-.209,1.221-.344.9-1.456-.015-.051-.042-.1-.057-.15-1.008-3.352-2.061-6.691-3-10.062A29.686,29.686,0,0,1,95.2,27.32a4.621,4.621,0,0,1,3.589-5.168,10.362,10.362,0,0,1,10.438,2.708,6.667,6.667,0,0,1,1.586,7.9.718.718,0,0,0,.172.926q6.9,7.334,13.781,14.691c.136.145.265.3.4.447l-.1.106L106.471,35.448a8.174,8.174,0,0,0-1,4.749,9.1,9.1,0,0,0,2.318,4.988c1.444,1.706,3.021,3.3,4.516,4.962a17.561,17.561,0,0,1,4.5,15.592,17.854,17.854,0,0,1-9.666,13.116,2.692,2.692,0,0,0-1.529,2.028c-1.789,9.139-3.625,18.269-5.438,27.4a9.581,9.581,0,0,0-.4,2.738c.458,4.394,1.036,8.776,1.56,13.162a.716.716,0,0,0,.54.687q3.244,1.1,6.474,2.248a.793.793,0,0,0,.833-.146c2.04-1.573,4.179-3.031,6.111-4.726a66.267,66.267,0,0,0,22.925-43.681,64.523,64.523,0,0,0-1-20.824A65.3,65.3,0,0,0,115.6,20.875C99.763,7.24,81.351,2.081,60.7,5.154A64.753,64.753,0,0,0,30.5,18.185c-1.388,1.063-2.713,2.211-4.12,3.362M4.439,77.307l.191,0c.045-.13.1-.258.132-.391A123.253,123.253,0,0,1,8.858,64,83.706,83.706,0,0,1,15.48,49.911c.314-.514.651-1.014.978-1.52a1.732,1.732,0,0,1-.163.64A208.665,208.665,0,0,0,6.067,79.637c-.449,1.868-1.059,3.719-.39,5.677A22.689,22.689,0,0,1,6.2,87.529a103.578,103.578,0,0,1,32.7-44.266.7.7,0,0,1-.178.3c-3.921,4.257-7.554,8.752-11.045,13.363A167.778,167.778,0,0,0,13.79,78.134,79.777,79.777,0,0,0,7.8,91.743a1.757,1.757,0,0,0-.043,1.074c.894,2.333,1.837,4.646,2.77,6.965a5.562,5.562,0,0,0,.287.525,125.179,125.179,0,0,1,11.334-21c4-6.1,13.121-18.15,14.386-19.019-.111.2-.2.372-.3.539C30.5,70.7,24.939,80.671,19.782,90.863c-2.282,4.51-4.474,9.064-6.326,13.773-.063.16-.162.379-.1.5.23.468.518.908.834,1.441,5-8.135,9.868-16.2,15.818-23.545a1.175,1.175,0,0,1-.182.434c-2.644,4.479-5.375,8.909-7.907,13.45-2.113,3.788-3.99,7.707-5.982,11.563a.77.77,0,0,0,.084.928c1.138,1.494,2.259,3,3.392,4.5.2.265.427.512.7.832l.351-.675c2.942-5.658,5.855-11.332,8.833-16.972A75.6,75.6,0,0,1,44.563,77.5c1.3-1.23,2.747-2.305,4.126-3.452l.1.117c-.253.219-.509.438-.761.659a55.333,55.333,0,0,0-8.352,9.425,102.628,102.628,0,0,0-8.279,12.835,66.7,66.7,0,0,0-6.574,20.967c-.228,1.55-.219,1.555.955,2.638.516.477,1.044.94,1.6,1.436.557-1.111,1.071-2.131,1.582-3.152,3.127-6.246,6.226-12.507,9.778-18.528a69.472,69.472,0,0,1,6.522-9.628c.809-.96,1.722-1.831,2.589-2.742l.137.12a1.851,1.851,0,0,1-.126.2A85.572,85.572,0,0,0,36.51,107.469c-2.048,4.6-3.889,9.288-5.821,13.937-.1.232-.18.469-.271.7a.645.645,0,0,0,.412-.218q2.5-2.624,4.992-5.254a2.977,2.977,0,0,0,.517-.737c.56-1.157,1.094-2.328,1.642-3.491q1.254-2.664,2.514-5.325l.106.047-3.228,7.938,7.877-6.141.11.136c-.125.11-.248.223-.377.328a75.846,75.846,0,0,0-8.448,7.935,1.766,1.766,0,0,0-.392.565c-.946,2.769-1.872,5.544-2.814,8.314a.545.545,0,0,0,.3.74c1.385.854,2.77,1.708,4.124,2.608.492.327.77.235,1.162-.167a67.442,67.442,0,0,0,18.639-35.9A66.92,66.92,0,0,0,57.2,68.206a66.411,66.411,0,0,0-9.9-23.856A67.819,67.819,0,0,0,25.274,23.476a.7.7,0,0,0-1.038.123A67.448,67.448,0,0,0,11.774,40.511a66.2,66.2,0,0,0-7.5,30.474c-.012,2.107.107,4.214.166,6.322m101.809,51.567c-22.257-7.8-37.484-22.567-45.458-44.747-.861,18.195-7.749,33.758-20.388,46.88a66.817,66.817,0,0,0,36.1,7.377,66.12,66.12,0,0,0,29.743-9.51M60.391,72.58a67.184,67.184,0,0,0,26.97,44.2c-.093-1.661-.184-3.142-.257-4.624-.087-1.805-.264-3.614-.215-5.415.124-4.545.382-9.085.53-13.629A23.964,23.964,0,0,0,85.094,81.5c-3.188-6.417-8.286-9.828-15.61-9.488-2.324.108-4.644.3-6.965.454-.69.045-1.382.076-2.128.116m39.128,51.29c0-.191.007-.262,0-.33-.411-3.5-.834-7-1.23-10.5a10.446,10.446,0,0,1-.186-2.978c1.083-5.815,2.28-11.608,3.417-17.413a33.1,33.1,0,0,0,.931-7.488,13.742,13.742,0,0,0-.369-2.748c-.2-.836-.638-1.072-1.5-1.063a52.564,52.564,0,0,0-7.256.7,2.786,2.786,0,0,0-2.344,1.768c-.141.328-.288.654-.407.99A27.422,27.422,0,0,0,89.2,91.356c-.335,3.434-.6,6.877-.813,10.32a55.033,55.033,0,0,0-.1,5.955c.154,3.287.465,6.566.684,9.849a.845.845,0,0,0,.466.761c2.563,1.491,5.115,3,7.688,4.473.738.423,1.534.745,2.392,1.156m-65.336-3.6-.159-.1-3.432,4.578L32,125.8l2.188-5.528" transform="translate(0 0)" stroke="currentColor" strokeWidth="4"/>
+              </g>
+            </g>
           </svg>
         )
-      case "Notification Center":
+      case 'Branch Operations':
         return (
-          <svg width="20" height="20" viewBox="0 0 24 24" className="fill-current">
+          <svg xmlns="http://www.w3.org/2000/svg" width="21.743" height="26.35" viewBox="0 0 21.743 26.35" className="stroke-current fill-none">
+            <g transform="translate(-3.25 -0.741)">
+              <circle cx="5" cy="5" r="5" transform="translate(7.543 1.491)" strokeLinejoin="round" strokeWidth="1.5" />
+              <path d="M18.21,17.3A8.426,8.426,0,0,0,4,23.426v3.83h7.66" transform="translate(0 -3.275)" strokeLinejoin="round" strokeWidth="1.5" />
+              <circle cx="3" cy="3" r="3" transform="translate(15.543 18.491)" strokeLinejoin="round" strokeWidth="1.5" />
+              <line x2="4" y2="3" transform="translate(20.543 23.491)" strokeLinejoin="round" strokeWidth="1.5" />
+            </g>
+          </svg>
+        )
+      case 'Water Shutdown':
+        return (
+          <svg xmlns="http://www.w3.org/2000/svg" width="30" height="30" viewBox="0 0 200 200" className="fill-current">
+            <g transform="translate(21 19.966)">
+              <path d="M0,0H158.958V158.958H0Z" fill="none"/>
+              <path d="M386.611,1021.911a59.609,59.609,0,0,1-42.151-101.76L386.611,878l42.151,42.151c.709.708,1.411,1.444,2.08,2.186a39.639,39.639,0,0,0-11.366,7.285l-.059-.059-32.805-32.832-32.785,32.785a46.365,46.365,0,1,0,65.57,65.57,47.02,47.02,0,0,0,3.5-3.914A39.479,39.479,0,0,0,435,997.134a60.269,60.269,0,0,1-6.245,7.325,59.215,59.215,0,0,1-42.144,17.452Z" transform="translate(-323.69 -876.198)"/>
+              <g transform="translate(123.593 52.716) rotate(45)">
+                <path d="M19.5,2411.463H18.47v-17.988H.5v-.988H18.47V2374.5H19.5v17.988h17.97v.988H19.5v17.988Z" transform="translate(2.58 -2371.42)"/>
+                <path d="M25.156,2417.123H17.97v-17.988H0v-7.147H17.97V2374h7.187v17.988h17.97v7.147H25.156Z" transform="translate(0 -2374)"/>
+              </g>
+              <path d="M-2232.635-1246.683a35.764,35.764,0,0,1-13.765-2.724,35.3,35.3,0,0,1-11.241-7.428,34.51,34.51,0,0,1-7.579-11.017,33.848,33.848,0,0,1-2.779-13.491,33.848,33.848,0,0,1,2.779-13.491,34.513,34.513,0,0,1,7.579-11.017,35.307,35.307,0,0,1,11.241-7.428,35.768,35.768,0,0,1,13.765-2.724,35.769,35.769,0,0,1,13.766,2.724,35.307,35.307,0,0,1,11.241,7.428,34.51,34.51,0,0,1,7.579,11.017,33.843,33.843,0,0,1,2.779,13.491,33.844,33.844,0,0,1-2.779,13.491,34.511,34.511,0,0,1-7.579,11.017,35.294,35.294,0,0,1-11.241,7.428A35.765,35.765,0,0,1-2232.635-1246.683Zm0-60.188c-14.364,0-26.05,11.453-26.05,25.53s11.686,25.53,26.05,25.53,26.05-11.453,26.05-25.53S-2218.271-1306.871-2232.635-1306.871Z" transform="translate(2356.228 1364.55)"/>
+            </g>
+          </svg>
+        )
+      case 'Notification Center':
+        return (
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="fill-current">
             <path d="M12 22C13.1 22 14 21.1 14 20H10C10 21.1 10.9 22 12 22ZM18 16V11C18 7.93 16.36 5.36 13.5 4.68V4C13.5 3.17 12.83 2.5 12 2.5C11.17 2.5 10.5 3.17 10.5 4V4.68C7.63 5.36 6 7.92 6 11V16L4 18V19H20V18L18 16Z" />
-          </svg>
-        )
-      case "Water Shutdown":
-        return (
-          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 200 200" className="fill-current">
-            <path d="M386.611,1021.911a59.609,59.609,0,0,1-42.151-101.76L386.611,878l42.151,42.151c.709.708,1.411,1.444,2.08,2.186a39.639,39.639,0,0,0-11.366,7.285l-.059-.059-32.805-32.832-32.785,32.785a46.365,46.365,0,1,0,65.57,65.57,47.02,47.02,0,0,0,3.5-3.914A39.479,39.479,0,0,0,435,997.134a60.269,60.269,0,0,1-6.245,7.325,59.215,59.215,0,0,1-42.144,17.452Z" transform="translate(21 19.966)" />
-          </svg>
-        )
-      case "Wetland":
-        return (
-          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 200 200" className="fill-current">
-            <path d="M71.418,142.825a71.413,71.413,0,1,1,71.455-71.336,71.429,71.429,0,0,1-71.455,71.336" transform="translate(29 29)" />
           </svg>
         )
       default:
@@ -78,20 +106,13 @@ export function Sidebar({ menuItems = [], language = "EN" }: SidebarProps) {
   }
 
   return (
-    <div className={cn(
-      "bg-teal-800 text-white transition-all duration-300 h-full flex flex-col relative",
-      isCollapsed ? "w-14" : "w-48"
-    )}>
+    <div className={cn('bg-teal-800 text-white transition-all duration-300 min-h-screen flex flex-col relative', isCollapsed ? 'w-14' : 'w-48')}>
       {/* Collapse Toggle */}
       <button
         onClick={() => setIsCollapsed(!isCollapsed)}
         className="absolute -right-3 top-2 bg-teal-700 rounded-full p-0.5 hover:bg-teal-600 z-10"
       >
-        {isCollapsed ? (
-          <ChevronRight className="w-4 h-4" />
-        ) : (
-          <ChevronLeft className="w-4 h-4" />
-        )}
+        {isCollapsed ? <ChevronRight className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}
       </button>
 
       {/* Menu Items */}
@@ -101,10 +122,7 @@ export function Sidebar({ menuItems = [], language = "EN" }: SidebarProps) {
           <li>
             <Link
               href="/branchhome"
-              className={cn(
-                "flex items-center gap-2 px-3 py-2.5 hover:bg-teal-700 transition-colors text-sm",
-                pathname === "/branchhome" && "bg-teal-700"
-              )}
+              className={cn('flex items-center gap-2 px-3 py-2.5 hover:bg-teal-700 transition-colors text-sm', pathname === '/branchhome' && 'bg-teal-700')}
             >
               <Home className="w-5 h-5 flex-shrink-0" />
               {!isCollapsed && <span>Home</span>}
@@ -116,24 +134,14 @@ export function Sidebar({ menuItems = [], language = "EN" }: SidebarProps) {
             <li key={index}>
               <button
                 onClick={() => toggleMenu(appName)}
-                className={cn(
-                  "w-full flex items-center justify-between gap-2 px-3 py-2.5 hover:bg-teal-700 transition-colors text-sm",
-                  openMenu === appName && "bg-teal-700"
-                )}
+                className={cn('w-full flex items-center justify-between gap-2 px-3 py-2.5 hover:bg-teal-700 transition-colors text-sm', openMenu === appName && 'bg-teal-700')}
               >
                 <div className="flex items-center gap-2">
-                  <div className="w-5 h-5 flex-shrink-0">
-                    {renderIcon(appName)}
-                  </div>
+                  <div className="w-5 h-5 flex-shrink-0">{renderIcon(appName)}</div>
                   {!isCollapsed && <span className="text-xs">{appName}</span>}
                 </div>
                 {!isCollapsed && (
-                  <ChevronRight
-                    className={cn(
-                      "w-3 h-3 transition-transform",
-                      openMenu === appName && "rotate-90"
-                    )}
-                  />
+                  <ChevronRight className={cn('w-3 h-3 transition-transform', openMenu === appName && 'rotate-90')} />
                 )}
               </button>
 
@@ -144,12 +152,9 @@ export function Sidebar({ menuItems = [], language = "EN" }: SidebarProps) {
                     <li key={idx}>
                       <Link
                         href={menu.MenuURL}
-                        className={cn(
-                          "block px-10 py-1.5 hover:bg-teal-700 transition-colors text-xs",
-                          pathname === menu.MenuURL && "bg-teal-700"
-                        )}
+                        className={cn('block px-10 py-1.5 hover:bg-teal-700 transition-colors text-xs', pathname === menu.MenuURL && 'bg-teal-700')}
                       >
-                        {language === "EN" ? menu.MenuNameEn : menu.MenuNameAr}
+                        {language === 'EN' ? menu.MenuNameEn : menu.MenuNameAr}
                       </Link>
                     </li>
                   ))}
