@@ -10,6 +10,8 @@ import {
     CustomNotification
 } from '@/types/notification.types'
 
+
+
 export const notificationService = {
     /**
      * Get all templates, event types, and categories
@@ -18,28 +20,26 @@ export const notificationService = {
     async getTemplates(): Promise<TemplateResponse> {
         try {
             const response = await apiClient.simplePost<TemplateResponse>('PushNotification/NewGetTemplates')
-            return response || { EventType: [], Category: [], Notifications: [] }
+            return response
         } catch (error) {
             console.error('Error fetching templates:', error)
-            return { EventType: [], Category: [], Notifications: [] }
+            throw error
         }
     },
 
     /**
      * Save or update a notification template
-     * Matches React app: PushNotification/SaveTemplate
+     * Matches React app: PushNotification/InsertUpdateTemplate
      */
     async saveTemplate(data: SaveTemplateRequest): Promise<any> {
         try {
+            // Match payload from React app (Template.jsx)
             const formData = {
-                NotificationID: data.NotificationID || '',
-                EventCode: data.EventCode,
                 NotificationCategory: data.NotificationCategory,
                 TemplateEn: data.TemplateEn,
-                TemplateAr: data.TemplateAr,
-                ModifiedBy: data.ModifiedBy
+                TemplateAr: data.TemplateAr
             }
-            const response = await apiClient.post<any>('PushNotification/SaveTemplate', formData)
+            const response = await apiClient.post<any>('PushNotification/InsertUpdateTemplate', formData)
             return response
         } catch (error) {
             console.error('Error saving template:', error)
@@ -65,7 +65,7 @@ export const notificationService = {
             )
             return response || { Table: [], TotalCount: 0 }
         } catch (error) {
-            console.error('Error fetching notifications:', error)
+            // Return empty list on error
             return { Table: [], TotalCount: 0 }
         }
     },

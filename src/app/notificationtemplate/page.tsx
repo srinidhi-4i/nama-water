@@ -2,21 +2,27 @@
 
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
+import { ChevronLeft } from "lucide-react"
 import { authService } from "@/services/auth.service"
 import { notificationService } from "@/services/notification.service"
+import { menuService } from "@/services/menu.service"
 import { Header } from "@/components/layout/Header"
 import { LogoSection } from "@/components/layout/LogoSection"
+import { Sidebar } from "@/components/layout/Sidebar"
 import { Footer } from "@/components/layout/Footer"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { DataTable, Column } from "@/components/ui/data-table"
-import { Bell, Eye, Edit } from "lucide-react"
+import { Eye, Edit } from "lucide-react"
 import { NotificationTemplate } from "@/types/notification.types"
+import { MenuItem } from "@/types/menu"
 import { TemplateViewEdit } from "../../components/notification/template-view-edit"
 
 export default function NotificationTemplatePage() {
   const router = useRouter()
   const [language, setLanguage] = useState<"EN" | "AR">("EN")
+  const [menuItems, setMenuItems] = useState<MenuItem[]>([])
+  const [userDetails, setUserDetails] = useState<any>(null)
   const [templates, setTemplates] = useState<NotificationTemplate[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const [currentPage, setCurrentPage] = useState(1)
@@ -30,8 +36,39 @@ export default function NotificationTemplatePage() {
       router.push('/login')
       return
     }
+
+    // Load user details
+    try {
+      const userData = authService.getCurrentUser()
+      if (userData && userData.BranchUserDetails && userData.BranchUserDetails.length > 0) {
+        setUserDetails(userData.BranchUserDetails[0])
+      }
+    } catch (error) {
+      console.error('Error loading user details:', error)
+    }
+
+    loadMenuData()
     loadTemplates()
+    // Forced reload for menu data structure
   }, [router, currentPage])
+
+  const loadMenuData = async () => {
+    try {
+      const data = await menuService.getMenuDetails()
+      if (data && data.length > 0) {
+        const transformedData = data.map((item: any) => ({
+          MenuID: item.MenuId,
+          MenuNameEn: item.Menu_Name_EN,
+          MenuNameAr: item.Menu_Name_AR,
+          MenuURL: item.Target_Url,
+          ApplicationNameEn: item.ApplicationNameEn || "General"
+        }))
+        setMenuItems(transformedData)
+      }
+    } catch (error) {
+      console.error('Error loading menu data:', error)
+    }
+  }
 
   const loadTemplates = async () => {
     setIsLoading(true)
@@ -50,16 +87,64 @@ export default function NotificationTemplatePage() {
     setLanguage(lang)
   }
 
-  const handleView = (template: NotificationTemplate) => {
-    setSelectedTemplate(template)
-    setViewMode("view")
-    setShowViewEdit(true)
+
+
+
+  const handleView = async (template: NotificationTemplate) => {
+    setIsLoading(true)
+    try {
+      // Fetch fresh data
+      const response = await notificationService.getTemplates()
+      const freshTemplates = response.Notifications || []
+      
+      // Update list state
+      setTemplates(freshTemplates)
+      setTotalPages(Math.ceil(freshTemplates.length / 6))
+
+      // Find the updated version of the selected template
+      // Using NotificationCategory as it seems to be the unique identifier for templates
+      const freshTemplate = freshTemplates.find(t => t.NotificationCategory === template.NotificationCategory) || template
+      
+      setSelectedTemplate(freshTemplate)
+      setViewMode("view")
+      setShowViewEdit(true)
+    } catch (error) {
+      console.error('Error refreshing data:', error)
+      // Fallback to existing data if fetch fails
+      setSelectedTemplate(template)
+      setViewMode("view")
+      setShowViewEdit(true)
+    } finally {
+      setIsLoading(false)
+    }
   }
 
-  const handleEdit = (template: NotificationTemplate) => {
-    setSelectedTemplate(template)
-    setViewMode("edit")
-    setShowViewEdit(true)
+  const handleEdit = async (template: NotificationTemplate) => {
+    setIsLoading(true)
+    try {
+      // Fetch fresh data
+      const response = await notificationService.getTemplates()
+      const freshTemplates = response.Notifications || []
+      
+      // Update list state
+      setTemplates(freshTemplates)
+      setTotalPages(Math.ceil(freshTemplates.length / 6))
+
+      // Find the updated version of the selected template
+      const freshTemplate = freshTemplates.find(t => t.NotificationCategory === template.NotificationCategory) || template
+
+      setSelectedTemplate(freshTemplate)
+      setViewMode("edit")
+      setShowViewEdit(true)
+    } catch (error) {
+       console.error('Error refreshing data:', error)
+       // Fallback
+       setSelectedTemplate(template)
+       setViewMode("edit")
+       setShowViewEdit(true)
+    } finally {
+      setIsLoading(false)
+    }
   }
 
   const handleBack = () => {
@@ -112,18 +197,21 @@ export default function NotificationTemplatePage() {
   if (showViewEdit && selectedTemplate) {
     return (
       <div className="flex flex-col min-h-screen">
-        <Header language={language} onLanguageChange={handleLanguageChange} />
-        <LogoSection />
+        <Header language={language} onLanguageChange={handleLanguageChange} userDetails={userDetails} />
         
-        <main className="flex-1 overflow-auto bg-gradient-to-br from-cyan-50 to-blue-50 p-6">
-          <div className="max-w-7xl mx-auto">
+        <LogoSection />
+
+        <div className="flex flex-1">
+          <Sidebar menuItems={menuItems} language={language} />
+
+          <main className="flex-1 bg-gray-50 p-6">
             <TemplateViewEdit
               template={selectedTemplate}
               mode={viewMode}
               onBack={handleBack}
             />
-          </div>
-        </main>
+          </main>
+        </div>
 
         <Footer />
       </div>
@@ -132,42 +220,110 @@ export default function NotificationTemplatePage() {
 
   return (
     <div className="flex flex-col min-h-screen">
-      <Header language={language} onLanguageChange={handleLanguageChange} />
-      <LogoSection />
+      <Header language={language} onLanguageChange={handleLanguageChange} userDetails={userDetails} />
       
-      <main className="flex-1 overflow-auto bg-gradient-to-br from-cyan-50 to-blue-50 p-6">
-        <div className="max-w-7xl mx-auto">
-          <div className="mb-6">
-            <Button 
-              variant="outline" 
-              onClick={() => router.push('/branchhome')}
-              className="mb-4"
+      {/* Logo Section */}
+      <LogoSection />
+
+      <div className="flex flex-1">
+        <Sidebar menuItems={menuItems} language={language} />
+
+        <main className="flex-1 bg-gray-50 p-6">
+            <Button
+              variant="ghost"
+              onClick={() => router.back()}
+              className="mb-4 text-teal-900 hover:text-teal-800 hover:bg-teal-50"
             >
-              ← Back to Home
+              <ChevronLeft className="w-4 h-4 mr-1" />
+              Back
             </Button>
-            <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-3">
-              <Bell className="h-8 w-8 text-blue-600" />
+
+            <h1 className="text-2xl font-semibold text-teal-900 mb-6">
               Notification Templates
             </h1>
-            <p className="text-gray-600 mt-2">View and edit notification templates</p>
-          </div>
 
-          {/* Templates Table */}
-          <Card>
-            <CardContent className="pt-6">
-              <DataTable
-                data={currentItems}
-                columns={columns}
-                currentPage={currentPage}
-                totalPages={totalPages}
-                onPageChange={setCurrentPage}
-                isLoading={isLoading}
-                emptyMessage="No notification templates found"
-              />
-            </CardContent>
-          </Card>
-        </div>
-      </main>
+            {/* Custom Table Layout matching Reference UI */}
+            <div className="space-y-2">
+              {/* Header Row */}
+              <div className="grid grid-cols-12 gap-4 bg-[#0A3B4C] text-white p-4 rounded-md items-center text-sm font-semibold">
+                <div className="col-span-4">Event Type</div>
+                <div className="col-span-6">Template Name</div>
+                <div className="col-span-2">Actions</div>
+              </div>
+
+              {/* Data Rows */}
+              <div className="space-y-2">
+                {isLoading ? (
+                  <div className="text-center p-8 text-gray-500">Loading templates...</div>
+                ) : currentItems.length === 0 ? (
+                  <div className="bg-white p-8 rounded-md border text-center text-gray-500 shadow-sm">
+                    No notification templates found
+                  </div>
+                ) : (
+                  currentItems.map((item, index) => (
+                    <div 
+                      key={item.NotificationID || index} 
+                      className="grid grid-cols-12 gap-4 bg-white p-4 rounded-md border shadow-sm items-center text-sm transition-colors hover:bg-gray-50"
+                    >
+                      <div className="col-span-4 font-medium text-gray-900">{item.EventTypeEn}</div>
+                      <div className="col-span-6 text-gray-700">{item.NotificationTitleEn}</div>
+                      <div className="col-span-2 flex items-center gap-2">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => handleEdit(item)}
+                          title="Edit"
+                          className="h-8 w-8 text-gray-500 hover:text-[#0A3B4C]"
+                        >
+                          <Edit className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => handleView(item)}
+                          title="View"
+                          className="h-8 w-8 text-gray-500 hover:text-[#0A3B4C]"
+                        >
+                          <Eye className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+
+              {/* Pagination & Total Count */}
+              <div className="flex justify-between items-center mt-6 text-sm text-gray-600">
+                <div>Total: {templates.length}</div>
+                
+                {totalPages > 1 && (
+                  <div className="flex items-center gap-2">
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      disabled={currentPage === 1} 
+                      onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                    >
+                      Previous
+                    </Button>
+                    <span className="mx-2">
+                      Page {currentPage} of {totalPages}
+                    </span>
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      disabled={currentPage === totalPages} 
+                      onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                    >
+                      Next
+                    </Button>
+                  </div>
+                )}
+              </div>
+            </div>
+          </main>
+
+      </div>
 
       <Footer />
     </div>

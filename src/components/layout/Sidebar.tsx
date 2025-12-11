@@ -106,25 +106,25 @@ export function Sidebar({ menuItems, language = 'EN' }: SidebarProps) {
   }
 
   return (
-    <div className={cn('bg-teal-800 text-white transition-all duration-300 min-h-screen flex flex-col relative', isCollapsed ? 'w-14' : 'w-48')}>
+    <div className={cn('bg-teal-900 text-white transition-all duration-300 min-h-screen flex flex-col relative', isCollapsed ? 'w-14' : 'w-64')}>
       {/* Collapse Toggle */}
       <button
         onClick={() => setIsCollapsed(!isCollapsed)}
-        className="absolute -right-3 top-2 bg-teal-700 rounded-full p-0.5 hover:bg-teal-600 z-10"
+        className="absolute -right-3 top-2 bg-red-500 rounded-full p-0.5 z-10"
       >
         {isCollapsed ? <ChevronRight className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}
       </button>
 
       {/* Menu Items */}
-      <nav className="flex-1 overflow-y-auto">
+      <nav className="flex-1 overflow-y-auto bg-teal-900">
         <ul className="py-1">
           {/* Home */}
           <li>
             <Link
               href="/branchhome"
-              className={cn('flex items-center gap-2 px-3 py-2.5 hover:bg-teal-700 transition-colors text-sm', pathname === '/branchhome' && 'bg-teal-700')}
+              className={cn('flex items-center gap-2 px-3 py-2.5  hover:bg-teal-800 transition-colors text-sm border-b-1 border-white', pathname === '/branchhome' && 'bg-teal-900')}
             >
-              <Home className="w-5 h-5 flex-shrink-0" />
+              <Home className="w-5 h-5 flex-shrink-0 bg-teal-900" />
               {!isCollapsed && <span>Home</span>}
             </Link>
           </li>
@@ -134,7 +134,7 @@ export function Sidebar({ menuItems, language = 'EN' }: SidebarProps) {
             <li key={index}>
               <button
                 onClick={() => toggleMenu(appName)}
-                className={cn('w-full flex items-center justify-between gap-2 px-3 py-2.5 hover:bg-teal-700 transition-colors text-sm', openMenu === appName && 'bg-teal-700')}
+                className={cn('w-full flex items-center justify-between gap-2 px-3 py-2.5 hover:bg-teal-800 transition-colors text-sm', openMenu === appName && 'bg-teal-700')}
               >
                 <div className="flex items-center gap-2">
                   <div className="w-5 h-5 flex-shrink-0">{renderIcon(appName)}</div>
@@ -152,7 +152,7 @@ export function Sidebar({ menuItems, language = 'EN' }: SidebarProps) {
                     <li key={idx}>
                       <Link
                         href={menu.MenuURL}
-                        className={cn('block px-10 py-1.5 hover:bg-teal-700 transition-colors text-xs', pathname === menu.MenuURL && 'bg-teal-700')}
+                        className={cn('block px-10 py-1.5 hover:bg-teal-800 transition-colors text-xs', pathname === menu.MenuURL && 'bg-teal-700')}
                       >
                         {language === 'EN' ? menu.MenuNameEn : menu.MenuNameAr}
                       </Link>

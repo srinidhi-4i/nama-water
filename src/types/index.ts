@@ -32,6 +32,7 @@ export interface MenuItem {
     Icon_Class: string
     order: number
     IsActive: boolean
+    ApplicationNameEn?: string
     children?: MenuItem[]
 }
 

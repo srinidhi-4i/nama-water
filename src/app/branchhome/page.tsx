@@ -16,12 +16,28 @@ export default function BranchHomePage() {
   const router = useRouter()
   const [language, setLanguage] = useState<"EN" | "AR">("EN")
   const [menuItems, setMenuItems] = useState<MenuItem[]>([])
+  const [userDetails, setUserDetails] = useState<any>(null)
 
   useEffect(() => {
     // Check authentication
     if (!authService.isAuthenticated()) {
       router.push('/login')
       return
+    }
+
+    // Load user details using authService
+    try {
+      const userData = authService.getCurrentUser()
+      console.log('Raw user data from storage:', userData)
+      
+      if (userData && userData.BranchUserDetails && userData.BranchUserDetails.length > 0) {
+        // Get the first user from BranchUserDetails array
+        const userDetail = userData.BranchUserDetails[0]
+        setUserDetails(userDetail)
+        console.log('User details loaded:', userDetail)
+      }
+    } catch (error) {
+      console.error('Error loading user details:', error)
     }
 
     // Load menu data (optional - won't break if it fails)
@@ -81,16 +97,16 @@ export default function BranchHomePage() {
       },
       {
         MenuID: 3,
-        MenuNameEn: "Search Customer",
-        MenuNameAr: "البحث عن العميل",
-        MenuURL: "/branchoperations",
+        MenuNameEn: "Validate/Search a customer",
+        MenuNameAr: "التحقق من صحة / البحث عن عميل",
+        MenuURL: "/branchoperations/validate",
         ApplicationNameEn: "Branch Operations"
       },
       {
         MenuID: 4,
-        MenuNameEn: "Bill Management",
-        MenuNameAr: "إدارة الفواتير",
-        MenuURL: "/branchoperations",
+        MenuNameEn: "Guest User Service",
+        MenuNameAr: "خدمة المستخدم الضيف",
+        MenuURL: "/branchoperations/guest",
         ApplicationNameEn: "Branch Operations"
       },
       {
@@ -152,7 +168,7 @@ export default function BranchHomePage() {
   return (
     <div className="flex flex-col min-h-screen">
       {/* Header */}
-      <Header language={language} onLanguageChange={handleLanguageChange} />
+      <Header language={language} onLanguageChange={handleLanguageChange} userDetails={userDetails} />
 
       {/* Logo Section */}
       <LogoSection />

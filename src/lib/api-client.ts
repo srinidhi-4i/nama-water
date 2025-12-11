@@ -87,6 +87,12 @@ class ApiClient {
                 if (data.Data) {
                     return data.Data
                 }
+
+                // If StatusCode is missing, it might be a raw response (like NewGetTemplates)
+                if (data.StatusCode === undefined) {
+                    return data
+                }
+
                 throw new Error(data.Message || 'An unexpected error occurred')
         }
     }
@@ -94,6 +100,8 @@ class ApiClient {
     private handleError(error: any): Promise<never> {
         // Safely log error details
         try {
+            // console.warn('API Error:', error?.message || 'Unknown error');
+            /*
             console.error('API Error Details:', {
                 url: error?.config?.url || 'unknown',
                 method: error?.config?.method || 'unknown',
@@ -103,8 +111,9 @@ class ApiClient {
                 message: error?.message || 'no message',
                 errorType: error?.name || 'unknown error type'
             })
+            */
         } catch (logError) {
-            console.error('Error logging failed:', logError)
+            // console.error('Error logging failed:', logError)
         }
 
         if (error?.response) {

@@ -80,9 +80,9 @@ export function TemplateViewEdit({ template, mode, onBack }: TemplateViewEditPro
                 </SelectTrigger>
                 <SelectContent>
                   {eventTypes.map((type) => (
-                    <option key={type.EventTypeCode} value={type.EventTypeCode}>
+                    <SelectItem key={type.EventTypeCode} value={type.EventTypeCode}>
                       {type.EventTypeEn}
-                    </option>
+                    </SelectItem>
                   ))}
                 </SelectContent>
               </Select>

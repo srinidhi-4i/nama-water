@@ -42,8 +42,8 @@ export interface WaterShutdownTemplate {
 
 // Filter and Request Types
 export interface WaterShutdownFilters {
-    region?: Region;
-    eventType?: EventType;
+    region?: Region | "ALL";
+    eventType?: EventType | "ALL";
     status?: WaterShutdownStatus;
     fromDate?: string;
     toDate?: string;

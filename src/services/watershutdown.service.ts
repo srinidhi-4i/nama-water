@@ -14,23 +14,38 @@ export const waterShutdownService = {
     // Notification Operations
     getNotifications: async (filters?: WaterShutdownFilters): Promise<WaterShutdownListResponse> => {
         try {
-            const params = new URLSearchParams();
+            const formData = {
+                region: filters?.region === "ALL" ? "" : filters?.region || "",
+                eventType: filters?.eventType === "ALL" ? "" : filters?.eventType || "",
+                fromDate: filters?.fromDate || "",
+                toDate: filters?.toDate || "",
+            };
 
-            if (filters?.region) params.append('region', filters.region);
-            if (filters?.eventType) params.append('eventType', filters.eventType);
-            if (filters?.status) params.append('status', filters.status);
-            if (filters?.fromDate) params.append('fromDate', filters.fromDate);
-            if (filters?.toDate) params.append('toDate', filters.toDate);
-            if (filters?.searchQuery) params.append('search', filters.searchQuery);
-            if (filters?.page) params.append('page', filters.page.toString());
-            if (filters?.pageSize) params.append('pageSize', filters.pageSize.toString());
+            const response = await api.post<any>('WaterShutdown/GetEventDetails', formData);
 
-            const response = await api.get<any>(`/api/watershutdown/notifications?${params.toString()}`);
+            console.log('Water Shutdown Response:', response.data); // Debug log
 
-            if (response.data && response.data.StatusCode === 605) {
+            if (response.data && (response.data.StatusCode === 605 || response.data.Table)) {
+                // Sometimes response might be directly the data or wrapped
+                // Reference code uses response.Table directly for list
+                const notifications = response.data.Table || response.data.Data?.Table || [];
+                // Map API response to our type if necessary, or use as is if types match
+                // Assuming keys might be PascalCase in API and we use camelCase or matching types
+                // Let's map it safely
+                const mappedNotifications: WaterShutdownNotification[] = notifications.map((item: any) => ({
+                    eventId: item.EventUniqueId,
+                    eventType: item.EventTypeName,
+                    status: item.StatusCode,
+                    region: item.RegionName,
+                    startDateTime: item.StartDateAndTime,
+                    endDateTime: item.EndDateAndTime,
+                    reason: item.ReasonForShutdown || '', // Add other fields as needed
+                    affectedCustomers: 0 // Placeholder if not available
+                }));
+
                 return {
-                    data: response.data.Data?.notifications || [],
-                    total: response.data.Data?.total || 0,
+                    data: mappedNotifications,
+                    total: mappedNotifications.length,
                     page: filters?.page || 1,
                     pageSize: filters?.pageSize || 10,
                 };
@@ -40,9 +55,10 @@ export const waterShutdownService = {
         } catch (error: any) {
             console.error('Error fetching water shutdown notifications:', error);
 
-            // Return mock data for development
-            console.warn('Using mock data for water shutdown notifications');
-            return waterShutdownService.getMockNotifications(filters);
+            // Return mock data for development if API fails differently than expected
+            // console.warn('Using mock data for water shutdown notifications');
+            // return waterShutdownService.getMockNotifications(filters);
+            throw error;
         }
     },
 

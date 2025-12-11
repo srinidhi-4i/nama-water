@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
@@ -35,6 +35,13 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const router = useRouter()
+  const [isMounted, setIsMounted] = useState(false)
+
+  useEffect(() => {
+    setIsMounted(true)
+  }, [])
+
+
 
 const form = useForm<FormValues>({
   resolver: zodResolver(formSchema),
@@ -60,7 +67,7 @@ const form = useForm<FormValues>({
       if (user) {
         console.log("Login successful", user)
         toast.success("Login Successful", {
-          description: `Welcome back, ${user.FullNameEn || user.username || 'User'}!`
+          description: `Welcome back, ${user.BranchuserNameEn || user.username || 'User'}!`
         })
         
         // Navigate to BranchHome page (matching React.js: history.push("/BranchHome"))
@@ -88,6 +95,10 @@ const form = useForm<FormValues>({
     } finally {
       setIsLoading(false)
     }
+  }
+
+  if (!isMounted) {
+    return null
   }
 
   return (

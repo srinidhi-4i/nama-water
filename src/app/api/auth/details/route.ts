@@ -35,10 +35,32 @@ export async function POST(request: NextRequest) {
         console.log('Branch Details: UAT response status:', response.status);
 
         const data = await response.json();
-
         console.log('Branch Details: UAT response:', data);
 
-        return NextResponse.json(data, { status: response.status });
+        // Create response with headers
+        const nextResponse = NextResponse.json(data, { status: response.status });
+
+        // Forward Set-Cookie header if present
+        const rawCookies = (response.headers as any).getSetCookie
+            ? (response.headers as any).getSetCookie()
+            : [response.headers.get('set-cookie')].filter((c: string | null) => !!c);
+
+        if (rawCookies.length > 0) {
+            rawCookies.forEach((cookie: string) => {
+                let modifiedCookie = cookie
+                    .replace(/Domain=[^;]+;?/gi, '')
+                    .replace(/Path=[^;]+;?/gi, '')
+                    .replace(/Secure;?/gi, '')
+                    .replace(/SameSite=[^;]+;?/gi, 'SameSite=Lax;');
+
+                modifiedCookie = modifiedCookie + '; Path=/';
+
+                console.log('Branch Details: Forwarding cookie:', modifiedCookie);
+                nextResponse.headers.append('set-cookie', modifiedCookie);
+            });
+        }
+
+        return nextResponse;
     } catch (error: any) {
         console.error('Branch Details: Error:', error);
         return NextResponse.json(

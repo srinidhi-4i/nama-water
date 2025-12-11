@@ -55,17 +55,25 @@ export const authService = {
             console.log('Branch Response:', branchResponse.data);
 
             if (branchResponse.data && branchResponse.data.StatusCode === 605) {
-                const user = branchResponse.data.Data;
+                const apiData = branchResponse.data.Data;
 
-                if (user && user.UserID === 0) {
+                if (apiData && apiData.UserID === 0) {
                     throw {
-                        message: user.Outmessage || 'Invalid user',
+                        message: apiData.Outmessage || 'Invalid user',
                         statusCode: 605,
                     };
                 }
 
-                if (typeof window !== 'undefined' && user) {
-                    const encryptedUser = encryptData(user);
+                // Structure the user data to match React app format
+                const userData = {
+                    BranchUserDetails: apiData.BranchUserDetails || [],
+                    BranchUserMenuDetails: apiData.BranchUserMenuDetails || [],
+                    BranchUserRoleDetails: apiData.BranchUserRoleDetails || []
+                };
+
+                if (typeof window !== 'undefined' && apiData) {
+                    // Save the complete user data structure
+                    const encryptedUser = encryptData(userData);
                     localStorage.setItem(STORAGE_KEYS.BRANCH_USER_DATA, encryptedUser);
 
                     if (rememberMe) {
@@ -81,7 +89,8 @@ export const authService = {
                     }
                 }
 
-                return user;
+                // Return the first user details for the toast message
+                return userData.BranchUserDetails[0] || apiData;
             }
 
             throw {
