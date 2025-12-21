@@ -22,48 +22,69 @@ const DEFAULT_MENU_ITEMS: MenuItem[] = [
     // Appointment
     { MenuId: 9, Parent_Id: null, Menu_Name_EN: "Appointment Booking", Menu_Name_AR: "حجز موعد", Target_Url: "/appointmentbooking", Icon_Class: "", order: 9, IsActive: true, ApplicationNameEn: "Appointment" },
 ]
-
 export const menuService = {
+    /**
+     * Common transformation for menu items
+     */
+    transformMenuItems(items: any[]): MenuItem[] {
+        if (!items || !Array.isArray(items)) return []
+
+        return items.map(item => {
+            let appName = item.ApplicationNameEn || "General";
+            const nameEn = item.Menu_Name_EN || item.MenuNameEn || "";
+
+            if (nameEn.includes("Validate") || nameEn.includes("Guest")) {
+                appName = "Branch Operations";
+            }
+
+            return {
+                ...item,
+                ApplicationNameEn: appName
+            };
+        })
+    },
+
     /**
      * Get menu details for the logged-in user
      * Matches React app: dashActions.GetMenuDetails()
      */
     async getMenuDetails(): Promise<MenuItem[]> {
         try {
-            const response = await apiClient.simplePost<MenuItem[]>('Menu/GetMenuDetails')
+            const response = await apiClient.simplePost<any[]>('Menu/GetMenuDetails')
 
             // If response is valid and has data, return it
             if (response && Array.isArray(response) && response.length > 0) {
-                // Ensure ApplicationNameEn is present (backend might miss it) and Force Correct Grouping
-                return response.map(item => {
-                    let appName = item.ApplicationNameEn || "General";
-                    // Fail-safe: Override group names based on menu name signatures
-                    // This fixes cases where API returns inconsistent ApplicationNameEn
-                    if (item.Menu_Name_EN.includes("Validate") || item.Menu_Name_EN.includes("Guest")) {
-                        appName = "Branch Operations";
-                    } else if (item.Menu_Name_EN.includes("Notification")) {
-                        appName = "Notification Center";
-                    } else if (item.Menu_Name_EN.includes("Water Shutdown")) {
-                        appName = "Water Shutdown";
-                    } else if (item.Menu_Name_EN.includes("Wetland") || item.Menu_Name_EN.includes("Holiday")) {
-                        appName = "Wetland";
-                    } else if (item.Menu_Name_EN.includes("Appointment")) {
-                        appName = "Appointment";
-                    }
-                    return {
-                        ...item,
-                        ApplicationNameEn: appName
-                    };
-                })
+                return this.transformMenuItems(response)
             }
 
             // Otherwise return default menu items
             console.log('Using default menu items as fallback (API returned empty)')
             return DEFAULT_MENU_ITEMS
         } catch (error) {
-            // Log as warning to reduce console noise
             console.warn('Using default menu items due to API error:', error)
             return DEFAULT_MENU_ITEMS
+        }
+    },
+
+    /**
+     * Get menu data (specifically requested for Guest User Services)
+     * Matches user request: api/Menu/GetMenudata
+     */
+    async getMenuData(): Promise<MenuItem[]> {
+        try {
+            const response = await apiClient.simplePost<any>('Menu/GetMenudata')
+
+            // Handle both direct array and { MenuData: [...] }
+            const data = Array.isArray(response) ? response : (response?.MenuData || [])
+
+            if (data && Array.isArray(data) && data.length > 0) {
+                return this.transformMenuItems(data)
+            }
+
+            return this.getMenuDetails()
+        } catch (error) {
+            console.warn('Error fetching menu data (falling back to getMenuDetails):', error)
+            return this.getMenuDetails()
         }
     },
 

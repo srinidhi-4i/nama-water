@@ -15,39 +15,27 @@ import { DataTable } from "@/components/ui/data-table"
 import { NotificationTemplate } from "@/types/notification.types"
 import { MenuItem } from "@/types/menu"
 import { TemplateViewEdit } from "@/components/notification/template-view-edit"
-import { getColumns } from "@/app/notificationtemplate/columns"
+import { getNotificationTemplateColumns } from "@/app/notifications-center/notificationtemplate/columns"
+
+import { useAuth } from "@/components/providers/AuthProvider"
+import Link from "next/link"
 
 export default function NotificationTemplateList() {
   const router = useRouter()
+  const { userDetails } = useAuth()
   const [language, setLanguage] = useState<"EN" | "AR">("EN")
   const [menuItems, setMenuItems] = useState<MenuItem[]>([])
-  const [userDetails, setUserDetails] = useState<any>(null)
   const [templates, setTemplates] = useState<NotificationTemplate[]>([])
   const [isLoading, setIsLoading] = useState(false)
-  const [currentPage, setCurrentPage] = useState(1)
-  const [totalPages, setTotalPages] = useState(1)
   const [showViewEdit, setShowViewEdit] = useState(false)
   const [selectedTemplate, setSelectedTemplate] = useState<NotificationTemplate | null>(null)
   const [viewMode, setViewMode] = useState<"view" | "edit">("view")
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false)
 
   useEffect(() => {
-    if (!authService.isAuthenticated()) {
-      router.push('/login')
-      return
-    }
-
-    try {
-      const userData = authService.getCurrentUser()
-      if (userData && userData.BranchUserDetails && userData.BranchUserDetails.length > 0) {
-        setUserDetails(userData.BranchUserDetails[0])
-      }
-    } catch (error) {
-      console.error('Error loading user details:', error)
-    }
-
     loadMenuData()
     loadTemplates()
-  }, [router, currentPage])
+  }, [])
 
   const loadMenuData = async () => {
     try {
@@ -72,7 +60,6 @@ export default function NotificationTemplateList() {
     try {
       const response = await notificationService.getTemplates()
       setTemplates(response.Notifications || [])
-      setTotalPages(Math.ceil((response.Notifications?.length || 0) / 6))
     } catch (error) {
       console.error('Error loading templates:', error)
     } finally {
@@ -91,7 +78,6 @@ export default function NotificationTemplateList() {
       const freshTemplates = response.Notifications || []
       
       setTemplates(freshTemplates)
-      setTotalPages(Math.ceil(freshTemplates.length / 6))
 
       const freshTemplate = freshTemplates.find(t => t.NotificationCategory === template.NotificationCategory) || template
       
@@ -115,7 +101,6 @@ export default function NotificationTemplateList() {
       const freshTemplates = response.Notifications || []
       
       setTemplates(freshTemplates)
-      setTotalPages(Math.ceil(freshTemplates.length / 6))
 
       const freshTemplate = freshTemplates.find(t => t.NotificationCategory === template.NotificationCategory) || template
 
@@ -137,24 +122,30 @@ export default function NotificationTemplateList() {
     setSelectedTemplate(null)
     loadTemplates()
   }
-
-  // Pagination for DataTable
-  const indexOfLastItem = currentPage * 6
-  const indexOfFirstItem = indexOfLastItem - 6
-  const currentItems = templates.slice(indexOfFirstItem, indexOfLastItem)
-
+  
   if (showViewEdit && selectedTemplate) {
     return (
       <div className="flex flex-col min-h-screen">
-        <Header language={language} onLanguageChange={handleLanguageChange} userDetails={userDetails} />
+        <Header 
+          language={language} 
+          onLanguageChange={handleLanguageChange} 
+          userDetails={userDetails} 
+          onMenuClick={() => setIsSidebarOpen(!isSidebarOpen)}
+        />
         <LogoSection />
         <div className="flex flex-1">
-          <Sidebar menuItems={menuItems} language={language} />
+          <Sidebar 
+            menuItems={menuItems} 
+            language={language} 
+            isOpen={isSidebarOpen} 
+            onMobileClose={() => setIsSidebarOpen(false)}
+          />
           <main className="flex-1 bg-gray-50 p-6">
             <TemplateViewEdit
               template={selectedTemplate}
               mode={viewMode}
               onBack={handleBack}
+              language={language}
             />
           </main>
         </div>
@@ -163,35 +154,47 @@ export default function NotificationTemplateList() {
     )
   }
 
-  const columns = getColumns(handleEdit, handleView);
+  const columns = getNotificationTemplateColumns(handleEdit, handleView);
 
   return (
     <div className="flex flex-col min-h-screen">
-      <Header language={language} onLanguageChange={handleLanguageChange} userDetails={userDetails} />
+      <Header 
+        language={language} 
+        onLanguageChange={handleLanguageChange} 
+        userDetails={userDetails} 
+        onMenuClick={() => setIsSidebarOpen(!isSidebarOpen)}
+      />
       <LogoSection />
       <div className="flex flex-1">
-        <Sidebar menuItems={menuItems} language={language} />
-        <main className="flex-1 bg-gray-50 p-6">
-            <Button
-              variant="ghost"
-              onClick={() => router.back()}
-              className="mb-4 text-teal-900 hover:text-teal-800 hover:bg-teal-50"
-            >
-              <ChevronLeft className="w-4 h-4 mr-1" />
-              Back
-            </Button>
+        <Sidebar 
+          menuItems={menuItems} 
+          language={language} 
+          isOpen={isSidebarOpen} 
+          onMobileClose={() => setIsSidebarOpen(false)}
+        />
+       <main className="flex-1 bg-slate-100 overflow-x-hidden">
+            <div className="flex flex-col sm:flex-row items-center justify-between mb-6 gap-4 px-2 shadow-md">
+                 <div className="flex items-center gap-4 text-center sm:text-left h-12">
+                    <h1 className="text-2xl font-bold text-[#006A72]">
+                      Notification Template
+                    </h1>
+                 </div>
+                 
+                <div className="text-sm text-gray-500">
+                  <Link 
+                    href="/branchhome"
+                    className="font-semibold text-[#006A72] hover:underline cursor-pointer"
+                  >
+                    Home
+                  </Link>
+                  <span> &gt; Notification Template List</span>
+                </div>
+            </div>
 
-            <h1 className="text-2xl font-semibold text-teal-900 mb-6">
-              Notification Templates
-            </h1>
-
-            <div className="rounded-md border overflow-hidden bg-white shadow-sm">
-                <DataTable
-                    data={currentItems}
+            <div className ="px-6">
+                <DataTable 
+                    data={templates}
                     columns={columns}
-                    currentPage={currentPage}
-                    totalPages={totalPages}
-                    onPageChange={setCurrentPage}
                     isLoading={isLoading}
                     emptyMessage="No notification templates found"
                 />

@@ -1,43 +1,42 @@
 "use client"
 
-import { Column } from "@/components/ui/data-table"
 import { Button } from "@/components/ui/button"
 import { Eye, Edit } from "lucide-react"
 import { CustomNotification } from "@/types/notification.types"
 import { format } from "date-fns"
+import { ColumnDef, createColumnHelper } from "@tanstack/react-table"
 
-export const getColumns = (
+const columnHelper = createColumnHelper<CustomNotification>()
+
+export const getCustomNotificationColumns = (
   onEdit: (item: CustomNotification) => void,
   onView: (item: CustomNotification) => void
-): Column<CustomNotification>[] => [
-  {
-    key: 'EventTypeEn',
+): ColumnDef<CustomNotification, any>[] => [
+  columnHelper.accessor('EventTypeEn', {
     header: 'Event Type',
-    className: 'font-medium',
-  },
-  {
-    key: 'Status',
+    cell: info => <span className="font-medium">{info.getValue()}</span>
+  }),
+  columnHelper.accessor('Status', {
     header: 'Status',
-  },
-  {
-    key: 'CreatedDateTime',
+    cell: info => info.getValue()
+  }),
+  columnHelper.accessor('CreatedDateTime', {
     header: 'Created Date and Time',
-    render: (item) => format(new Date(item.CreatedDateTime), 'dd/MM/yyyy HH:mm'),
-  },
-  {
-    key: 'ScheduledDateTime',
+    cell: info => format(new Date(info.getValue()), 'dd/MM/yyyy HH:mm')
+  }),
+  columnHelper.accessor('ScheduledDateTime', {
     header: 'Scheduled Date and Time',
-    render: (item) => format(new Date(item.ScheduledDateTime), 'dd/MM/yyyy HH:mm'),
-  },
-  {
-    key: 'actions',
+    cell: info => format(new Date(info.getValue()), 'dd/MM/yyyy HH:mm')
+  }),
+  columnHelper.display({
+    id: 'actions',
     header: 'Actions',
-    render: (item) => (
+    cell: ({ row }) => (
       <div className="flex items-center gap-2">
         <Button
           variant="ghost"
           size="sm"
-          onClick={() => onView(item)}
+          onClick={() => onView(row.original)}
           title="View"
           className="h-8 w-8 p-0"
         >
@@ -46,7 +45,7 @@ export const getColumns = (
         <Button
           variant="ghost"
           size="sm"
-          onClick={() => onEdit(item)}
+          onClick={() => onEdit(row.original)}
           title="Edit"
           className="h-8 w-8 p-0"
         >
@@ -54,5 +53,5 @@ export const getColumns = (
         </Button>
       </div>
     ),
-  },
+  }),
 ]

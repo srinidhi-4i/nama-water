@@ -1,8 +1,9 @@
 "use client"
 
-import Link from "next/link"
-import { Bell, LogOut } from "lucide-react"
+
+import { Bell, LogOut, Menu } from "lucide-react"
 import { useState, useEffect } from "react"
+import { authService } from "@/services/auth.service"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -22,9 +23,10 @@ interface HeaderProps {
   language?: "EN" | "AR"
   onLanguageChange?: (lang: "EN" | "AR") => void
   userDetails?: BranchUserDetails | null
+  onMenuClick?: () => void
 }
 
-export function Header({ language = "EN", onLanguageChange, userDetails }: HeaderProps) {
+export function Header({ language = "EN", onLanguageChange, userDetails, onMenuClick }: HeaderProps) {
   const [mounted, setMounted] = useState(false)
 
   useEffect(() => {
@@ -46,22 +48,24 @@ export function Header({ language = "EN", onLanguageChange, userDetails }: Heade
   const initials = getUserInitials(displayName)
 
   const handleLogout = () => {
-    // Clear localStorage
-    localStorage.removeItem("bcw/APbiop/swBop23765qtf==")
-    localStorage.removeItem("wcb/APtiypx/sw7lu83P7A==")
-    
-    // Redirect to login
-    window.location.href = "/login"
+    authService.branchLogout()
   }
 
   if (!mounted) return null
 
   return (
-    <header className="bg-teal-900 text-white">
+    <header className="bg-teal-900 text-white  z-50">
       <div className="container mx-auto px-4">
-        <div className="flex items-center justify-between h-8">
-          {/* Left: Call Center Info */}
+        <div className="flex items-center justify-between h-10">
+          {/* Left: Menu Toggle & Call Center Info */}
           <div className="flex items-center gap-3 text-xs">
+            <button 
+              onClick={onMenuClick}
+              className="lg:hidden p-1.5 hover:bg-teal-800 rounded transition-colors"
+              aria-label="Toggle Menu"
+            >
+              <Menu className="w-5 h-5" />
+            </button>
             <span className="flex items-center gap-1">
               <span className="hidden sm:inline">Call Center:</span>
               <span className="font-semibold">1442</span>

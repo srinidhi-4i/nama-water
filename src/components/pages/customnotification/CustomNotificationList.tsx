@@ -23,24 +23,26 @@ import { MenuItem } from "@/types/menu"
 import { format } from "date-fns"
 import { CreateNotification } from "@/components/notification/create-notification"
 import { EditNotification } from "@/components/notification/edit-notification"
-import { getColumns } from "@/app/customnotification/columns"
+import { getCustomNotificationColumns } from "@/app/notifications-center/customnotification/columns"
+import { useAuth } from "@/components/providers/AuthProvider"
+import Link from "next/link"
 
 export default function CustomNotificationList() {
   const router = useRouter()
+  const { userDetails } = useAuth()
   const [language, setLanguage] = useState<"EN" | "AR">("EN")
   const [menuItems, setMenuItems] = useState<MenuItem[]>([])
-  const [userDetails, setUserDetails] = useState<any>(null)
+  // const [userDetails, setUserDetails] = useState<any>(null) // Handled by useAuth
   const [notifications, setNotifications] = useState<CustomNotification[]>([])
   const [eventTypes, setEventTypes] = useState<EventType[]>([])
   const [isLoading, setIsLoading] = useState(false)
-  const [currentPage, setCurrentPage] = useState(1)
-  const [totalPages, setTotalPages] = useState(1)
   
   // Filter states
   const [selectedEventType, setSelectedEventType] = useState<string>("ALL")
   const [fromDate, setFromDate] = useState<Date | undefined>()
   const [toDate, setToDate] = useState<Date | undefined>()
   const [searchQuery, setSearchQuery] = useState("")
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false)
 
   // View states
   const [showCreate, setShowCreate] = useState(false)
@@ -48,24 +50,10 @@ export default function CustomNotificationList() {
   const [selectedNotification, setSelectedNotification] = useState<CustomNotification | null>(null)
 
   useEffect(() => {
-    if (!authService.isAuthenticated()) {
-      router.push('/login')
-      return
-    }
-
-    try {
-      const userData = authService.getCurrentUser()
-      if (userData && userData.BranchUserDetails && userData.BranchUserDetails.length > 0) {
-        setUserDetails(userData.BranchUserDetails[0])
-      }
-    } catch (error) {
-      console.error('Error loading user details:', error)
-    }
-
     loadMenuData()
     loadEventTypes()
     loadNotifications()
-  }, [router, currentPage]) // added currentPage dependency to trigger reload on page change? Or loadNotifications uses currentPage state.
+  }, [])
 
   const loadMenuData = async () => {
     try {
@@ -102,13 +90,10 @@ export default function CustomNotificationList() {
         toDate: toDate ? format(toDate, 'yyyy-MM-dd') : undefined,
         eventCode: selectedEventType !== "ALL" ? selectedEventType : undefined,
         searchQuery: searchQuery || undefined,
-        page: currentPage,
-        pageSize: 5,
       }
 
       const response = await notificationService.getNotifications(filters)
       setNotifications(response.Table || [])
-      setTotalPages(Math.ceil((response.TotalCount || 0) / 5))
     } catch (error) {
       console.error('Error loading notifications:', error)
     } finally {
@@ -117,7 +102,6 @@ export default function CustomNotificationList() {
   }
 
   const handleSearch = () => {
-    setCurrentPage(1)
     loadNotifications()
   }
 
@@ -126,7 +110,6 @@ export default function CustomNotificationList() {
     setFromDate(undefined)
     setToDate(undefined)
     setSearchQuery("")
-    setCurrentPage(1)
     setTimeout(() => loadNotifications(), 100)
   }
 
@@ -174,17 +157,44 @@ export default function CustomNotificationList() {
     loadNotifications()
   }
 
-  const columns = getColumns(handleEdit, handleView);
+  const columns = getCustomNotificationColumns(handleEdit, handleView);
 
   if (showCreate) {
     return (
       <div className="flex flex-col min-h-screen">
-        <Header language={language} onLanguageChange={handleLanguageChange} userDetails={userDetails} />
+        <Header 
+          language={language} 
+          onLanguageChange={handleLanguageChange} 
+          userDetails={userDetails} 
+          onMenuClick={() => setIsSidebarOpen(!isSidebarOpen)}
+        />
+        <LogoSection />
         <div className="flex flex-1">
-          <Sidebar menuItems={menuItems} language={language} />
-          <div className="flex-1 flex flex-col">
-            <LogoSection />
-            <main className="flex-1 bg-gray-50 p-6">
+          <Sidebar 
+            menuItems={menuItems} 
+            language={language} 
+            isOpen={isSidebarOpen} 
+            onMobileClose={() => setIsSidebarOpen(false)}
+          />
+          <div className="flex-1 flex flex-col bg-slate-100 overflow-x-hidden">
+            <div className="flex flex-col sm:flex-row items-center justify-between mb-6 gap-4 px-2 shadow-md">
+                 <div className="flex items-center gap-4 text-center sm:text-left h-12">
+                    <h1 className="text-2xl font-bold text-[#006A72]">
+                      Custom Notification creation
+                    </h1>
+                 </div>
+                 
+                <div className="text-sm text-gray-500">
+                  <Link 
+                    href="/branchhome"
+                    className="font-semibold text-[#006A72] hover:underline cursor-pointer"
+                  >
+                    Home
+                  </Link>
+                  <span> &gt; create new Custom Notification </span>
+                </div>
+            </div>
+            <main className="flex-1 px-6 pb-6">
               <CreateNotification onBack={handleBack} />
             </main>
           </div>
@@ -197,12 +207,39 @@ export default function CustomNotificationList() {
   if (showEdit && selectedNotification) {
     return (
       <div className="flex flex-col min-h-screen">
-        <Header language={language} onLanguageChange={handleLanguageChange} userDetails={userDetails} />
+        <Header 
+          language={language} 
+          onLanguageChange={handleLanguageChange} 
+          userDetails={userDetails} 
+          onMenuClick={() => setIsSidebarOpen(!isSidebarOpen)}
+        />
+        <LogoSection />
         <div className="flex flex-1">
-          <Sidebar menuItems={menuItems} language={language} />
-          <div className="flex-1 flex flex-col">
-            <LogoSection />
-            <main className="flex-1 bg-gray-50 p-6">
+          <Sidebar 
+            menuItems={menuItems} 
+            language={language} 
+            isOpen={isSidebarOpen} 
+            onMobileClose={() => setIsSidebarOpen(false)}
+          />
+          <div className="flex-1 flex flex-col bg-slate-100 overflow-x-hidden">
+             <div className="flex flex-col sm:flex-row items-center justify-between mb-6 gap-4 px-2 shadow-md bg-white">
+                 <div className="flex items-center gap-4 text-center sm:text-left h-12">
+                    <h1 className="text-2xl font-bold text-[#006A72]">
+                      Custom Notification Edit
+                    </h1>
+                 </div>
+                 
+                <div className="text-sm text-gray-500">
+                  <Link 
+                    href="/branchhome"
+                    className="font-semibold text-[#006A72] hover:underline cursor-pointer"
+                  >
+                    Home
+                  </Link>
+                  <span> &gt; Edit Custom Notification </span>
+                </div>
+            </div>
+            <main className="flex-1 px-6 pb-6">
               <EditNotification notification={selectedNotification} onBack={handleBack} />
             </main>
           </div>
@@ -214,120 +251,132 @@ export default function CustomNotificationList() {
 
   return (
     <div className="flex flex-col min-h-screen">
-      <Header language={language} onLanguageChange={handleLanguageChange} userDetails={userDetails} />
+      <Header 
+        language={language} 
+        onLanguageChange={handleLanguageChange} 
+        userDetails={userDetails} 
+        onMenuClick={() => setIsSidebarOpen(!isSidebarOpen)}
+      />
        <LogoSection />
       <div className="flex flex-1">
-        <Sidebar menuItems={menuItems} language={language} />
+        <Sidebar 
+          menuItems={menuItems} 
+          language={language} 
+          isOpen={isSidebarOpen} 
+          onMobileClose={() => setIsSidebarOpen(false)}
+        />
 
-          <main className="flex-1 bg-gray-50 p-6">
-            <Button
-              variant="ghost"
-              onClick={() => router.back()}
-              className="mb-4 text-teal-900 hover:text-teal-800 hover:bg-teal-50"
-            >
-              <ChevronLeft className="w-4 h-4 mr-1" />
-              Back
-            </Button>
-
-            <h1 className="text-2xl font-semibold text-teal-900 mb-6">
-              Custom Notification
-            </h1>
-
-            <Card className="mb-6">
-              <CardContent className="pt-6 space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                   {/* Date Inputs replaced with FloatingLabelInput */}
-                   <div className="flex gap-2">
-                       <FloatingLabelInput 
-                          type="date"
-                          label="From Date"
-                          id="fromDate"
-                          value={fromDate ? format(fromDate, 'yyyy-MM-dd') : ''}
-                          onChange={(e) => setFromDate(e.target.value ? new Date(e.target.value) : undefined)}
-                          className="w-full bg-white"
-                       />
-                       <FloatingLabelInput 
-                          type="date"
-                          label="To Date"
-                          id="toDate"
-                          value={toDate ? format(toDate, 'yyyy-MM-dd') : ''}
-                          onChange={(e) => setToDate(e.target.value ? new Date(e.target.value) : undefined)}
-                          className="w-full bg-white"
-                       />
-                   </div>
-
-                  <div className="relative">
-                    <Select value={selectedEventType} onValueChange={setSelectedEventType}>
-                      <SelectTrigger id="eventType" className="bg-white h-[50px] pt-4">
-                        <SelectValue placeholder=" " />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="ALL">All</SelectItem>
-                        {eventTypes.map((type) => (
-                          <SelectItem key={type.EventTypeCode} value={type.EventTypeCode}>
-                            {type.EventTypeEn}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <FloatingLabel htmlFor="eventType">Event Type</FloatingLabel>
-                  </div>
-                  
-                  <div>
-                    <FloatingLabelInput
-                        id="search"
-                        label="Search"
-                        value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
-                        onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
-                        className="bg-white"
-                    />
-                  </div>
-
+          <main className="flex-1 bg-slate-100  overflow-x-hidden">
+            <div className="flex flex-col sm:flex-row items-center justify-between mb-6 gap-4 px-2 shadow-md">
+                 <div className="flex items-center gap-4 text-center sm:text-left h-12">
+                    <h1 className="text-2xl font-bold text-[#006A72]">
+                      Custom Notification
+                    </h1>
+                 </div>
+                 
+                <div className="text-sm text-gray-500">
+                  <Link 
+                    href="/branchhome"
+                    className="font-semibold text-[#006A72] hover:underline cursor-pointer"
+                  >
+                    Home
+                  </Link>
+                  <span> &gt; Custom Notification List</span>
                 </div>
+            </div>
 
-                <div className="flex gap-2">
-                  <Button onClick={handleSearch} className="bg-[#1F4E58] hover:bg-[#163a42] text-white">
-                    <Search className="h-4 w-4 mr-2" />
+            
+          <div className="px-6">
+            <div className="bg-white p-6 rounded-lg shadow-sm border mb-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+                 <div className="relative">
+                     <FloatingLabelInput 
+                        type="date"
+                        label="From Date"
+                        id="fromDate"
+                        value={fromDate ? format(fromDate, 'yyyy-MM-dd') : ''}
+                        onChange={(e) => setFromDate(e.target.value ? new Date(e.target.value) : undefined)}
+                        className="w-full bg-white h-[50px]"
+                     />
+                 </div>
+                 <div className="relative">
+                     <FloatingLabelInput 
+                        type="date"
+                        label="To Date"
+                        id="toDate"
+                        value={toDate ? format(toDate, 'yyyy-MM-dd') : ''}
+                        onChange={(e) => setToDate(e.target.value ? new Date(e.target.value) : undefined)}
+                        className="w-full bg-white h-[50px]"
+                     />
+                 </div>
+
+                <div className="relative">
+                  <Select value={selectedEventType} onValueChange={setSelectedEventType}>
+                    <SelectTrigger id="eventType" className="bg-white w-full h-[50px] pt-4">
+                      <SelectValue placeholder=" " />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="ALL">All</SelectItem>
+                      {eventTypes.map((type) => (
+                        <SelectItem key={type.EventTypeCode} value={type.EventTypeCode}>
+                          {type.EventTypeEn}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FloatingLabel htmlFor="eventType">Event Type</FloatingLabel>
+                </div>
+                
+                <div className="relative">
+                  <FloatingLabelInput
+                      id="search"
+                      label="Search"
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
+                      className="bg-white w-full h-[50px]"
+                  />
+                </div>
+              </div>
+
+              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4">
+                <div className="flex items-end gap-2 pb-[1px]">
+                  <Button onClick={handleSearch} className="bg-[#1F4E58] hover:bg-[#163a42] text-white px-6">
+                   
                     Search
                   </Button>
-                  <Button variant="outline" onClick={handleClearFilters} className="text-[#1F4E58] border-[#1F4E58]">
+                  <Button variant="outline" onClick={handleClearFilters} className="text-[#1F4E58] border-[#1F4E58] hover:bg-teal-50 px-6">
                     Clear Filter
                   </Button>
                 </div>
-              </CardContent>
-            </Card>
 
-            <div className="flex justify-between items-center mb-4">
-              <div className="text-sm text-gray-600">
-                Total: {notifications.length} notifications
-              </div>
-              <div className="flex gap-2">
-                {notifications.length > 0 && (
-                  <Button variant="outline" onClick={handleExport}>
-                    <FileSpreadsheet className="h-4 w-4 mr-2" />
-                    Export Excel
+                <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+                  {notifications.length > 0 && (
+                    <Button variant="outline" onClick={handleExport} className="w-full sm:w-auto text-[#1F4E58] border-[#1F4E58]">
+                      <FileSpreadsheet className="h-4 w-4 mr-2" />
+                      Export Excel
+                    </Button>
+                  )}
+                  <Button onClick={() => setShowCreate(true)} className="bg-[#E54B4B] hover:bg-[#d03b3b] text-white w-full sm:w-auto px-6">
+                    Create New Notification
                   </Button>
-                )}
-                <Button onClick={() => setShowCreate(true)} className="bg-red-600 hover:bg-red-700">
-                  Create New Notification
-                </Button>
+                </div>
               </div>
             </div>
+            
+            {/* <div className="text-sm text-gray-600 mb-4">
+              Total: {notifications.length} notifications
+            </div> */}
+          </div>
 
-            <Card>
-              <CardContent className="pt-6">
+           <div className="px-6">
                 <DataTable
                   data={notifications}
                   columns={columns}
-                  currentPage={currentPage}
-                  totalPages={totalPages}
-                  onPageChange={setCurrentPage}
                   isLoading={isLoading}
                   emptyMessage="No custom notifications found"
                 />
-              </CardContent>
-            </Card>
+              </div>
           </main>
       </div>
 

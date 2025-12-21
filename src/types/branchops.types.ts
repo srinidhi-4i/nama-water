@@ -61,3 +61,21 @@ export const DEFAULT_VALIDATION_TYPES: ValidationType[] = [
     { ValidateTypeId: 7, ValidateTypeCode: "RETRIEVE_OTP_LOG", ValidateTypeName: "Retrieve the OTP Log" },
     { ValidateTypeId: 8, ValidateTypeCode: "VALIDATE_CUSTOMER_DETAILS_ROP", ValidateTypeName: "Validate Customer Details in Using BOP" }
 ]
+
+export interface GuestService {
+    MenuId: number
+    Module_Name: string
+    Module_Name_Arabic: string
+    Menu_Icon: string
+    Target_Url: string
+    BracnhServiceURL?: string
+    BranchServiceEnablementFlag?: number
+    order: number
+}
+
+export interface GuestServiceGroup {
+    title: string
+    titleAr: string
+    icon: string
+    services: GuestService[]
+}

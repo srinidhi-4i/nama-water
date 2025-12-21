@@ -22,48 +22,59 @@ import {
   WaterShutdownNotification, 
   WaterShutdownFilters,
   Region,
-  EventType
+  EventType,
+  RegionItem,
+  EventTypeItem
 } from "@/types/watershutdown.types"
 import { MenuItem } from "@/types/menu"
 import { format } from "date-fns"
 import Link from "next/link"
-import { columns } from "@/app/watershutdown/columns"
+import { getWaterShutdownColumns } from "@/app/watershutdown/shutdownNotification/columns"
+import { NotificationViewEdit } from "@/components/watershutdown/notification-view-edit"
+
+import { useAuth } from "@/components/providers/AuthProvider"
 
 export default function WaterShutdownList() {
   const router = useRouter()
+  const { userDetails } = useAuth()
   const [language, setLanguage] = useState<"EN" | "AR">("EN")
   const [menuItems, setMenuItems] = useState<MenuItem[]>([])
-  const [userDetails, setUserDetails] = useState<any>(null)
   const [notifications, setNotifications] = useState<WaterShutdownNotification[]>([])
   const [isLoading, setIsLoading] = useState(false)
-  const [currentPage, setCurrentPage] = useState(1)
-  const [totalPages, setTotalPages] = useState(1)
   
+  // Master Data
+  const [regionMaster, setRegionMaster] = useState<RegionItem[]>([])
+  const [eventMaster, setEventMaster] = useState<EventTypeItem[]>([])
+
   // Filter states
   const [selectedRegion, setSelectedRegion] = useState<Region | "ALL">("ALL")
   const [selectedEventType, setSelectedEventType] = useState<EventType | "ALL">("ALL")
   const [fromDate, setFromDate] = useState<Date | undefined>()
   const [toDate, setToDate] = useState<Date | undefined>()
   const [searchQuery, setSearchQuery] = useState("")
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false)
+
+  // View/Edit State
+  const [showViewEdit, setShowViewEdit] = useState(false)
+  const [viewMode, setViewMode] = useState<"view" | "edit">("view")
+  const [selectedNotificationId, setSelectedNotificationId] = useState<string | null>(null)
+  const [isDetailLoading, setIsDetailLoading] = useState(false)
 
   useEffect(() => {
-    if (!authService.isAuthenticated()) {
-      router.push('/login')
-      return
-    }
-
-    try {
-      const userData = authService.getCurrentUser()
-      if (userData && userData.BranchUserDetails && userData.BranchUserDetails.length > 0) {
-        setUserDetails(userData.BranchUserDetails[0])
-      }
-    } catch (error) {
-      console.error('Error loading user details:', error)
-    }
-
     loadMenuData()
+    loadMasterData()
     loadNotifications()
-  }, [router, currentPage])
+  }, [])
+
+  const loadMasterData = async () => {
+    try {
+        const data = await waterShutdownService.getWaterShutdownMasterData();
+        setRegionMaster(data.regions);
+        setEventMaster(data.eventTypes);
+    } catch (error) {
+        console.error('Error loading master data', error)
+    }
+  }
 
   const loadMenuData = async () => {
     try {
@@ -92,13 +103,10 @@ export default function WaterShutdownList() {
         fromDate: fromDate ? format(fromDate, 'yyyy-MM-dd') : undefined,
         toDate: toDate ? format(toDate, 'yyyy-MM-dd') : undefined,
         searchQuery: searchQuery || undefined,
-        page: currentPage,
-        pageSize: 10,
       }
 
       const response = await waterShutdownService.getNotifications(filters)
       setNotifications(response.data)
-      setTotalPages(Math.ceil(response.total / (filters.pageSize || 10)))
     } catch (error) {
       console.error('Error loading notifications:', error)
     } finally {
@@ -107,7 +115,6 @@ export default function WaterShutdownList() {
   }
 
   const handleSearch = () => {
-    setCurrentPage(1)
     loadNotifications()
   }
 
@@ -117,7 +124,6 @@ export default function WaterShutdownList() {
     setFromDate(undefined)
     setToDate(undefined)
     setSearchQuery("")
-    setCurrentPage(1)
   }
 
   const handleExport = async () => {
@@ -149,23 +155,70 @@ export default function WaterShutdownList() {
     setLanguage(lang)
   }
 
+  const handleView = async (id: string) => {
+    setIsDetailLoading(true)
+    try {
+      // Pre-fetch to ensure fresh data
+      await waterShutdownService.getNotificationById(id)
+      setSelectedNotificationId(id)
+      setViewMode("view")
+      setShowViewEdit(true)
+    } catch (error) {
+      console.error('Error fetching notification data:', error)
+    } finally {
+      setIsDetailLoading(false)
+    }
+  }
+
+  const handleEdit = async (id: string) => {
+    setIsDetailLoading(true)
+    try {
+      // Pre-fetch to ensure fresh data
+      await waterShutdownService.getNotificationById(id)
+      setSelectedNotificationId(id)
+      setViewMode("edit")
+      setShowViewEdit(true)
+    } catch (error) {
+      console.error('Error fetching notification data:', error)
+    } finally {
+      setIsDetailLoading(false)
+    }
+  }
+
+  const handleBack = () => {
+    setShowViewEdit(false)
+    setSelectedNotificationId(null)
+    loadNotifications() // Refresh list
+  }
+
+  const tableColumns = getWaterShutdownColumns({
+      onView: handleView,
+      onDownload: (id: string) => console.log("Download", id),
+      onEdit: handleEdit,
+      onSMS: (id: string) => console.log("SMS", id),
+      onComplete: (id: string) => console.log("Complete", id),
+  }); // In a real app, wrap in useMemo
+
   return (
     <div className="flex flex-col min-h-screen">
-      <Header language={language} onLanguageChange={handleLanguageChange} userDetails={userDetails} />
+      <Header 
+        language={language} 
+        onLanguageChange={handleLanguageChange} 
+        userDetails={userDetails} 
+        onMenuClick={() => setIsSidebarOpen(!isSidebarOpen)}
+      />
       <LogoSection />
       <div className="flex flex-1">
-        <Sidebar menuItems={menuItems} language={language} />
+        <Sidebar 
+          menuItems={menuItems} 
+          language={language} 
+          isOpen={isSidebarOpen} 
+          onMobileClose={() => setIsSidebarOpen(false)} 
+        />
 
-        <main className="flex-1 bg-gray-50 p-6 overflow-x-hidden"> 
-            <div className="flex items-center justify-between mb-6">
-                 <div className="flex items-center gap-4">
-                   <Button
-                      variant="ghost"
-                      onClick={() => router.back()}
-                      className="p-0 hover:bg-transparent"
-                    >
-                      {/* Back Icon if needed */}
-                    </Button>
+        <main className="flex-1 bg-slate-100  overflow-x-hidden">
+            <div className="flex flex-col sm:flex-row items-center justify-between mb-6 gap-4 px-2 shadow-md">
+                 <div className="flex items-center gap-4 text-center sm:text-left h-12 ">
                     <h1 className="text-2xl font-bold text-[#006A72]">
                       Nama Water Operation Notification
                     </h1>
@@ -181,116 +234,128 @@ export default function WaterShutdownList() {
                   <span> &gt; Water Shutdown Notification</span>
                 </div>
             </div>
-
-            <div className="bg-white p-6 rounded-lg shadow-sm border mb-6">
-              
-              <div className="flex flex-wrap items-end gap-4 mb-6">
-                <div className="w-64">
-                   <div className="relative">
-                      <Select value={selectedRegion} onValueChange={(value) => setSelectedRegion(value as Region | "ALL")}>
-                        <SelectTrigger id="region" className="bg-white flex-1 h-[50px] pt-4">
-                          <SelectValue placeholder=" " />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="ALL">All</SelectItem>
-                          <SelectItem value="MUSCAT">MUSCAT</SelectItem>
-                          <SelectItem value="DHOFAR">DHOFAR</SelectItem>
-                          <SelectItem value="BATINAH">BATINAH</SelectItem>
-                          <SelectItem value="SHARQIYAH">SHARQIYAH</SelectItem>
-                          <SelectItem value="DAKHLIYAH">DAKHLIYAH</SelectItem>
-                        </SelectContent>
-                      </Select>
-                      <FloatingLabel htmlFor="region">Region</FloatingLabel>
-                   </div>
+            <div className="px-6">
+            {showViewEdit && selectedNotificationId ? (
+              <NotificationViewEdit 
+                notificationId={selectedNotificationId}
+                mode={viewMode}
+                onBack={handleBack}
+                language={language}
+              />
+            ) : (
+              <>
+                <div className="bg-white p-4 rounded-lg shadow-sm border mb-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+                   {/* ... filters ... */}
+                <div className="relative">
+                  <Select value={selectedRegion} onValueChange={(value) => setSelectedRegion(value as Region | "ALL")}>
+                    <SelectTrigger id="region" className="bg-white w-full h-[50px] pt-4">
+                      <SelectValue placeholder=" " />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="ALL">All</SelectItem>
+                      {regionMaster.map((region) => (
+                         <SelectItem key={region.RegionID} value={region.RegionCode?.trim()}>
+                            {region.RegionName || region.RegionCode}
+                         </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FloatingLabel htmlFor="region">Region</FloatingLabel>
                 </div>
 
-                <div className="flex items-center gap-2">
-                    <FloatingLabelInput 
-                        type="date" 
-                        id="fromDate"
-                        label="From Date"
-                        value={fromDate ? format(fromDate, 'yyyy-MM-dd') : ''}
-                        onChange={(e) => setFromDate(e.target.value ? new Date(e.target.value) : undefined)}
-                        className="w-[150px] bg-white"
-                    />
+                <div className="relative">
+                  <FloatingLabelInput 
+                      type="date" 
+                      id="fromDate"
+                      label="From Date"
+                      value={fromDate ? format(fromDate, 'yyyy-MM-dd') : ''}
+                      onChange={(e) => setFromDate(e.target.value ? new Date(e.target.value) : undefined)}
+                      className="w-full bg-white"
+                  />
                 </div>
 
-                <div className="flex items-center gap-2">
-                    <FloatingLabelInput 
-                        type="date" 
-                        id="toDate"
-                        label="To Date"
-                        value={toDate ? format(toDate, 'yyyy-MM-dd') : ''}
-                        onChange={(e) => setToDate(e.target.value ? new Date(e.target.value) : undefined)}
-                        className="w-[150px] bg-white"
-                    />
+                <div className="relative">
+                  <FloatingLabelInput 
+                      type="date" 
+                      id="toDate"
+                      label="To Date"
+                      value={toDate ? format(toDate, 'yyyy-MM-dd') : ''}
+                      onChange={(e) => setToDate(e.target.value ? new Date(e.target.value) : undefined)}
+                      className="w-full bg-white"
+                  />
                 </div>
 
-                <div className="flex gap-2 ml-auto">
-                    <Button onClick={handleSearch} className="bg-[#1F4E58] hover:bg-[#163a42] text-white w-24">
-                        Search
-                    </Button>
-                    <Button variant="outline" onClick={handleClearFilters} className="text-[#1F4E58] border-[#1F4E58] hover:bg-teal-50 w-24">
-                        Clear Filter
-                    </Button>
+                <div className="flex items-end gap-2 pb-[1px]">
+                  <Button onClick={handleSearch} className="bg-[#1F4E58] hover:bg-[#163a42] text-white px-6">
+                    Search
+                  </Button>
+                  <Button variant="outline" onClick={handleClearFilters} className="text-[#1F4E58] border-[#1F4E58] hover:bg-teal-50 px-6">
+                    Clear Filter
+                  </Button>
                 </div>
               </div>
 
-              <div className="flex flex-wrap items-center gap-4">
-                 <div className="w-auto min-w-[300px]">
-                   <div className="relative">
-                      <Select value={selectedEventType} onValueChange={(value) => setSelectedEventType(value as EventType | "ALL")}>
-                        <SelectTrigger id="eventType" className="bg-white flex-1 min-w-[200px] h-[50px] pt-4">
-                          <SelectValue placeholder=" " />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="ALL">All</SelectItem>
-                          <SelectItem value="Major Planned Event">Major Planned Event</SelectItem>
-                          <SelectItem value="Minor Planned Event">Minor Planned Event</SelectItem>
-                        </SelectContent>
-                      </Select>
-                      <FloatingLabel htmlFor="eventType">Event Type</FloatingLabel>
-                   </div>
-                 </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div className="relative lg:col-span-1">
+                  <Select value={selectedEventType} onValueChange={(value) => setSelectedEventType(value as EventType | "ALL")}>
+                    <SelectTrigger id="eventType" className="bg-white w-full h-[50px] pt-4">
+                      <SelectValue placeholder=" " />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="ALL">All</SelectItem>
+                      {eventMaster?.map((event) => (
+                          <SelectItem key={event?.EventTypeID || Math.random()} value={event?.EventTypeCode || event?.EventTypeID?.toString() || ""}>
+                            {event?.EventTypeName}
+                          </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FloatingLabel htmlFor="eventType">Event Type</FloatingLabel>
+                </div>
 
-                 <div className="flex-1 min-w-[200px]">
-                      <FloatingLabelInput
-                          id="search"
-                          label="Search"
-                          value={searchQuery}
-                          onChange={(e) => setSearchQuery(e.target.value)}
-                          onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
-                          className="bg-white w-full"
-                      />
-                 </div>
+                <div className="relative lg:col-span-1">
+                  <FloatingLabelInput
+                      id="search"
+                      label="Search"
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
+                      className="bg-white w-full"
+                  />
+                </div>
 
-                 <div className="flex gap-2 shrink-0">
-                    <Button variant="default" onClick={handleExport} className="bg-[#1F4E58] hover:bg-[#163a42] text-white">
-                      Export Excel
-                    </Button>
-                    <Button onClick={() => console.log('Create new notification')} className="bg-[#E54B4B] hover:bg-[#d03b3b] text-white">
-                      Create New Notification
-                    </Button>
-                 </div>
+                <div className="flex items-end gap-2 md:col-span-2 lg:col-span-2 pb-[1px]">
+                  <Button variant="default" onClick={handleExport} className="bg-[#1F4E58] hover:bg-[#163a42] text-white">
+                    Export Excel
+                  </Button>
+                  <Button 
+                    onClick={async () => {
+                      setIsDetailLoading(true);
+                      await loadMasterData();
+                      setIsDetailLoading(false);
+                      console.log('Create new notification');
+                    }} 
+                    className="bg-[#E54B4B] hover:bg-[#d03b3b] text-white"
+                  >
+                    Create New Notification
+                  </Button>
+                </div>
               </div>
-
             </div>
-
-            <Card>
-              <CardContent className="p-0">
-                 <div className="rounded-md border overflow-hidden">
-                    <DataTable
-                      data={notifications}
-                      columns={columns}
-                      currentPage={currentPage}
-                      totalPages={totalPages}
-                      onPageChange={setCurrentPage}
-                      isLoading={isLoading}
-                      emptyMessage="No water shutdown notifications found"
-                    />
-                 </div>
-              </CardContent>
-            </Card>
+            
+            <div className="px-6">
+                <DataTable
+                  data={notifications}
+                  columns={tableColumns}
+                  isLoading={isLoading || isDetailLoading}
+                  emptyMessage="No water shutdown notifications found"
+                />
+            </div>
+          </>
+        )}
+      </div>
+              
           </main>
       </div>
 

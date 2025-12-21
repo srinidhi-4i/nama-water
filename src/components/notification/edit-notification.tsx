@@ -51,83 +51,100 @@ export function EditNotification({ notification, onBack }: EditNotificationProps
   }
 
   return (
-    <div className="space-y-6">
-      <Card>
-        <CardHeader>
-          <CardTitle>Edit Notification</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-6">
-          {/* Notification Details (Read-only) */}
-          <div className="space-y-4">
-            <h3 className="text-lg font-semibold">Notification Details</h3>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {/* Event Type (Disabled) */}
-              <div>
-                <Label>Event Type</Label>
-                <Input value={notification.EventTypeEn} disabled />
-              </div>
-
-              {/* Template Name (Disabled) */}
-              <div>
-                <Label>Template Name</Label>
-                <Input value={notification.NotificationTitleEn} disabled />
-              </div>
+    <div className="bg-white rounded-lg shadow-sm border p-6">
+      <div className="space-y-8">
+        {/* Notification Details Section */}
+        <div className="space-y-6">
+          <h2 className="text-xl font-bold text-[#1F4E58] border-b pb-2">Notification Details</h2>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
+            {/* Event Type (Disabled) */}
+            <div className="space-y-2">
+              <Label className="text-sm font-semibold text-gray-700">Event Type</Label>
+              <Input 
+                value={notification.EventTypeEn} 
+                disabled 
+                className="h-11 bg-gray-50 border-gray-300 text-gray-600"
+              />
             </div>
 
-            {/* Status */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <Label>Status</Label>
-                <Input value={notification.Status} disabled />
-              </div>
-              <div>
-                <Label>User Type</Label>
-                <Input value={notification.UserType === 'REGISTERED' ? 'Registered Users' : 'All Users'} disabled />
-              </div>
+            {/* Template Name (Disabled) */}
+            <div className="space-y-2">
+              <Label className="text-sm font-semibold text-gray-700">Template Name</Label>
+              <Input 
+                value={notification.NotificationTitleEn} 
+                disabled 
+                className="h-11 bg-gray-50 border-gray-300 text-gray-600"
+              />
+            </div>
+
+            {/* Status (Disabled) */}
+            <div className="space-y-2">
+              <Label className="text-sm font-semibold text-gray-700">Status</Label>
+              <Input 
+                value={notification.Status} 
+                disabled 
+                className="h-11 bg-gray-50 border-gray-300 text-gray-600"
+              />
+            </div>
+
+            {/* User Type (Disabled) */}
+            <div className="space-y-2">
+              <Label className="text-sm font-semibold text-gray-700">User Type</Label>
+              <Input 
+                value={notification.UserType === 'REGISTERED' ? 'Registered Users' : 'All Users'} 
+                disabled 
+                className="h-11 bg-gray-50 border-gray-300 text-gray-600"
+              />
             </div>
           </div>
+        </div>
 
-          {/* Event Details */}
-          <div className="space-y-4">
-            <h3 className="text-lg font-semibold">Event Details</h3>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {/* Scheduled Date */}
-              <div>
-                <Label htmlFor="scheduledDate">Scheduled Date and time *</Label>
-                <Input
-                  id="scheduledDate"
-                  type="date"
-                  value={scheduledDate}
-                  onChange={(e) => setScheduledDate(e.target.value)}
-                />
-              </div>
-
-              {/* Scheduled Time */}
-              <div>
-                <Label htmlFor="scheduledTime">&nbsp;</Label>
-                <Input
-                  id="scheduledTime"
-                  type="time"
-                  value={scheduledTime}
-                  onChange={(e) => setScheduledTime(e.target.value)}
-                />
-              </div>
+        {/* Event Details Section */}
+        <div className="space-y-6">
+          <h2 className="text-xl font-bold text-[#1F4E58] border-b pb-2">Event Details</h2>
+          
+          <div className="space-y-2">
+            <Label htmlFor="scheduledDate" className="text-sm font-semibold text-gray-700">
+              Scheduled Date and time <span className="text-red-500">*</span>
+            </Label>
+            <div className="flex flex-col sm:flex-row gap-4 max-w-2xl">
+              <Input
+                id="scheduledDate"
+                type="date"
+                value={scheduledDate}
+                onChange={(e) => setScheduledDate(e.target.value)}
+                className="h-11 border-gray-300 focus:ring-[#006A72] flex-1"
+              />
+              <Input
+                id="scheduledTime"
+                type="time"
+                value={scheduledTime}
+                onChange={(e) => setScheduledTime(e.target.value)}
+                className="h-11 border-gray-300 focus:ring-[#006A72] flex-1 bg-white"
+              />
             </div>
           </div>
+        </div>
 
-          {/* Action Buttons */}
-          <div className="flex justify-between pt-4">
-            <Button variant="outline" onClick={onBack}>
-              ← Back
-            </Button>
-            <Button onClick={handleUpdate} disabled={isUpdating}>
-              {isUpdating ? "Updating..." : "Update"}
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
+        {/* Action Buttons */}
+        <div className="flex justify-end gap-4 pt-6 mt-8 border-t">
+          <Button 
+            variant="outline" 
+            onClick={onBack}
+            className="px-8 h-11 border-[#1F4E58] text-[#1F4E58] hover:bg-teal-50"
+          >
+            Previous
+          </Button>
+          <Button 
+            onClick={handleUpdate} 
+            disabled={isUpdating}
+            className="px-8 h-11 bg-[#1F4E58] hover:bg-[#163a42] text-white min-w-[120px]"
+          >
+            {isUpdating ? "Updating..." : "Update"}
+          </Button>
+        </div>
+      </div>
     </div>
   )
 }

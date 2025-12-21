@@ -25,22 +25,13 @@ import {
 } from "@/components/ui/popover"
 import { cn } from "@/lib/utils"
 
-import { Header } from "@/components/layout/Header"
-import { LogoSection } from "@/components/layout/LogoSection"
-import { Sidebar } from "@/components/layout/Sidebar"
-import { Footer } from "@/components/layout/Footer"
-
 import { branchOpsService } from "@/services/branchops.service"
-import { authService } from "@/services/auth.service"
-import { menuService } from "@/services/menu.service"
+import { useLanguage } from "@/components/providers/LanguageProvider"
 import { ValidationType } from "@/types/branchops.types"
-import { MenuItem } from "@/types/menu"
 
 export default function ValidateCustomerPage() {
   const router = useRouter()
-  const [language, setLanguage] = useState<"EN" | "AR">("EN")
-  const [menuItems, setMenuItems] = useState<MenuItem[]>([])
-  const [userDetails, setUserDetails] = useState<any>(null)
+  const { language } = useLanguage()
   const [validationTypes, setValidationTypes] = useState<ValidationType[]>([])
   const [selectedType, setSelectedType] = useState<string>("")
   const [inputValue, setInputValue] = useState<string>("")
@@ -52,52 +43,12 @@ export default function ValidateCustomerPage() {
   const [activeTab, setActiveTab] = useState("validate")
 
   useEffect(() => {
-    // Check authentication
-    if (!authService.isAuthenticated()) {
-      router.push('/login')
-      return
-    }
-
-    // Load user details
-    try {
-      const userData = authService.getCurrentUser()
-      if (userData && userData.BranchUserDetails && userData.BranchUserDetails.length > 0) {
-        setUserDetails(userData.BranchUserDetails[0])
-      }
-    } catch (error) {
-      console.error('Error loading user details:', error)
-    }
-
-    // Load menu data
-    loadMenuData()
     loadValidationTypes()
-  }, [router])
-
-  const loadMenuData = async () => {
-    try {
-      const data = await menuService.getMenuDetails()
-      if (data && data.length > 0) {
-        const transformedData = data.map((item: any) => ({
-          MenuID: item.MenuId,
-          MenuNameEn: item.Menu_Name_EN,
-          MenuNameAr: item.Menu_Name_AR,
-          MenuURL: item.Target_Url,
-          ApplicationNameEn: item.ApplicationNameEn || "General"
-        }))
-        setMenuItems(transformedData)
-      }
-    } catch (error) {
-      console.error('Error loading menu data:', error)
-    }
-  }
+  }, [])
 
   const loadValidationTypes = async () => {
     const types = await branchOpsService.getValidationTypes()
     setValidationTypes(types)
-  }
-
-  const handleLanguageChange = (lang: "EN" | "AR") => {
-    setLanguage(lang)
   }
 
   const handleValidationTypeChange = (value: string) => {
@@ -111,7 +62,6 @@ export default function ValidateCustomerPage() {
 
     // Handle special cases
     if (value === "ACCOUNT_PAYMENT") {
-      // Redirect to payment page
       router.push("/paybill")
     }
   }
@@ -180,7 +130,7 @@ export default function ValidateCustomerPage() {
 
     toast.success("Account found! Redirecting...")
     setTimeout(() => {
-      router.push("/branchoperations/profile")
+      router.push("/branch-operations/profile")
     }, 1000)
   }
 
@@ -236,7 +186,7 @@ export default function ValidateCustomerPage() {
       return
     }
 
-    router.push(`/branchoperations/otp-log?mobile=${inputValue}`)
+    router.push(`/branch-operations/otp-log?mobile=${inputValue}`)
   }
 
   const handleROPValidation = async () => {
@@ -475,87 +425,67 @@ export default function ValidateCustomerPage() {
   }
 
   return (
-    <div className="flex flex-col min-h-screen">
-      {/* Header */}
-      <Header language={language} onLanguageChange={handleLanguageChange} userDetails={userDetails} />
+    <div className="flex-1 bg-gray-50 p-6 min-h-[calc(100vh-200px)] relative">
+      {/* Back Button */}
+      <Button
+        variant="ghost"
+        onClick={() => router.back()}
+        className="mb-4 text-teal-900 hover:text-teal-800 hover:bg-teal-50"
+      >
+        <ChevronLeft className="w-4 h-4 mr-1" />
+        {language === "EN" ? "Back" : "العودة"}
+      </Button>
 
-      {/* Main Layout: Sidebar + Content */}
-      {/* Logo Section */}
-      <LogoSection />
+      {/* Page Title */}
+      <h1 className="text-2xl font-semibold text-teal-900 mb-6">
+        {language === "EN" ? "Validate/Search a customer" : "التحقق من صحة / البحث عن عميل"}
+      </h1>
 
-      {/* Main Layout: Sidebar + Content */}
-      <div className="flex flex-1">
-        {/* Sidebar */}
-        <Sidebar menuItems={menuItems} language={language} />
+      {/* Tabs */}
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full max-w-4xl">
+        <TabsList className="grid w-full grid-cols-2 mb-6">
+          <TabsTrigger value="validate">{language === "EN" ? "Validate" : "التحقق"}</TabsTrigger>
+          <TabsTrigger value="profile">{language === "EN" ? "Profile Data" : "بيانات الملف الشخصي"}</TabsTrigger>
+        </TabsList>
 
-        {/* Main Content Area */}
-        <main className="flex-1 bg-gray-50 p-6 min-h-[600px] relative">
-          {/* Back Button */}
-          <Button
-            variant="ghost"
-            onClick={() => router.back()}
-            className="mb-4 text-teal-900 hover:text-teal-800 hover:bg-teal-50"
-          >
-            <ChevronLeft className="w-4 h-4 mr-1" />
-            Back
-          </Button>
+        <TabsContent value="validate" className="space-y-6">
+          {/* Main Validation Card */}
+          <div className="bg-white rounded-lg shadow-md border p-6 space-y-6">
+            <div>
+              <Label htmlFor="validateType">{language === "EN" ? "Validate Type" : "نوع التحقق"}</Label>
+              <Select value={selectedType} onValueChange={handleValidationTypeChange}>
+                <SelectTrigger id="validateType" className="mt-2">
+                  <SelectValue placeholder={language === "EN" ? "Select Validate Type" : "اختر نوع التحقق"} />
+                </SelectTrigger>
+                <SelectContent>
+                  {validationTypes.map((type) => (
+                    <SelectItem 
+                      key={type.ValidateTypeCode} 
+                      value={type.ValidateTypeCode}
+                    >
+                      {type.ValidateTypeName}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
 
-          {/* Page Title */}
-          <h1 className="text-2xl font-semibold text-teal-900 mb-6">
-            Validate/Search a customer
-          </h1>
-
-          {/* Tabs */}
-          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full max-w-4xl">
-            <TabsList className="grid w-full grid-cols-2 mb-6">
-              <TabsTrigger value="validate">Validate</TabsTrigger>
-              <TabsTrigger value="profile">Profile Data</TabsTrigger>
-            </TabsList>
-
-            <TabsContent value="validate" className="space-y-6">
-              {/* Main Validation Card */}
-              <div className="bg-white rounded-lg shadow-md border p-6 space-y-6">
-                <div>
-                  <Label htmlFor="validateType">Validate Type</Label>
-                  <Select value={selectedType} onValueChange={handleValidationTypeChange}>
-                    <SelectTrigger id="validateType" className="mt-2">
-                      <SelectValue placeholder="Select Validate Type" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {validationTypes.map((type) => (
-                        <SelectItem 
-                          key={type.ValidateTypeCode} 
-                          value={type.ValidateTypeCode}
-                        >
-                          {type.ValidateTypeName}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                {selectedType && selectedType !== "ACCOUNT_PAYMENT" && (
-                  <div className="pt-4 border-t">
-                    {renderInputField()}
-                  </div>
-                )}
+            {selectedType && selectedType !== "ACCOUNT_PAYMENT" && (
+              <div className="pt-4 border-t">
+                {renderInputField()}
               </div>
-            </TabsContent>
+            )}
+          </div>
+        </TabsContent>
 
-            <TabsContent value="profile" className="space-y-6">
-              <div className="bg-white rounded-lg shadow-sm border p-6">
-                <p className="text-gray-500 text-center py-8">
-                  Profile data will be displayed here after validation
-                </p>
-              </div>
-            </TabsContent>
-          </Tabs>
-        </main>
-
-      </div>
-
-      {/* Footer */}
-      <Footer />
+        <TabsContent value="profile" className="space-y-6">
+          <div className="bg-white rounded-lg shadow-sm border p-6">
+            <p className="text-gray-500 text-center py-8">
+              {language === "EN" ? "Profile data will be displayed here after validation" : "سيتم عرض بيانات الملف الشخصي هنا بعد التحقق"}
+            </p>
+          </div>
+        </TabsContent>
+      </Tabs>
     </div>
   )
 }

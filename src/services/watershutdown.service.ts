@@ -1,4 +1,5 @@
 import { api } from '@/lib/axios';
+import { apiClient } from '@/lib/api-client';
 import {
     WaterShutdownNotification,
     WaterShutdownTemplate,
@@ -8,27 +9,117 @@ import {
     UpdateNotificationRequest,
     CreateTemplateRequest,
     UpdateTemplateRequest,
+    RegionItem,
+    EventTypeItem,
 } from '@/types/watershutdown.types';
 
+export interface WaterShutdownMasterData {
+    regions: RegionItem[];
+    eventTypes: EventTypeItem[];
+    templateTypes: any[];
+}
+
 export const waterShutdownService = {
+    // Master Data
+    getWaterShutdownMasterData: async (): Promise<WaterShutdownMasterData> => {
+        try {
+            const formData = new FormData();
+            formData.append('masterType', '');
+
+            const response = await api.post<any>('/WaterShutdown/GetWaterShutdown', formData);
+            const data = response.data?.Data || response.data || {};
+
+            console.log('GetWaterShutdown Master Data Response:', response.data);
+
+            let regions: any[] = [];
+            let eventTypes: any[] = [];
+            let templateTypes: any[] = [];
+
+            // Dynamically find tables based on content
+            const allTables = Object.keys(data)
+                .filter(key => key.startsWith('Table'))
+                .map(key => ({ name: key, data: data[key] }))
+                .filter(item => Array.isArray(item.data) && item.data.length > 0);
+
+            console.log('Available Tables:', allTables.map(t => ({ name: t.name, keys: Object.keys(t.data[0]) })));
+
+            // Find EventTypes Table
+            const eventTypeTable = allTables.find(t => {
+                const keys = Object.keys(t.data[0]).map(k => k.toLowerCase());
+                return keys.some(k => k.includes('eventtypeid') || k.includes('eventtypename'));
+            });
+            if (eventTypeTable) {
+                eventTypes = eventTypeTable.data;
+                console.log(`Matched EventTypes in ${eventTypeTable.name}`);
+            }
+
+            // Find TemplateTypes Table
+            const templateTypeTable = allTables.find(t => {
+                const keys = Object.keys(t.data[0]).map(k => k.toLowerCase());
+                return keys.some(k => k.includes('templatetypeid') || k.includes('templatetypename'));
+            });
+            if (templateTypeTable) {
+                templateTypes = templateTypeTable.data;
+                console.log(`Matched TemplateTypes in ${templateTypeTable.name}`);
+            }
+
+            // Find Regions Table
+            const regionTable = allTables.find(t => {
+                const keys = Object.keys(t.data[0]).map(k => k.toLowerCase());
+                return (keys.some(k => k.includes('regionid') || k.includes('regionname'))) &&
+                    t !== eventTypeTable && t !== templateTypeTable;
+            });
+            if (regionTable) {
+                regions = regionTable.data;
+                console.log(`Matched Regions in ${regionTable.name}`);
+            }
+
+            return {
+                regions,
+                eventTypes,
+                templateTypes
+            };
+        } catch (error) {
+            console.error('Error fetching master data:', error);
+            return { regions: [], eventTypes: [], templateTypes: [] };
+        }
+    },
+
     // Notification Operations
+    getNotificationById: async (id: string): Promise<any> => {
+        try {
+            const formData = new FormData();
+            formData.append('EventID', id);
+
+            const response = await api.post<any>('/WaterShutdown/GetWaterShutDownEventDetailsSingle', formData);
+            if (response.data && (response.data.StatusCode === 605 || response.data.Table)) {
+                return response.data; // Return the full response containing Table, Table1, etc.
+            }
+            throw new Error('Failed to fetch notification details');
+        } catch (error) {
+            console.error('Error fetching notification by ID:', error);
+            throw error;
+        }
+    },
+
     getNotifications: async (filters?: WaterShutdownFilters): Promise<WaterShutdownListResponse> => {
         try {
-            const formData = {
-                region: filters?.region === "ALL" ? "" : filters?.region || "",
-                eventType: filters?.eventType === "ALL" ? "" : filters?.eventType || "",
-                fromDate: filters?.fromDate || "",
-                toDate: filters?.toDate || "",
-            };
+            const formData = new FormData();
+            formData.append('region', filters?.region === "ALL" ? "" : filters?.region || "");
+            formData.append('eventType', filters?.eventType === "ALL" ? "" : filters?.eventType || "");
+            formData.append('fromDate', filters?.fromDate || "");
+            formData.append('toDate', filters?.toDate || "");
 
-            const response = await api.post<any>('WaterShutdown/GetEventDetails', formData);
+            const response = await api.post<any>('/WaterShutdown/GetEventDetails', formData);
 
             console.log('Water Shutdown Response:', response.data); // Debug log
 
+            // The API response structure seems to return the list in response.data.Table directly
+            // based on the logs seen (Status: success, StatusCode: 605, Data: Object, Table: Array...)
             if (response.data && (response.data.StatusCode === 605 || response.data.Table)) {
-                // Sometimes response might be directly the data or wrapped
-                // Reference code uses response.Table directly for list
+
                 const notifications = response.data.Table || response.data.Data?.Table || [];
+
                 // Map API response to our type if necessary, or use as is if types match
                 // Assuming keys might be PascalCase in API and we use camelCase or matching types
                 // Let's map it safely
@@ -52,9 +143,9 @@ export const waterShutdownService = {
             }
 
             throw new Error(response.data?.Status || 'Failed to fetch notifications');
+
         } catch (error: any) {
             console.error('Error fetching water shutdown notifications:', error);
-
             // Return mock data for development if API fails differently than expected
             // console.warn('Using mock data for water shutdown notifications');
             // return waterShutdownService.getMockNotifications(filters);
@@ -73,7 +164,7 @@ export const waterShutdownService = {
             if (data.reasonAr) formData.append('reasonAr', data.reasonAr);
             if (data.affectedCustomers) formData.append('affectedCustomers', data.affectedCustomers.toString());
 
-            const response = await api.post<any>('/api/watershutdown/notifications', formData);
+            const response = await api.post<any>('/WaterShutdown/SaveEventDetails', formData);
 
             if (response.data && response.data.StatusCode === 605) {
                 return response.data.Data;
@@ -99,7 +190,7 @@ export const waterShutdownService = {
             if (data.status) formData.append('status', data.status);
             if (data.affectedCustomers) formData.append('affectedCustomers', data.affectedCustomers.toString());
 
-            const response = await api.put<any>(`/api/watershutdown/notifications/${id}`, formData);
+            const response = await api.post<any>('/WaterShutdown/SaveEventDetails', formData);
 
             if (response.data && response.data.StatusCode === 605) {
                 return response.data.Data;
@@ -150,36 +241,82 @@ export const waterShutdownService = {
     // Template Operations
     getTemplates: async (): Promise<WaterShutdownTemplate[]> => {
         try {
-            const response = await api.get<any>('/api/watershutdown/templates');
+            const formData = new FormData();
+            formData.append('TemplateDetailsID', '');
 
-            if (response.data && response.data.StatusCode === 605) {
-                return response.data.Data || [];
-            }
+            const response = await api.post<any>('/WaterShutdown/GetEventTemplateDetails', formData);
 
-            throw new Error(response.data?.Status || 'Failed to fetch templates');
+            const data = response.data?.Data || response.data || {};
+            const table = data.Table || data.Data?.Table || (Array.isArray(data) ? data : []);
+
+            return table.map((item: any) => ({
+                id: item.TemplateDetailsID || item.id,
+                eventType: item.EventTypeNameEn || item.eventType,
+                templateType: item.TemplateTypeNameEn || item.templateType,
+                subject: item.EmailTemplateEn ? "Email Template" : item.Subject,
+                body: item.SMSTemplateEn || item.body,
+                bodyAr: item.SMSTemplateAr || item.bodyAr,
+                // Add raw data for components that need specific API fields
+                ...item
+            }));
         } catch (error: any) {
             console.error('Error fetching templates:', error);
-
-            // Return mock data for development
-            console.warn('Using mock data for templates');
             return waterShutdownService.getMockTemplates();
         }
     },
 
-    createTemplate: async (data: CreateTemplateRequest): Promise<WaterShutdownTemplate> => {
+    getTemplateById: async (id: string): Promise<WaterShutdownTemplate> => {
         try {
             const formData = new FormData();
-            formData.append('eventType', data.eventType);
-            formData.append('templateType', data.templateType);
-            formData.append('subject', data.subject);
-            if (data.subjectAr) formData.append('subjectAr', data.subjectAr);
-            formData.append('body', data.body);
-            if (data.bodyAr) formData.append('bodyAr', data.bodyAr);
+            formData.append('TemplateDetailsID', id);
 
-            const response = await api.post<any>('/api/watershutdown/templates', formData);
+            const response = await api.post<any>('/WaterShutdown/GetEventTemplateDetails', formData);
+            const data = response.data?.Data || response.data || {};
+            const item = (data.Table && data.Table[0]) || data;
 
-            if (response.data && response.data.StatusCode === 605) {
-                return response.data.Data;
+            // Decode Email template if it exists
+            let decodedEmail = "";
+            if (item.EmailTemplateEn) {
+                try {
+                    decodedEmail = decodeURIComponent(escape(atob(item.EmailTemplateEn)));
+                } catch (e) {
+                    decodedEmail = item.EmailTemplateEn;
+                }
+            }
+
+            return {
+                id: item.TemplateDetailsID || item.id,
+                eventType: item.EventTypeNameEn || item.eventType,
+                templateType: item.TemplateTypeNameEn || item.templateType,
+                subject: item.Subject || "WATER OPERATION SHUTDOWN NOTIFICATION",
+                body: item.SMSTemplateEn || item.body,
+                bodyAr: item.SMSTemplateAr || item.bodyAr,
+                emailBody: decodedEmail,
+                ...item
+            };
+        } catch (error: any) {
+            console.error('Error fetching template details:', error);
+            throw error;
+        }
+    },
+
+    createTemplate: async (data: any): Promise<WaterShutdownTemplate> => {
+        try {
+            const formData = new FormData();
+            formData.append('UpdateType', 'CREATE');
+            formData.append('TemplateDetailsID', '');
+            formData.append('EventTypeID', data.eventType);
+            formData.append('TemplateTypeID', data.templateType);
+            formData.append('EmailTemplateEn', data.emailBody || '');
+            formData.append('EmailTemplateAr', '');
+            formData.append('SMSTemplateEn', data.body);
+            formData.append('SMSTemplateAr', data.bodyAr || '');
+            formData.append('UserID', '');
+
+            const response = await api.post<any>('/WaterShutdown/InsertEventTemplateDetails', formData);
+
+            if (response.data && (response.data.IsSuccess === 1 || response.data.Status === "Success")) {
+                return response.data.Data || response.data;
             }
 
             throw new Error(response.data?.Status || 'Failed to create template');
@@ -189,21 +326,23 @@ export const waterShutdownService = {
         }
     },
 
-    updateTemplate: async (id: string, data: UpdateTemplateRequest): Promise<WaterShutdownTemplate> => {
+    updateTemplate: async (id: string, data: any): Promise<WaterShutdownTemplate> => {
         try {
             const formData = new FormData();
-            formData.append('id', id);
-            if (data.eventType) formData.append('eventType', data.eventType);
-            if (data.templateType) formData.append('templateType', data.templateType);
-            if (data.subject) formData.append('subject', data.subject);
-            if (data.subjectAr) formData.append('subjectAr', data.subjectAr);
-            if (data.body) formData.append('body', data.body);
-            if (data.bodyAr) formData.append('bodyAr', data.bodyAr);
+            formData.append('UpdateType', 'UPDATE');
+            formData.append('TemplateDetailsID', id);
+            formData.append('EventTypeID', data.eventType);
+            formData.append('TemplateTypeID', data.templateType);
+            formData.append('EmailTemplateEn', data.emailBody || '');
+            formData.append('EmailTemplateAr', '');
+            formData.append('SMSTemplateEn', data.body);
+            formData.append('SMSTemplateAr', data.bodyAr || '');
+            formData.append('UserID', '');
 
-            const response = await api.put<any>(`/api/watershutdown/templates/${id}`, formData);
+            const response = await api.post<any>('/WaterShutdown/InsertEventTemplateDetails', formData);
 
-            if (response.data && response.data.StatusCode === 605) {
-                return response.data.Data;
+            if (response.data && (response.data.IsSuccess === 1 || response.data.Status === "Success")) {
+                return response.data.Data || response.data;
             }
 
             throw new Error(response.data?.Status || 'Failed to update template');

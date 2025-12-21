@@ -72,18 +72,19 @@ export const notificationService = {
 
     /**
      * Create a new custom notification
-     * Matches React app: PushNotification/CreateNotification
+     * Matches React app: PushNotification/InsertUpdatePushNotification
      */
     async createNotification(data: CreateNotificationRequest): Promise<any> {
         try {
             const formData = {
+                NotificationID: data.NotificationID || 0,
                 EventTypeCode: data.EventTypeCode,
                 NotificationCategory: data.NotificationCategory,
                 UserType: data.UserType,
                 ScheduledDateTime: data.ScheduledDateTime,
                 CreatedBy: data.CreatedBy
             }
-            const response = await apiClient.post<any>('PushNotification/CreateNotification', formData)
+            const response = await apiClient.post<any>('PushNotification/InsertUpdatePushNotification', formData)
             return response
         } catch (error) {
             console.error('Error creating notification:', error)
@@ -93,7 +94,7 @@ export const notificationService = {
 
     /**
      * Update an existing custom notification
-     * Matches React app: PushNotification/UpdateNotification
+     * Matches React app: PushNotification/InsertUpdatePushNotification
      */
     async updateNotification(data: UpdateNotificationRequest): Promise<any> {
         try {
@@ -102,7 +103,7 @@ export const notificationService = {
                 ScheduledDateTime: data.ScheduledDateTime,
                 ModifiedBy: data.ModifiedBy
             }
-            const response = await apiClient.post<any>('PushNotification/UpdateNotification', formData)
+            const response = await apiClient.post<any>('PushNotification/InsertUpdatePushNotification', formData)
             return response
         } catch (error) {
             console.error('Error updating notification:', error)

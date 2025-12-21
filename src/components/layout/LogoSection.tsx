@@ -11,9 +11,9 @@ export function LogoSection() {
           <Image
             src="/Assets/Images/global/Oman_2040.png"
             alt="Oman 2040"
-            width={140}
-            height={50}
-            className="object-contain"
+            width={120}
+            height={40}
+            className="object-contain w-[100px] sm:w-[140px]"
           />
         </div>
 
@@ -25,9 +25,9 @@ export function LogoSection() {
           <Image
             src="/Assets/Images/global/nama_logo.png"
             alt="Nama Water Services"
-            width={140}
-            height={50}
-            className="object-contain"
+            width={120}
+            height={40}
+            className="object-contain w-[100px] sm:w-[140px]"
           />
         </div>
       </div>

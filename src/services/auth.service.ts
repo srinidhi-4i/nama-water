@@ -82,9 +82,11 @@ export const authService = {
                     }
 
                     const dummyToken = 'branch-authenticated';
-                    if (rememberMe) {
-                        localStorage.setItem(STORAGE_KEYS.AUTH_TOKEN, dummyToken);
-                    } else {
+                    // Always use localStorage for token to support multiple tabs/persistence 
+                    // as requested by user ("opening same url in another tab should directly enter application")
+                    localStorage.setItem(STORAGE_KEYS.AUTH_TOKEN, dummyToken);
+                    if (!rememberMe) {
+                        // If not rememberMe, we still keep it in sessionStorage as a backup or for session-only logic
                         sessionStorage.setItem(STORAGE_KEYS.AUTH_TOKEN, dummyToken);
                     }
                 }
@@ -119,10 +121,27 @@ export const authService = {
 
     branchLogout: () => {
         if (typeof window !== 'undefined') {
-            localStorage.removeItem(STORAGE_KEYS.BRANCH_USER_DATA);
-            localStorage.removeItem(STORAGE_KEYS.AUTH_TOKEN);
-            sessionStorage.removeItem(STORAGE_KEYS.AUTH_TOKEN);
-            localStorage.removeItem('branchAccountSearch');
+            // Clear all possible auth keys used across versions
+            const keysToClear = [
+                STORAGE_KEYS.BRANCH_USER_DATA,
+                STORAGE_KEYS.AUTH_TOKEN,
+                'AU/@/#/TO/#/VA',
+                'brUd/APtiypx/sw7lu83P7A==',
+                'wcb/APtiypx/sw7lu83P7A==',
+                'branchAccountSearch',
+                'b\\u//n\\'
+            ];
+
+            keysToClear.forEach(key => {
+                localStorage.removeItem(key);
+                sessionStorage.removeItem(key);
+            });
+
+            localStorage.clear();
+            sessionStorage.clear();
+
+            // Force redirect to login
+            window.location.href = '/login';
         }
     },
 
@@ -130,13 +149,19 @@ export const authService = {
         if (typeof window === 'undefined') return null;
         const encryptedUser = localStorage.getItem(STORAGE_KEYS.BRANCH_USER_DATA);
         if (!encryptedUser) return null;
-        return decryptData<BranchUser>(encryptedUser);
+        try {
+            return decryptData<BranchUser>(encryptedUser);
+        } catch (e) {
+            return null;
+        }
     },
 
     isAuthenticated: (): boolean => {
         if (typeof window === 'undefined') return false;
         const user = authService.getCurrentUser();
-        const token = localStorage.getItem(STORAGE_KEYS.AUTH_TOKEN) || sessionStorage.getItem(STORAGE_KEYS.AUTH_TOKEN);
+        const token = localStorage.getItem(STORAGE_KEYS.AUTH_TOKEN) ||
+            sessionStorage.getItem(STORAGE_KEYS.AUTH_TOKEN) ||
+            localStorage.getItem('AU/@/#/TO/#/VA');
         return !!(user && token);
     },
 

@@ -8,9 +8,11 @@ import { MenuItem } from '@/types/menu'
 interface SidebarProps {
   menuItems: MenuItem[]
   language?: 'EN' | 'AR'
+  isOpen?: boolean
+  onMobileClose?: () => void
 }
 
-export function Sidebar({ menuItems, language = 'EN' }: SidebarProps) {
+export function Sidebar({ menuItems, language = 'EN', isOpen, onMobileClose }: SidebarProps) {
   const [isCollapsed, setIsCollapsed] = useState(false)
   const [openMenu, setOpenMenu] = useState<string | null>(null)
   const pathname = usePathname()
@@ -106,64 +108,91 @@ export function Sidebar({ menuItems, language = 'EN' }: SidebarProps) {
   }
 
   return (
-    <div className={cn('bg-teal-900 text-white transition-all duration-300 min-h-screen flex flex-col relative', isCollapsed ? 'w-14' : 'w-64')}>
-      {/* Collapse Toggle */}
-      <button
-        onClick={() => setIsCollapsed(!isCollapsed)}
-        className="absolute -right-3 top-2 bg-red-500 rounded-full p-0.5 z-10"
-      >
-        {isCollapsed ? <ChevronRight className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}
-      </button>
+    <>
+      {/* Mobile Overlay */}
+      {isOpen && (
+        <div 
+          className="fixed inset-0 bg-black/50 z-40 lg:hidden"
+          onClick={onMobileClose}
+        />
+      )}
 
-      {/* Menu Items */}
-      <nav className="flex-1 overflow-y-auto bg-teal-900">
-        <ul className="py-1">
-          {/* Home */}
-          <li>
-            <Link
-              href="/branchhome"
-              className={cn('flex items-center gap-2 px-3 py-2.5  hover:bg-teal-800 transition-colors text-sm border-b-1 border-white', pathname === '/branchhome' && 'bg-teal-900')}
-            >
-              <Home className="w-5 h-5 flex-shrink-0 bg-teal-900" />
-              {!isCollapsed && <span>Home</span>}
-            </Link>
-          </li>
+      <div className={cn(
+        'bg-teal-900 text-white transition-all duration-300  flex flex-col relative z-50',
+        'fixed lg:relative inset-y-0 left-0 lg:translate-x-0',
+        isCollapsed ? 'w-14' : 'w-64',
+        isOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
+      )}>
+        {/* Collapse Toggle (Desktop only) */}
+        <button
+          onClick={() => setIsCollapsed(!isCollapsed)}
+          className="absolute -right-3 top-2 bg-red-500 rounded-full p-0.5 z-10 hidden lg:block"
+        >
+          {isCollapsed ? <ChevronRight className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}
+        </button>
 
-          {/* Dynamic Menu Items */}
-          {Object.keys(groupedMenus).map((appName, index) => (
-            <li key={index}>
-              <button
-                onClick={() => toggleMenu(appName)}
-                className={cn('w-full flex items-center justify-between gap-2 px-3 py-2.5 hover:bg-teal-800 transition-colors text-sm', openMenu === appName && 'bg-teal-700')}
+        {/* Mobile Close Button */}
+        {isOpen && (
+           <button
+             onClick={onMobileClose}
+             className="lg:hidden absolute top-2 right-2 p-1 hover:bg-teal-800 rounded"
+           >
+             <ChevronLeft className="w-5 h-5 flex-shrink-0" />
+           </button>
+        )}
+
+        {/* Menu Items */}
+        <nav className="flex-1 overflow-y-auto bg-teal-900 mt-10 lg:mt-0">
+          <ul className="py-1">
+            {/* Home */}
+            <li>
+              <Link
+                href="/branchhome"
+                onClick={onMobileClose}
+                className={cn('flex items-center gap-2 px-3 py-2.5  hover:bg-teal-800 transition-colors text-sm border-b-1 border-white', pathname === '/branchhome' && 'bg-teal-900')}
               >
-                <div className="flex items-center gap-2">
-                  <div className="w-5 h-5 flex-shrink-0">{renderIcon(appName)}</div>
-                  {!isCollapsed && <span className="text-xs">{appName}</span>}
-                </div>
-                {!isCollapsed && (
-                  <ChevronRight className={cn('w-3 h-3 transition-transform', openMenu === appName && 'rotate-90')} />
-                )}
-              </button>
-
-              {/* Submenu */}
-              {openMenu === appName && !isCollapsed && (
-                <ul className="bg-teal-900">
-                  {groupedMenus[appName].map((menu, idx) => (
-                    <li key={idx}>
-                      <Link
-                        href={menu.MenuURL}
-                        className={cn('block px-10 py-1.5 hover:bg-teal-800 transition-colors text-xs', pathname === menu.MenuURL && 'bg-teal-700')}
-                      >
-                        {language === 'EN' ? menu.MenuNameEn : menu.MenuNameAr}
-                      </Link>
-                    </li>
-                  ))}
-                </ul>
-              )}
+                <Home className="w-5 h-5 flex-shrink-0 bg-teal-900" />
+                {(!isCollapsed || isOpen) && <span>Home</span>}
+              </Link>
             </li>
-          ))}
-        </ul>
-      </nav>
-    </div>
+
+            {/* Dynamic Menu Items */}
+            {Object.keys(groupedMenus).map((appName, index) => (
+              <li key={index}>
+                <button
+                  onClick={() => toggleMenu(appName)}
+                  className={cn('w-full flex items-center justify-between gap-2 px-3 py-2.5 hover:bg-teal-800 transition-colors text-sm', openMenu === appName && 'bg-teal-700')}
+                >
+                  <div className="flex items-center gap-2">
+                    <div className="w-5 h-5 flex-shrink-0">{renderIcon(appName)}</div>
+                    {(!isCollapsed || isOpen) && <span className="text-xs">{appName}</span>}
+                  </div>
+                  {(!isCollapsed || isOpen) && (
+                    <ChevronRight className={cn('w-3 h-3 transition-transform', openMenu === appName && 'rotate-90')} />
+                  )}
+                </button>
+
+                {/* Submenu */}
+                {openMenu === appName && (!isCollapsed || isOpen) && (
+                  <ul className="bg-teal-900">
+                    {groupedMenus[appName].map((menu, idx) => (
+                      <li key={idx}>
+                        <Link
+                          href={menu.MenuURL}
+                          onClick={onMobileClose}
+                          className={cn('block px-10 py-1.5 hover:bg-teal-800 transition-colors text-xs', pathname === menu.MenuURL && 'bg-teal-700')}
+                        >
+                          {language === 'EN' ? menu.MenuNameEn : menu.MenuNameAr}
+                        </Link>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </li>
+            ))}
+          </ul>
+        </nav>
+      </div>
+    </>
   )
 }

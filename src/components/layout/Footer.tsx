@@ -8,22 +8,22 @@ export function Footer() {
       <div className="container mx-auto px-4">
         {/* Social Media Icons */}
         <div className="flex justify-center gap-6 mb-4">
-          <a href="#" className="hover:text-teal-400 transition-colors">
+          <a href="https://www.facebook.com/NamaWaterServices/" target="_blank" rel="noopener noreferrer" className="hover:text-teal-400 transition-colors">
             <Facebook className="w-6 h-6" />
           </a>
-          <a href="#" className="hover:text-teal-400 transition-colors">
+          <a href="https://x.com/NamaWater" target="_blank" rel="noopener noreferrer" className="hover:text-teal-400 transition-colors">
             <Twitter className="w-6 h-6" />
           </a>
-          <a href="#" className="hover:text-teal-400 transition-colors">
+          <a href="https://www.linkedin.com/company/namawaterservices/" target="_blank" rel="noopener noreferrer" className="hover:text-teal-400 transition-colors">
             <Linkedin className="w-6 h-6" />
           </a>
-          <a href="#" className="hover:text-teal-400 transition-colors">
+          <a href="https://www.instagram.com/namawaterservices/" target="_blank" rel="noopener noreferrer" className="hover:text-teal-400 transition-colors">
             <Instagram className="w-6 h-6" />
           </a>
-          <a href="#" className="hover:text-teal-400 transition-colors">
+          <a href="https://www.youtube.com/@namawaterservices" target="_blank" rel="noopener noreferrer" className="hover:text-teal-400 transition-colors">
             <Youtube className="w-6 h-6" />
           </a>
-          <a href="#" className="hover:text-teal-400 transition-colors">
+          <a href="mailto:contact@namawater.om" className="hover:text-teal-400 transition-colors">
             <Mail className="w-6 h-6" />
           </a>
         </div>

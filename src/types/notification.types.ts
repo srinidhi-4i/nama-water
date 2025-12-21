@@ -80,6 +80,7 @@ export interface NotificationListResponse {
 
 // Create Notification Request
 export interface CreateNotificationRequest {
+    NotificationID?: number
     EventTypeCode: string
     NotificationCategory: string
     UserType: 'REGISTERED' | 'ALL'
