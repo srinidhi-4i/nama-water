@@ -175,17 +175,22 @@ export function Sidebar({ menuItems, language = 'EN', isOpen, onMobileClose }: S
                 {/* Submenu */}
                 {openMenu === appName && (!isCollapsed || isOpen) && (
                   <ul className="bg-teal-900">
-                    {groupedMenus[appName].map((menu, idx) => (
-                      <li key={idx}>
-                        <Link
-                          href={menu.MenuURL}
-                          onClick={onMobileClose}
-                          className={cn('block px-10 py-1.5 hover:bg-teal-800 transition-colors text-xs', pathname === menu.MenuURL && 'bg-teal-700')}
-                        >
-                          {language === 'EN' ? menu.MenuNameEn : menu.MenuNameAr}
-                        </Link>
-                      </li>
-                    ))}
+                    {groupedMenus[appName].map((menu, idx) => {
+                      // #region agent log
+                      fetch('http://127.0.0.1:7242/ingest/839c7757-441a-490f-a720-0ae555f4ea7b',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'Sidebar.tsx:178',message:'Menu item rendered',data:{menuURL:menu.MenuURL,menuName:menu.MenuNameEn,currentPathname:pathname},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'B'})}).catch(()=>{});
+                      // #endregion
+                      return (
+                        <li key={idx}>
+                          <Link
+                            href={menu.MenuURL}
+                            onClick={onMobileClose}
+                            className={cn('block px-10 py-1.5 hover:bg-teal-800 transition-colors text-xs', pathname === menu.MenuURL && 'bg-teal-700')}
+                          >
+                            {language === 'EN' ? menu.MenuNameEn : menu.MenuNameAr}
+                          </Link>
+                        </li>
+                      )
+                    })}
                   </ul>
                 )}
               </li>

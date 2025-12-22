@@ -28,6 +28,7 @@ import { cn } from "@/lib/utils"
 import { branchOpsService } from "@/services/branchops.service"
 import { useLanguage } from "@/components/providers/LanguageProvider"
 import { ValidationType } from "@/types/branchops.types"
+import Link from "next/link"
 
 export default function ValidateCustomerPage() {
   const router = useRouter()
@@ -425,24 +426,27 @@ export default function ValidateCustomerPage() {
   }
 
   return (
-    <div className="flex-1 bg-gray-50 p-6 min-h-[calc(100vh-200px)] relative">
-      {/* Back Button */}
-      <Button
-        variant="ghost"
-        onClick={() => router.back()}
-        className="mb-4 text-teal-900 hover:text-teal-800 hover:bg-teal-50"
-      >
-        <ChevronLeft className="w-4 h-4 mr-1" />
-        {language === "EN" ? "Back" : "العودة"}
-      </Button>
-
-      {/* Page Title */}
-      <h1 className="text-2xl font-semibold text-teal-900 mb-6">
-        {language === "EN" ? "Validate/Search a customer" : "التحقق من صحة / البحث عن عميل"}
-      </h1>
-
+    <div className="flex-1 bg-gray-50 min-h-[calc(100vh-200px)] relative">
+     <div className="flex flex-col sm:flex-row items-center justify-between mb-6 gap-4 px-2 shadow-md bg-white">
+        <div className="flex items-center gap-4 text-center sm:text-left h-12">
+          <h1 className="text-2xl font-bold text-[#006A72]">
+            {language === "EN" ? "Validate/Search a customer" : "التحقق من صحة / البحث عن عميل"}
+          </h1>
+        </div>
+        
+        <div className="text-sm text-gray-500">
+          <Link 
+            href="/branchhome"
+            className="font-semibold text-[#006A72] hover:underline cursor-pointer"
+          >
+            {language === "EN" ? "Home" : "الرئيسية"}
+          </Link>
+          <span> &gt; {language === "EN" ? "Validate/Search a customer" : "التحقق من صحة / البحث عن عميل"}</span>
+        </div>
+      </div>
+     
       {/* Tabs */}
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full max-w-4xl">
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full px-6">
         <TabsList className="grid w-full grid-cols-2 mb-6">
           <TabsTrigger value="validate">{language === "EN" ? "Validate" : "التحقق"}</TabsTrigger>
           <TabsTrigger value="profile">{language === "EN" ? "Profile Data" : "بيانات الملف الشخصي"}</TabsTrigger>

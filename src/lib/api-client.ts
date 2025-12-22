@@ -6,7 +6,7 @@ class ApiClient {
 
     constructor() {
         this.client = axios.create({
-            baseURL: process.env.NEXT_PUBLIC_API_URL,
+            // No baseURL - use relative URLs to leverage Next.js rewrites in next.config.ts
             withCredentials: true,
             headers: {
                 'Content-Type': 'application/json',
@@ -16,6 +16,11 @@ class ApiClient {
         // Request interceptor
         this.client.interceptors.request.use(
             (config) => {
+                // #region agent log
+                if (typeof window !== 'undefined') {
+                    fetch('http://127.0.0.1:7242/ingest/839c7757-441a-490f-a720-0ae555f4ea7b',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'api-client.ts:18',message:'API request made',data:{url:config.url,method:config.method,baseURL:config.baseURL,fullUrl:config.url ? (config.baseURL || '') + config.url : 'unknown'},timestamp:Date.now(),sessionId:'debug-session',runId:'run2',hypothesisId:'D'})}).catch(()=>{});
+                }
+                // #endregion
                 // You can add auth tokens here if needed
                 return config
             },
@@ -100,6 +105,11 @@ class ApiClient {
     private handleError(error: any): Promise<never> {
         // Safely log error details
         try {
+            // #region agent log
+            if (typeof window !== 'undefined') {
+                fetch('http://127.0.0.1:7242/ingest/839c7757-441a-490f-a720-0ae555f4ea7b',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'api-client.ts:102',message:'API error occurred',data:{url:error?.config?.url || 'unknown',baseURL:error?.config?.baseURL || 'none',method:error?.config?.method || 'unknown',status:error?.response?.status || 'no status',statusText:error?.response?.statusText || 'no status text',errorMessage:error?.message || 'no message'},timestamp:Date.now(),sessionId:'debug-session',runId:'run2',hypothesisId:'D'})}).catch(()=>{});
+            }
+            // #endregion
             // console.warn('API Error:', error?.message || 'Unknown error');
             /*
             console.error('API Error Details:', {

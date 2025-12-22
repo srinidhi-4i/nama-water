@@ -2,22 +2,11 @@
 
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
-import { authService } from "@/services/auth.service"
 import { waterShutdownService } from "@/services/watershutdown.service"
-import { menuService } from "@/services/menu.service"
-import { Header } from "@/components/layout/Header"
-import { LogoSection } from "@/components/layout/LogoSection"
-import { Sidebar } from "@/components/layout/Sidebar"
-import { Footer } from "@/components/layout/Footer"
-import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-// import { Label } from "@/components/ui/label" // Replaced by FloatingLabel
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { DataTable } from "@/components/ui/data-table"
 import { FloatingLabelInput, FloatingLabel } from "@/components/ui/floating-label"
-// import { DateRangePicker } from "@/components/ui/date-range-picker" // Not used in reference code block?
-import { Search } from "lucide-react"
 import { 
   WaterShutdownNotification, 
   WaterShutdownFilters,
@@ -26,19 +15,24 @@ import {
   RegionItem,
   EventTypeItem
 } from "@/types/watershutdown.types"
-import { MenuItem } from "@/types/menu"
 import { format } from "date-fns"
 import Link from "next/link"
-import { getWaterShutdownColumns } from "@/app/watershutdown/shutdownNotification/columns"
+import { getWaterShutdownColumns } from "@/app/(dashboard)/watershutdown/list/columns"
 import { NotificationViewEdit } from "@/components/watershutdown/notification-view-edit"
-
-import { useAuth } from "@/components/providers/AuthProvider"
+import { useLanguage } from "@/components/providers/LanguageProvider"
 
 export default function WaterShutdownList() {
+  // #region agent log
+  fetch('http://127.0.0.1:7242/ingest/839c7757-441a-490f-a720-0ae555f4ea7b',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'WaterShutdownList.tsx:24',message:'WaterShutdownList component started',data:{},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
+  // #endregion
   const router = useRouter()
-  const { userDetails } = useAuth()
-  const [language, setLanguage] = useState<"EN" | "AR">("EN")
-  const [menuItems, setMenuItems] = useState<MenuItem[]>([])
+  // #region agent log
+  fetch('http://127.0.0.1:7242/ingest/839c7757-441a-490f-a720-0ae555f4ea7b',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'WaterShutdownList.tsx:29',message:'Before useLanguage hook',data:{},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'C'})}).catch(()=>{});
+  // #endregion
+  const { language } = useLanguage()
+  // #region agent log
+  fetch('http://127.0.0.1:7242/ingest/839c7757-441a-490f-a720-0ae555f4ea7b',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'WaterShutdownList.tsx:32',message:'After useLanguage hook',data:{language},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'C'})}).catch(()=>{});
+  // #endregion
   const [notifications, setNotifications] = useState<WaterShutdownNotification[]>([])
   const [isLoading, setIsLoading] = useState(false)
   
@@ -52,7 +46,6 @@ export default function WaterShutdownList() {
   const [fromDate, setFromDate] = useState<Date | undefined>()
   const [toDate, setToDate] = useState<Date | undefined>()
   const [searchQuery, setSearchQuery] = useState("")
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false)
 
   // View/Edit State
   const [showViewEdit, setShowViewEdit] = useState(false)
@@ -61,7 +54,9 @@ export default function WaterShutdownList() {
   const [isDetailLoading, setIsDetailLoading] = useState(false)
 
   useEffect(() => {
-    loadMenuData()
+    // #region agent log
+    fetch('http://127.0.0.1:7242/ingest/839c7757-441a-490f-a720-0ae555f4ea7b',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'WaterShutdownList.tsx:47',message:'useEffect triggered',data:{},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
+    // #endregion
     loadMasterData()
     loadNotifications()
   }, [])
@@ -73,24 +68,6 @@ export default function WaterShutdownList() {
         setEventMaster(data.eventTypes);
     } catch (error) {
         console.error('Error loading master data', error)
-    }
-  }
-
-  const loadMenuData = async () => {
-    try {
-      const data = await menuService.getMenuDetails()
-      if (data && data.length > 0) {
-        const transformedData = data.map((item: any) => ({
-          MenuID: item.MenuId,
-          MenuNameEn: item.Menu_Name_EN,
-          MenuNameAr: item.Menu_Name_AR,
-          MenuURL: item.Target_Url,
-          ApplicationNameEn: item.ApplicationNameEn || "General"
-        }))
-        setMenuItems(transformedData)
-      }
-    } catch (error) {
-      console.error('Error loading menu data:', error)
     }
   }
 
@@ -151,10 +128,6 @@ export default function WaterShutdownList() {
     }
   }
 
-  const handleLanguageChange = (lang: "EN" | "AR") => {
-    setLanguage(lang)
-  }
-
   const handleView = async (id: string) => {
     setIsDetailLoading(true)
     try {
@@ -199,54 +172,41 @@ export default function WaterShutdownList() {
       onComplete: (id: string) => console.log("Complete", id),
   }); // In a real app, wrap in useMemo
 
+  // #region agent log
+  fetch('http://127.0.0.1:7242/ingest/839c7757-441a-490f-a720-0ae555f4ea7b',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'WaterShutdownList.tsx:200',message:'Before return JSX',data:{showViewEdit,hasSelectedId:!!selectedNotificationId},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
+  // #endregion
   return (
-    <div className="flex flex-col min-h-screen">
-      <Header 
-        language={language} 
-        onLanguageChange={handleLanguageChange} 
-        userDetails={userDetails} 
-        onMenuClick={() => setIsSidebarOpen(!isSidebarOpen)}
-      />
-      <LogoSection />
-      <div className="flex flex-1">
-        <Sidebar 
-          menuItems={menuItems} 
-          language={language} 
-          isOpen={isSidebarOpen} 
-          onMobileClose={() => setIsSidebarOpen(false)} 
-        />
-
-        <main className="flex-1 bg-slate-100  overflow-x-hidden">
-            <div className="flex flex-col sm:flex-row items-center justify-between mb-6 gap-4 px-2 shadow-md">
-                 <div className="flex items-center gap-4 text-center sm:text-left h-12 ">
-                    <h1 className="text-2xl font-bold text-[#006A72]">
-                      Nama Water Operation Notification
-                    </h1>
-                 </div>
-                 
-                <div className="text-sm text-gray-500">
-                  <Link 
-                    href="/branchhome"
-                    className="font-semibold text-[#006A72] hover:underline cursor-pointer"
-                  >
-                    Home
-                  </Link>
-                  <span> &gt; Water Shutdown Notification</span>
-                </div>
-            </div>
-            <div className="px-6">
-            {showViewEdit && selectedNotificationId ? (
-              <NotificationViewEdit 
-                notificationId={selectedNotificationId}
-                mode={viewMode}
-                onBack={handleBack}
-                language={language}
-              />
-            ) : (
-              <>
-                <div className="bg-white p-4 rounded-lg shadow-sm border mb-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-                   {/* ... filters ... */}
+    <div className="flex-1 bg-slate-100 overflow-x-hidden pb-8 min-h-[calc(100vh-200px)]">
+      <div className="flex flex-col sm:flex-row items-center justify-between mb-6 gap-4 px-2 shadow-md bg-white">
+        <div className="flex items-center gap-4 text-center sm:text-left h-12">
+          <h1 className="text-2xl font-bold text-[#006A72]">
+            Nama Water Operation Notification
+          </h1>
+        </div>
+        
+        <div className="text-sm text-gray-500">
+          <Link 
+            href="/branchhome"
+            className="font-semibold text-[#006A72] hover:underline cursor-pointer"
+          >
+            Home
+          </Link>
+          <span> &gt; Water Shutdown Notification</span>
+        </div>
+      </div>
+      
+      <div className="px-6">
+        {showViewEdit && selectedNotificationId ? (
+          <NotificationViewEdit 
+            notificationId={selectedNotificationId}
+            mode={viewMode}
+            onBack={handleBack}
+            language={language}
+          />
+        ) : (
+          <>
+            <div className="bg-white p-4 rounded-lg shadow-sm border mb-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
                 <div className="relative">
                   <Select value={selectedRegion} onValueChange={(value) => setSelectedRegion(value as Region | "ALL")}>
                     <SelectTrigger id="region" className="bg-white w-full h-[50px] pt-4">
@@ -345,21 +305,16 @@ export default function WaterShutdownList() {
             </div>
             
             <div className="px-6">
-                <DataTable
-                  data={notifications}
-                  columns={tableColumns}
-                  isLoading={isLoading || isDetailLoading}
-                  emptyMessage="No water shutdown notifications found"
-                />
+              <DataTable
+                data={notifications}
+                columns={tableColumns}
+                isLoading={isLoading || isDetailLoading}
+                emptyMessage="No water shutdown notifications found"
+              />
             </div>
           </>
         )}
       </div>
-              
-          </main>
-      </div>
-
-      <Footer />
     </div>
   )
 }

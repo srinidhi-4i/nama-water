@@ -69,7 +69,10 @@ export interface GuestService {
     Menu_Icon: string
     Target_Url: string
     BracnhServiceURL?: string
+    BranchServiceURL?: string
     BranchServiceEnablementFlag?: number
+    PersonTypeCode?: string
+    quickMenu?: string
     order: number
 }
 

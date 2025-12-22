@@ -12,8 +12,8 @@ export default function GuestUserServicesPage() {
       {/* Breadcrumbs */}
       <div className="flex flex-col sm:flex-row items-center justify-between mb-6 gap-4 px-2 shadow-md bg-white">
         <div className="flex items-center gap-4 text-center sm:text-left h-12 px-4">
-          <h1 className="text-xl font-bold text-[#006A72]">
-            Branch Operations
+        <h1 className="text-2xl font-bold text-[#006A72]">
+            {language === "EN" ? "Guest User Services" : "خدمات المستخدم الضيف"}
           </h1>
         </div>
             
@@ -22,7 +22,7 @@ export default function GuestUserServicesPage() {
             href="/branchhome"
             className="font-semibold text-[#006A72] hover:underline cursor-pointer"
           >
-            Home
+             {language === "EN" ? "Home" : "الرئيسية"}
           </Link>
           <span> &gt; {language === "EN" ? "Guest User Services" : "خدمات المستخدم الضيف"}</span>
         </div>
