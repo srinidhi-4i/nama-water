@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import Link from "next/link"
+import PageHeader from "@/components/layout/PageHeader"
 
 export default function AppointmentGenerateToken() {
   const { language } = useLanguage()
@@ -18,23 +19,13 @@ export default function AppointmentGenerateToken() {
 
   return (
     <div className="flex-1 bg-slate-100 overflow-x-hidden pb-8 min-h-[calc(100vh-200px)]">
-      <div className="flex flex-col sm:flex-row items-center justify-between mb-6 gap-4 px-2 shadow-md bg-white">
-        <div className="flex items-center gap-4 text-center sm:text-left h-12">
-          <h1 className="text-2xl font-bold text-[#006A72]">
-            {language === "EN" ? "Generate Token" : "إنشاء رمز"}
-          </h1>
-        </div>
-        
-        <div className="text-sm text-gray-500">
-          <Link 
-            href="/branchhome"
-            className="font-semibold text-[#006A72] hover:underline cursor-pointer"
-          >
-            {language === "EN" ? "Home" : "الرئيسية"}
-          </Link>
-          <span> &gt; {language === "EN" ? "Generate Token" : "إنشاء رمز"}</span>
-        </div>
-      </div>
+      <PageHeader
+        language={language}
+        titleEn="Generate Appointment Token"
+        titleAr="إنشاء رمز الموعد"
+        breadcrumbEn="Generate Appointment Token"
+        breadcrumbAr="إنشاء رمز الموعد"
+      />
 
       <div className="px-6">
         <div className="max-w-2xl mx-auto">

@@ -10,6 +10,7 @@ import Link from "next/link"
 import { CreateTemplate } from "@/components/watershutdown/create-template"
 import { TemplateViewEdit } from "@/components/watershutdown/template-view-edit"
 import { getWaterShutdownTemplateColumns } from "@/app/(dashboard)/watershutdown/templates/columns"
+import PageHeader from "@/components/layout/PageHeader"
 
 export default function WaterShutdownTemplatesPage() {
   const { language } = useLanguage()
@@ -94,22 +95,14 @@ export default function WaterShutdownTemplatesPage() {
     if (showCreate) {
       return (
         <>
-          <div className="flex flex-col sm:flex-row items-center justify-between mb-6 gap-4 px-2 shadow-md bg-white">
-            <div className="flex items-center gap-4 text-center sm:text-left h-12">
-              <h1 className="text-2xl font-bold text-[#006A72]">
-                {language === "EN" ? "Water Shut Down Template creation" : "إنشاء قالب إيقاف المياه"}
-              </h1>
-            </div>
-            
-            <div className="text-sm text-gray-500">
-              <Link 
-                href="/branchhome"
-                className="font-semibold text-[#006A72] hover:underline cursor-pointer"
-              >
-                {language === "EN" ? "Home" : "الرئيسية"}
-              </Link>
-              <span> &gt; {language === "EN" ? "create new Water Shutdown Template" : "إنشاء قالب إيقاف مياه جديد"}</span>
-            </div>
+    <div className="flex-1 bg-slate-100 overflow-x-hidden ">
+           <PageHeader
+             language={language}
+             titleEn="Water Shut Down Template creation"
+             titleAr="إنشاء قالب إيقاف المياه"
+             breadcrumbEn="Water Shut Down Template creation"
+             breadcrumbAr="إنشاء قالب إيقاف المياه"
+           />
           </div>
           <div className="px-6">
             <CreateTemplate onBack={handleBack} />
@@ -121,22 +114,14 @@ export default function WaterShutdownTemplatesPage() {
     if (showViewEdit && selectedTemplate) {
       return (
         <>
-          <div className="flex flex-col sm:flex-row items-center justify-between mb-6 gap-4 px-2 shadow-md bg-white">
-            <div className="flex items-center gap-4 text-center sm:text-left h-12">
-              <h1 className="text-2xl font-bold text-[#006A72]">
-                {language === "EN" ? `Water Shut Down Template ${viewMode === "view" ? "View" : "Edit"}` : `عرض قالب إيقاف المياه ${viewMode === "view" ? "عرض" : "تعديل"}`}
-              </h1>
-            </div>
-            
-            <div className="text-sm text-gray-500">
-              <Link 
-                href="/branchhome"
-                className="font-semibold text-[#006A72] hover:underline cursor-pointer"
-              >
-                {language === "EN" ? "Home" : "الرئيسية"}
-              </Link>
-              <span> &gt; {viewMode === "view" ? (language === "EN" ? "View" : "عرض") : (language === "EN" ? "Edit" : "تعديل")} {language === "EN" ? "Water Shutdown Template" : "قالب إيقاف المياه"}</span>
-            </div>
+    <div className="flex-1 bg-slate-100 overflow-x-hidden ">
+           <PageHeader
+             language={language}
+             titleEn="Water Shut Down Template creation"
+             titleAr="إنشاء قالب إيقاف المياه"
+             breadcrumbEn="Water Shut Down Template creation"
+             breadcrumbAr="إنشاء قالب إيقاف المياه"
+           />
           </div>
           <div className="px-6">
             <TemplateViewEdit 
@@ -152,22 +137,14 @@ export default function WaterShutdownTemplatesPage() {
 
     return (
       <>
-        <div className="flex flex-col sm:flex-row items-center justify-between mb-6 gap-4 px-2 shadow-md bg-white">
-          <div className="flex items-center gap-4 text-center sm:text-left h-12">
-            <h1 className="text-2xl font-bold text-[#006A72]">
-              {language === "EN" ? "Water Shut Down Templates" : "قوالب إيقاف المياه"}
-            </h1>
-          </div>
-          
-          <div className="text-sm text-gray-500">
-            <Link 
-              href="/branchhome"
-              className="font-semibold text-[#006A72] hover:underline cursor-pointer"
-            >
-              {language === "EN" ? "Home" : "الرئيسية"}
-            </Link>
-            <span> &gt; {language === "EN" ? "Water Shutdown Notification" : "إشعار إيقاف المياه"}</span>
-          </div>
+    <div className="flex-1 bg-slate-100 overflow-x-hidden ">
+          <PageHeader
+            language={language}
+            titleEn="Water Shut Down Templates"
+            titleAr="قوالب إيقاف المياه"
+            breadcrumbEn="Water Shut Down Templates"
+            breadcrumbAr="قوالب إيقاف المياه"
+          />
         </div>
 
         <div className="px-6">

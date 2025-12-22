@@ -74,7 +74,7 @@ export function TemplateViewEdit({ template, mode, onBack, language }: TemplateV
           {/* Event Type */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <Label htmlFor="eventType">Event Type</Label>
+              <Label htmlFor="eventType" className="mb-2">Event Type</Label>
               <Select value={template.EventCode} disabled>
                 <SelectTrigger id="eventType">
                   <SelectValue placeholder="Select event type" />
@@ -91,7 +91,7 @@ export function TemplateViewEdit({ template, mode, onBack, language }: TemplateV
 
             {/* Notification Name */}
             <div>
-              <Label htmlFor="notificationName">Notification Name</Label>
+              <Label htmlFor="notificationName" className="mb-2">Notification Name</Label>
               <Select value={template.NotificationCategory} disabled>
                 <SelectTrigger id="notificationName">
                   <SelectValue placeholder="Select notification" />
@@ -108,7 +108,7 @@ export function TemplateViewEdit({ template, mode, onBack, language }: TemplateV
           {/* Arabic Text */}
           {language === "AR" ? (
             <div>
-              <Label htmlFor="arabicText">Write your arabic text here:</Label>
+              <Label htmlFor="arabicText" className="mb-2">Write your arabic text here:</Label>
               <Textarea
                 id="arabicText"
                 value={arabicText}
@@ -121,7 +121,7 @@ export function TemplateViewEdit({ template, mode, onBack, language }: TemplateV
             </div>
           ) : (
             <div>
-              <Label htmlFor="englishText">Write your english text here:</Label>
+              <Label htmlFor="englishText" className="mb-2">Write your english text here:</Label>
               <Textarea
                 id="englishText"
                 value={englishText}

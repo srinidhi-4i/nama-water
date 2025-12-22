@@ -15,6 +15,7 @@ import { EditNotification } from "@/components/notification/edit-notification"
 import { getCustomNotificationColumns } from "@/app/(dashboard)/notification-center/custom/columns"
 import { useLanguage } from "@/components/providers/LanguageProvider"
 import Link from "next/link"
+import PageHeader from "@/components/layout/PageHeader"
 
 export default function CustomNotificationList() {
   const router = useRouter()
@@ -124,23 +125,13 @@ export default function CustomNotificationList() {
   if (showCreate) {
     return (
       <div className="flex-1 bg-slate-100 overflow-x-hidden pb-8 min-h-[calc(100vh-200px)]">
-        <div className="flex flex-col sm:flex-row items-center justify-between mb-6 gap-4 px-2 shadow-md bg-white">
-          <div className="flex items-center gap-4 text-center sm:text-left h-12">
-            <h1 className="text-2xl font-bold text-[#006A72]">
-              {language === "EN" ? "Custom Notification creation" : "إنشاء إشعار مخصص"}
-            </h1>
-          </div>
-          
-          <div className="text-sm text-gray-500">
-            <Link 
-              href="/branchhome"
-              className="font-semibold text-[#006A72] hover:underline cursor-pointer"
-            >
-              {language === "EN" ? "Home" : "الرئيسية"}
-            </Link>
-            <span> &gt; {language === "EN" ? "create new Custom Notification" : "إنشاء إشعار مخصص جديد"}</span>
-          </div>
-        </div>
+        <PageHeader
+        language={language}
+        titleEn="Custom Notification"
+        titleAr="الإشعار المخصص"
+        breadcrumbEn="Custom Notification List"
+        breadcrumbAr="قائمة الإشعارات المخصصة"
+      />
         <div className="px-6">
           <CreateNotification onBack={handleBack} />
         </div>
@@ -151,23 +142,13 @@ export default function CustomNotificationList() {
   if (showEdit && selectedNotification) {
     return (
       <div className="flex-1 bg-slate-100 overflow-x-hidden pb-8 min-h-[calc(100vh-200px)]">
-        <div className="flex flex-col sm:flex-row items-center justify-between mb-6 gap-4 px-2 shadow-md bg-white">
-          <div className="flex items-center gap-4 text-center sm:text-left h-12">
-            <h1 className="text-2xl font-bold text-[#006A72]">
-              {language === "EN" ? "Custom Notification Edit" : "تعديل الإشعار المخصص"}
-            </h1>
-          </div>
-          
-          <div className="text-sm text-gray-500">
-            <Link 
-              href="/branchhome"
-              className="font-semibold text-[#006A72] hover:underline cursor-pointer"
-            >
-              {language === "EN" ? "Home" : "الرئيسية"}
-            </Link>
-            <span> &gt; {language === "EN" ? "Edit Custom Notification" : "تعديل الإشعار المخصص"}</span>
-          </div>
-        </div>
+       <PageHeader
+        language={language}
+        titleEn="Custom Notification"
+        titleAr="الإشعار المخصص"
+        breadcrumbEn="Custom Notification List"
+        breadcrumbAr="قائمة الإشعارات المخصصة"
+      />
         <div className="px-6">
           <EditNotification notification={selectedNotification} onBack={handleBack} />
         </div>
@@ -177,23 +158,15 @@ export default function CustomNotificationList() {
 
   return (
     <div className="flex-1 bg-slate-100 overflow-x-hidden pb-8 min-h-[calc(100vh-200px)]">
-      <div className="flex flex-col sm:flex-row items-center justify-between mb-6 gap-4 px-2 shadow-md bg-white">
-        <div className="flex items-center gap-4 text-center sm:text-left h-12">
-          <h1 className="text-2xl font-bold text-[#006A72]">
-            {language === "EN" ? "Custom Notification" : "الإشعار المخصص"}
-          </h1>
-        </div>
-        
-        <div className="text-sm text-gray-500">
-          <Link 
-            href="/branchhome"
-            className="font-semibold text-[#006A72] hover:underline cursor-pointer"
-          >
-            {language === "EN" ? "Home" : "الرئيسية"}
-          </Link>
-          <span> &gt; {language === "EN" ? "Custom Notification List" : "قائمة الإشعارات المخصصة"}</span>
-        </div>
-      </div>
+      
+      <PageHeader
+        language={language}
+        titleEn="Custom Notification"
+        titleAr="الإشعار المخصص"
+        breadcrumbEn="Custom Notification List"
+        breadcrumbAr="قائمة الإشعارات المخصصة"
+      />
+
 
       <div className="px-6">
         <div className="bg-white p-6 rounded-lg shadow-sm border mb-6">
@@ -272,7 +245,7 @@ export default function CustomNotificationList() {
           </div>
         </div>
         
-        <div className="px-6">
+        <div>
           <DataTable
             data={notifications}
             columns={columns}

@@ -1,5 +1,3 @@
-"use client"
-
 import WaterShutdownTemplatesPage from "@/components/pages/watershutdown/WaterShutdownTemplatesPage"
 
 

@@ -20,6 +20,7 @@ import Link from "next/link"
 import { getWaterShutdownColumns } from "@/app/(dashboard)/watershutdown/list/columns"
 import { NotificationViewEdit } from "@/components/watershutdown/notification-view-edit"
 import { useLanguage } from "@/components/providers/LanguageProvider"
+import PageHeader from "@/components/layout/PageHeader"
 
 export default function WaterShutdownList() {
   // #region agent log
@@ -176,24 +177,14 @@ export default function WaterShutdownList() {
   fetch('http://127.0.0.1:7242/ingest/839c7757-441a-490f-a720-0ae555f4ea7b',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'WaterShutdownList.tsx:200',message:'Before return JSX',data:{showViewEdit,hasSelectedId:!!selectedNotificationId},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
   // #endregion
   return (
-    <div className="flex-1 bg-slate-100 overflow-x-hidden pb-8 min-h-[calc(100vh-200px)]">
-      <div className="flex flex-col sm:flex-row items-center justify-between mb-6 gap-4 px-2 shadow-md bg-white">
-        <div className="flex items-center gap-4 text-center sm:text-left h-12">
-          <h1 className="text-2xl font-bold text-[#006A72]">
-            Nama Water Operation Notification
-          </h1>
-        </div>
-        
-        <div className="text-sm text-gray-500">
-          <Link 
-            href="/branchhome"
-            className="font-semibold text-[#006A72] hover:underline cursor-pointer"
-          >
-            Home
-          </Link>
-          <span> &gt; Water Shutdown Notification</span>
-        </div>
-      </div>
+    <div className="flex-1 bg-slate-100 overflow-x-hidden">
+      <PageHeader
+        language={language}
+        titleEn="Water Shutdown Notification"
+        titleAr="إشعارات إغلاق المياه"
+        breadcrumbEn="Water Shutdown Notification"
+        breadcrumbAr="إشعارات إغلاق المياه"
+      />
       
       <div className="px-6">
         {showViewEdit && selectedNotificationId ? (
@@ -221,14 +212,14 @@ export default function WaterShutdownList() {
                       ))}
                     </SelectContent>
                   </Select>
-                  <FloatingLabel htmlFor="region">Region</FloatingLabel>
+                  <FloatingLabel htmlFor="region">{language === "EN" ? `Region` : `المنطقة`}</FloatingLabel>
                 </div>
 
                 <div className="relative">
                   <FloatingLabelInput 
                       type="date" 
                       id="fromDate"
-                      label="From Date"
+                      label={language === "EN" ? `From Date` : `تاريخ البدء`}
                       value={fromDate ? format(fromDate, 'yyyy-MM-dd') : ''}
                       onChange={(e) => setFromDate(e.target.value ? new Date(e.target.value) : undefined)}
                       className="w-full bg-white"
@@ -239,7 +230,7 @@ export default function WaterShutdownList() {
                   <FloatingLabelInput 
                       type="date" 
                       id="toDate"
-                      label="To Date"
+                      label={language === "EN" ? `To Date` : `تاريخ الانتهاء`}
                       value={toDate ? format(toDate, 'yyyy-MM-dd') : ''}
                       onChange={(e) => setToDate(e.target.value ? new Date(e.target.value) : undefined)}
                       className="w-full bg-white"
@@ -248,10 +239,10 @@ export default function WaterShutdownList() {
 
                 <div className="flex items-end gap-2 pb-[1px]">
                   <Button onClick={handleSearch} className="bg-[#1F4E58] hover:bg-[#163a42] text-white px-6">
-                    Search
+                    {language === "EN" ? `Search` : `بحث`}
                   </Button>
                   <Button variant="outline" onClick={handleClearFilters} className="text-[#1F4E58] border-[#1F4E58] hover:bg-teal-50 px-6">
-                    Clear Filter
+                    {language === "EN" ? `Clear Filter` : `مسح الفلاتر`}
                   </Button>
                 </div>
               </div>
@@ -271,13 +262,13 @@ export default function WaterShutdownList() {
                       ))}
                     </SelectContent>
                   </Select>
-                  <FloatingLabel htmlFor="eventType">Event Type</FloatingLabel>
+                  <FloatingLabel htmlFor="eventType">{language === "EN" ? `Event Type` : `نوع الحدث`}</FloatingLabel>
                 </div>
 
                 <div className="relative lg:col-span-1">
                   <FloatingLabelInput
                       id="search"
-                      label="Search"
+                      label={language === "EN" ? `Search` : `بحث`}
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
                       onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
@@ -287,7 +278,7 @@ export default function WaterShutdownList() {
 
                 <div className="flex items-end gap-2 md:col-span-2 lg:col-span-2 pb-[1px]">
                   <Button variant="default" onClick={handleExport} className="bg-[#1F4E58] hover:bg-[#163a42] text-white">
-                    Export Excel
+                    {language === "EN" ? `Export Excel` : `تصدير إلى Excel`}
                   </Button>
                   <Button 
                     onClick={async () => {
@@ -298,18 +289,18 @@ export default function WaterShutdownList() {
                     }} 
                     className="bg-[#E54B4B] hover:bg-[#d03b3b] text-white"
                   >
-                    Create New Notification
+                    {language === "EN" ? `Create New Notification` : `إنشاء إشعار جديد`}
                   </Button>
                 </div>
               </div>
             </div>
             
-            <div className="px-6">
+            <div >
               <DataTable
                 data={notifications}
                 columns={tableColumns}
                 isLoading={isLoading || isDetailLoading}
-                emptyMessage="No water shutdown notifications found"
+                emptyMessage={language === "EN" ? `No water shutdown notifications found` : `لا يوجد إشعارات إغلاق المياه`}
               />
             </div>
           </>

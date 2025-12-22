@@ -11,6 +11,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { CalendarIcon, MapPin, Users, Leaf, Clock } from "lucide-react"
 import Link from "next/link"
+import PageHeader from "@/components/layout/PageHeader"
 
 export default function WetlandSupervisorActions() {
   const { language } = useLanguage()
@@ -51,24 +52,13 @@ export default function WetlandSupervisorActions() {
 
   return (
     <div className="flex-1 bg-slate-100 overflow-x-hidden pb-8 min-h-[calc(100vh-200px)]">
-      <div className="flex flex-col sm:flex-row items-center justify-between mb-6 gap-4 px-2 shadow-md bg-white">
-        <div className="flex items-center gap-4 text-center sm:text-left h-12">
-          <h1 className="text-2xl font-bold text-[#006A72] flex items-center gap-3">
-            <Leaf className="h-8 w-8 text-green-600" />
-            {language === "EN" ? "Wetland Booking" : "حجز الأراضي الرطبة"}
-          </h1>
-        </div>
-        
-        <div className="text-sm text-gray-500">
-          <Link 
-            href="/branchhome"
-            className="font-semibold text-[#006A72] hover:underline cursor-pointer"
-          >
-            {language === "EN" ? "Home" : "الرئيسية"}
-          </Link>
-          <span> &gt; {language === "EN" ? "Wetland Booking" : "حجز الأراضي الرطبة"}</span>
-        </div>
-      </div>
+      <PageHeader
+        language={language}
+        titleEn="Wetland Booking"
+        titleAr="حجز الأراضي الرطبة"
+        breadcrumbEn="Wetland Booking"
+        breadcrumbAr="حجز الأراضي الرطبة"
+      />
 
       <div className="px-6">
         <div className="max-w-6xl mx-auto">

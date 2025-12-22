@@ -38,81 +38,78 @@ export const GuestUserServices: React.FC = () => {
   const { language } = useLanguage()
   const [serviceGroups, setServiceGroups] = useState<GuestServiceGroup[]>([])
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
 
   const loadServices = async () => {
     try {
       setLoading(true)
+      setError(null)
+      setServiceGroups([])
       // Get language and pass to API call
       const lang = language || "EN"
-      const menuData = await menuService.getMenuData(lang)
+      const rawMenuData = await menuService.getMenuData(lang)
       
-      if (!Array.isArray(menuData) || menuData.length === 0) {
+      if (!Array.isArray(rawMenuData) || rawMenuData.length === 0) {
         setServiceGroups([])
         return
       }
 
+      // Transform raw menu data into a more consistent format
+      const menuData = menuService.transformMenuItems(rawMenuData);
+
       // Step 1: Find parent menu with Parent_Id === null (GetParentMenu logic from e-poral-paw)
-      const parentMenu = menuData.find((m: any) => {
-        const pId = m.Parent_Id || m.ParentId
-        return pId === null || pId === undefined
-      })
+      const parentMenu = menuData.find((m) => m.parentId === null || m.parentId === undefined);
 
       if (!parentMenu) {
         setServiceGroups([])
         return
       }
 
-      const parentId = parentMenu.MenuId || parentMenu.MenuID
+      const parentId = parentMenu.menuId;
 
       // Step 2: Filter children by criteria matching e-poral-paw logic
       // Filter by: Parent_Id === parentId, GuestBranchServiceURLS, PersonTypeCode, quickMenu === "1"
       const services: GuestService[] = menuData
-        .filter((m: any) => {
-          const mParentId = m.Parent_Id || m.ParentId
-          const branchServiceURL = m.BracnhServiceURL || m.BranchServiceURL || ""
-          const personTypeCode = m.PersonTypeCode
-          const quickMenu = m.quickMenu
-          const menuId = m.MenuId || m.MenuID
-
+        .filter((m) => {
           // Must be child of parent
-          if (mParentId !== parentId) return false
+          if (m.parentId !== parentId) return false
 
           // Filter out Guest User Service itself (MenuId === 2)
-          if (menuId === 2) return false
+          if (m.menuId === 2) return false
 
           // Must be in GuestBranchServiceURLS
-          if (!GUEST_BRANCH_SERVICE_URLS.includes(branchServiceURL)) return false
+          if (!GUEST_BRANCH_SERVICE_URLS.includes(m.branchServiceURL)) return false
 
           // PersonTypeCode should match (null/undefined means all, or "IND")
-          if (personTypeCode !== undefined && personTypeCode !== null && personTypeCode !== "IND") {
+          if (m.personTypeCode !== undefined && m.personTypeCode !== null && m.personTypeCode !== "IND") {
             return false
           }
 
           // Only show quickMenu === "1" items
-          if (quickMenu !== "1") return false
+          if (m.quickMenu !== "1") return false
 
           return true
         })
-        .map((m: any) => ({
-          MenuId: m.MenuId || m.MenuID,
-          Module_Name: m.Module_Name || m.Menu_Name_EN || m.MenuNameEn || "",
-          Module_Name_Arabic: m.Module_Name_Arabic || m.Menu_Name_AR || m.MenuNameAr || "",
-          Menu_Icon: m.Menu_Icon || m.Icon_Class || "",
-          Target_Url: m.Target_Url || m.TargetUrl || "",
-          BracnhServiceURL: m.BracnhServiceURL || m.BranchServiceURL || "",
-          BranchServiceEnablementFlag: m.BranchServiceEnablementFlag ?? 1,
-          PersonTypeCode: m.PersonTypeCode,
+        .map((m) => ({
+          MenuId: m.menuId,
+          Module_Name: m.moduleNameEn,
+          Module_Name_Arabic: m.moduleNameAr,
+          Menu_Icon: m.iconClass,
+          Target_Url: m.targetUrl,
+          BracnhServiceURL: m.branchServiceURL,
+          BranchServiceEnablementFlag: m.branchServiceEnablementFlag,
+          PersonTypeCode: m.personTypeCode,
           quickMenu: m.quickMenu,
-          order: m.order || m.Order || 0
+          order: m.order
         }))
         .sort((a, b) => a.order - b.order)
 
       // Step 3: Group under "Raise Complaint" parent (matching reference screenshot)
       if (services.length > 0) {
         setServiceGroups([{
-          title: parentMenu.Module_Name || parentMenu.Menu_Name_EN || parentMenu.MenuNameEn || "Raise Complaint",
-          titleAr: parentMenu.Module_Name_Arabic || parentMenu.Menu_Name_AR || parentMenu.MenuNameAr || "تقديم شكوى",
-          icon: parentMenu.Menu_Icon || parentMenu.Icon_Class || "AlertCircle",
+          title: parentMenu.moduleNameEn || "Raise Complaint",
+          titleAr: parentMenu.moduleNameAr || "تقديم شكوى",
+          icon: parentMenu.iconClass || "AlertCircle",
           services: services
         }])
       } else {
@@ -120,6 +117,7 @@ export const GuestUserServices: React.FC = () => {
       }
     } catch (error) {
       console.error("Error loading guest services:", error)
+      setError("Failed to load services. Please try again.")
       setServiceGroups([])
     } finally {
       setLoading(false)

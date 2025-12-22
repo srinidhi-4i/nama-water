@@ -10,6 +10,7 @@ import { TemplateViewEdit } from "@/components/notification/template-view-edit"
 import { getNotificationTemplateColumns } from "@/app/(dashboard)/notification-center/templates/columns"
 import { useLanguage } from "@/components/providers/LanguageProvider"
 import Link from "next/link"
+import PageHeader from "@/components/layout/PageHeader"
 
 export default function NotificationTemplateList() {
   const router = useRouter()
@@ -91,23 +92,13 @@ export default function NotificationTemplateList() {
   if (showViewEdit && selectedTemplate) {
     return (
       <div className="flex-1 bg-slate-100 overflow-x-hidden pb-8 min-h-[calc(100vh-200px)]">
-        <div className="flex flex-col sm:flex-row items-center justify-between mb-6 gap-4 px-2 shadow-md bg-white">
-          <div className="flex items-center gap-4 text-center sm:text-left h-12">
-            <h1 className="text-2xl font-bold text-[#006A72]">
-              {language === "EN" ? `Notification Template ${viewMode === "view" ? "View" : "Edit"}` : `عرض قالب الإشعار ${viewMode === "view" ? "عرض" : "تعديل"}`}
-            </h1>
-          </div>
-          
-          <div className="text-sm text-gray-500">
-            <Link 
-              href="/branchhome"
-              className="font-semibold text-[#006A72] hover:underline cursor-pointer"
-            >
-              {language === "EN" ? "Home" : "الرئيسية"}
-            </Link>
-            <span> &gt; {viewMode === "view" ? (language === "EN" ? "View" : "عرض") : (language === "EN" ? "Edit" : "تعديل")} {language === "EN" ? "Notification Template" : "قالب الإشعار"}</span>
-          </div>
-        </div>
+        <PageHeader
+          language={language}
+          titleEn="Notification Template"
+          titleAr="قالب الإشعار"
+          breadcrumbEn="Notification Template List"
+          breadcrumbAr="قائمة قوالب الإشعارات"
+        />
         <div className="px-6">
           <TemplateViewEdit
             template={selectedTemplate}
@@ -124,23 +115,13 @@ export default function NotificationTemplateList() {
 
   return (
     <div className="flex-1 bg-slate-100 overflow-x-hidden pb-8 min-h-[calc(100vh-200px)]">
-      <div className="flex flex-col sm:flex-row items-center justify-between mb-6 gap-4 px-2 shadow-md bg-white">
-        <div className="flex items-center gap-4 text-center sm:text-left h-12">
-          <h1 className="text-2xl font-bold text-[#006A72]">
-            {language === "EN" ? "Notification Template" : "قالب الإشعار"}
-          </h1>
-        </div>
-        
-        <div className="text-sm text-gray-500">
-          <Link 
-            href="/branchhome"
-            className="font-semibold text-[#006A72] hover:underline cursor-pointer"
-          >
-            {language === "EN" ? "Home" : "الرئيسية"}
-          </Link>
-          <span> &gt; {language === "EN" ? "Notification Template List" : "قائمة قوالب الإشعارات"}</span>
-        </div>
-      </div>
+      <PageHeader
+        language={language}
+        titleEn="Notification Template"
+        titleAr="قالب الإشعار"
+        breadcrumbEn="Notification Template List"
+        breadcrumbAr="قائمة قوالب الإشعارات"
+      />
 
       <div className="px-6">
         <DataTable 
