@@ -8,9 +8,7 @@ class ApiClient {
         this.client = axios.create({
             // No baseURL - use relative URLs to leverage Next.js rewrites in next.config.ts
             withCredentials: true,
-            headers: {
-                'Content-Type': 'application/json',
-            },
+            headers: {},
         })
 
         // Request interceptor
@@ -18,10 +16,25 @@ class ApiClient {
             (config) => {
                 // #region agent log
                 if (typeof window !== 'undefined') {
-                    fetch('http://127.0.0.1:7242/ingest/839c7757-441a-490f-a720-0ae555f4ea7b',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'api-client.ts:18',message:'API request made',data:{url:config.url,method:config.method,baseURL:config.baseURL,fullUrl:config.url ? (config.baseURL || '') + config.url : 'unknown'},timestamp:Date.now(),sessionId:'debug-session',runId:'run2',hypothesisId:'D'})}).catch(()=>{});
+                    fetch('http://127.0.0.1:7242/ingest/839c7757-441a-490f-a720-0ae555f4ea7b', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ location: 'api-client.ts:18', message: 'API request made', data: { url: config.url, method: config.method, baseURL: config.baseURL, fullUrl: config.url ? (config.baseURL || '') + config.url : 'unknown' }, timestamp: Date.now(), sessionId: 'debug-session', runId: 'run2', hypothesisId: 'D' }) }).catch(() => { });
                 }
                 // #endregion
-                // You can add auth tokens here if needed
+
+                // Add auth token
+                if (typeof window !== 'undefined') {
+                    try {
+                        const userStr = localStorage.getItem('wcb/APtiypx/sw7lu83P7A==')
+                        if (userStr) {
+                            const user = JSON.parse(userStr)
+                            const token = user.token || user.AuraToken
+                            if (token) {
+                                config.headers.Authorization = `Bearer ${token}`
+                            }
+                        }
+                    } catch (error) {
+                        console.error("Error parsing auth token", error)
+                    }
+                }
                 return config
             },
             (error) => {
@@ -53,7 +66,8 @@ class ApiClient {
                     localStorage.removeItem('wcb/APtiypx/sw7lu83P7A==')
                     sessionStorage.removeItem('v!s#c')
                     localStorage.clear()
-                    window.location.href = '/login'
+                    // window.location.href = '/login' // Debugging
+                    console.warn('Session expired (604) - Auto-logout disabled for debugging')
                 }
                 throw new Error('Session expired. Please login again.')
 
@@ -68,7 +82,8 @@ class ApiClient {
                     localStorage.removeItem('brUd/APtiypx/sw7lu83P7A==')
                     localStorage.removeItem('wcb/APtiypx/sw7lu83P7A==')
                     localStorage.clear()
-                    window.location.href = '/login'
+                    // window.location.href = '/login' // Debugging
+                    console.warn('Session expired (612) - Auto-logout disabled for debugging')
                 }
                 throw new Error('Session expired. Please login again.')
 
@@ -107,7 +122,7 @@ class ApiClient {
         try {
             // #region agent log
             if (typeof window !== 'undefined') {
-                fetch('http://127.0.0.1:7242/ingest/839c7757-441a-490f-a720-0ae555f4ea7b',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'api-client.ts:102',message:'API error occurred',data:{url:error?.config?.url || 'unknown',baseURL:error?.config?.baseURL || 'none',method:error?.config?.method || 'unknown',status:error?.response?.status || 'no status',statusText:error?.response?.statusText || 'no status text',errorMessage:error?.message || 'no message'},timestamp:Date.now(),sessionId:'debug-session',runId:'run2',hypothesisId:'D'})}).catch(()=>{});
+                fetch('http://127.0.0.1:7242/ingest/839c7757-441a-490f-a720-0ae555f4ea7b', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ location: 'api-client.ts:102', message: 'API error occurred', data: { url: error?.config?.url || 'unknown', baseURL: error?.config?.baseURL || 'none', method: error?.config?.method || 'unknown', status: error?.response?.status || 'no status', statusText: error?.response?.statusText || 'no status text', errorMessage: error?.message || 'no message' }, timestamp: Date.now(), sessionId: 'debug-session', runId: 'run2', hypothesisId: 'D' }) }).catch(() => { });
             }
             // #endregion
             // console.warn('API Error:', error?.message || 'Unknown error');
@@ -135,9 +150,10 @@ class ApiClient {
             if (status === 401 || status === 403) {
                 // Unauthorized - redirect to login
                 if (typeof window !== 'undefined') {
-                    localStorage.clear()
-                    sessionStorage.clear()
-                    window.location.href = '/login'
+                    // localStorage.clear()
+                    // sessionStorage.clear()
+                    // window.location.href = '/login' // Commented out for debugging
+                    console.warn('Session expired (401/403) - Auto-logout disabled for debugging')
                 }
                 return Promise.reject(new Error('Session expired. Please login again.'))
             }
@@ -175,18 +191,18 @@ class ApiClient {
             })
         }
 
-        return this.client.post(url, formData, {
-            ...config,
-            headers: {
-                'Content-Type': 'multipart/form-data',
-                ...config?.headers,
-            },
-        })
+        return this.client.post(url, formData, config)
     }
 
     // POST request with JSON (for cases where JSON is needed)
     async postJSON<T>(url: string, data?: any, config?: AxiosRequestConfig): Promise<T> {
-        return this.client.post(url, data, config)
+        return this.client.post(url, data, {
+            ...config,
+            headers: {
+                ...config?.headers,
+                'Content-Type': 'application/json',
+            },
+        })
     }
 
     // PUT request
@@ -203,11 +219,7 @@ class ApiClient {
     async simplePost<T>(url: string): Promise<T> {
         // Create an empty FormData object to properly generate the multipart boundary
         const formData = new FormData()
-        return this.client.post(url, formData, {
-            headers: {
-                'Content-Type': 'multipart/form-data',
-            },
-        })
+        return this.client.post(url, formData)
     }
 }
 

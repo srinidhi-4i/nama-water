@@ -5,11 +5,14 @@ import { MenuItem, Announcement, CommonDetails } from '@/types'
 export const GUEST_BRANCH_SERVICE_URLS = [
     "ReportWaterLeakBranchOperation",
     "GenericComplaintsBranch",
-    "VehicleComplaintsBranch",
-    "ReportQualityBop",
+    "ReportWaterLeakingBop",
+    "ReportCompanyVehiclesBop",
     "ContractorWorkComplaintBranch",
+    "ReportQualityBop",
+    "ReportHighPressure",
+    "WastewaterServiceBranch",
     "WaterOverflowBranch",
-    "ReportHighPressure"
+    "SewerOdorComplaintBranch"
 ]
 
 // Default menu items (fallback when API fails)
@@ -51,10 +54,20 @@ export const menuService = {
         return urlMap[oldUrl] || oldUrl
     },
 
-    transformMenuItems(items: any[]): MenuItem[] {
-        if (!items || !Array.isArray(items)) return []
+    transformMenuItems(items: any): MenuItem[] {
+        let itemsArray: any[] = []
 
-        return items.map(item => {
+        if (Array.isArray(items)) {
+            itemsArray = items
+        } else if (items && typeof items === 'object') {
+            // Support formats like { Data: [...] }, { Table: [...] }, { MenuData: [...] }
+            itemsArray = items.Data || items.Table || items.MenuData || items.Table1 || []
+            if (!Array.isArray(itemsArray)) itemsArray = []
+        }
+
+        if (itemsArray.length === 0) return []
+
+        return itemsArray.map(item => {
             let appName = item.ApplicationNameEn || "General";
             const nameEn = item.Menu_Name_EN || item.MenuNameEn || "";
 
@@ -79,7 +92,7 @@ export const menuService = {
      */
     async getMenuDetails(): Promise<MenuItem[]> {
         try {
-            const response = await apiClient.simplePost<any[]>('Menu/GetMenuDetails')
+            const response = await apiClient.simplePost<any[]>('/Menu/GetMenuDetails')
 
             // If response is valid and has data, return it
             if (response && Array.isArray(response) && response.length > 0) {
@@ -87,12 +100,25 @@ export const menuService = {
             }
 
             // Otherwise return default menu items
-            console.log('Using default menu items as fallback (API returned empty)')
+            console.log('Using default menu items as fallback (API returned empty or unparseable)')
             return DEFAULT_MENU_ITEMS
         } catch (error) {
             console.warn('Using default menu items due to API error:', error)
             return DEFAULT_MENU_ITEMS
         }
+    },
+
+    /**
+     * Get default menu items synchronously (mapped for sidebar)
+     */
+    getMenuDetailsSync(): any[] {
+        return DEFAULT_MENU_ITEMS.map(item => ({
+            MenuID: item.MenuId,
+            MenuNameEn: item.Menu_Name_EN,
+            MenuNameAr: item.Menu_Name_AR,
+            MenuURL: item.Target_Url,
+            ApplicationNameEn: item.ApplicationNameEn || "General"
+        }))
     },
 
     /**
@@ -105,23 +131,23 @@ export const menuService = {
             formData.append("lang", lang)
             formData.append("customerType", "IND")
             formData.append("token", "1221323324")
-            
+
             const response = await apiClient.post<any>('/Menu/GetMenudata', formData)
-            
+
             // Handle StatusCode 605 response structure (matching e-poral-paw)
             if (response?.StatusCode === 605 && Array.isArray(response.Data)) {
                 return response.Data
             }
-            
+
             // Fallback: try to extract data if response structure is different
             if (Array.isArray(response)) {
                 return response
             }
-            
+
             if (response?.Data && Array.isArray(response.Data)) {
                 return response.Data
             }
-            
+
             return []
         } catch (error) {
             console.warn('Error fetching menu data:', error)
@@ -135,7 +161,7 @@ export const menuService = {
      */
     async getAnnouncements(): Promise<Announcement[]> {
         try {
-            const response = await apiClient.simplePost<Announcement[]>('Menu/GetAnnouncementData')
+            const response = await apiClient.simplePost<Announcement[]>('/Menu/GetAnnouncementData')
             return response || []
         } catch (error) {
             console.warn('Error fetching announcements (using empty fallback):', error)
@@ -149,11 +175,25 @@ export const menuService = {
      */
     async getCommonDetails(): Promise<CommonDetails> {
         try {
-            const response = await apiClient.simplePost<CommonDetails>('Common/GetCommonDetails')
+            const response = await apiClient.simplePost<CommonDetails>('/Common/GetCommonDetails')
             return response
         } catch (error) {
             console.error('Error fetching common details:', error)
             throw error
         }
     },
+
+    /**
+     * Get common data (specifically requested for Guest User Services)
+     * Matches e-poral-paw: api/Menu/GetCommonData
+     */
+    async getCommonData(): Promise<any[]> {
+        try {
+            const response = await apiClient.simplePost<any[]>('/Menu/GetCommonData')
+            return response || []
+        } catch (error) {
+            console.warn('Error fetching common data:', error)
+            return []
+        }
+    }
 }

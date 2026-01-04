@@ -43,6 +43,8 @@ export default function ValidateCustomerPage() {
   const [expiryDate, setExpiryDate] = useState<Date>()
   const [isLoading, setIsLoading] = useState(false)
   const [activeTab, setActiveTab] = useState("validate")
+  const [profileData, setProfileData] = useState<any>(null)
+  const [commonData, setCommonData] = useState<any>(null)
 
   useEffect(() => {
     loadValidationTypes()
@@ -60,11 +62,14 @@ export default function ValidateCustomerPage() {
     setAccountNumber("")
     setRequestNumber("")
     setCivilId("")
+    setProfileData(null)
+    setActiveTab("validate")
     setExpiryDate(undefined)
 
     // Handle special cases
     if (value === "ACCOUNT_PAYMENT") {
-      router.push("/paybill")
+        // Redirect to PayBillBranch as per reference
+        router.push("/PayBillBranch")
     }
   }
 
@@ -123,17 +128,20 @@ export default function ValidateCustomerPage() {
       false
     )
 
-    // Store in localStorage for the profile page
-    localStorage.setItem("branchAccountSearch", JSON.stringify({
-      accountNumber: accountNumber.trim(),
-      serviceType: serviceType,
-      customerInfo: customerInfo
-    }))
+    // Prepare result data for dashboard
+    const result = {
+        ...customerInfo,
+        AccountNumber: accountNumber.trim(),
+        ServiceType: serviceType?.ServiceType,
+        CCBAccountNumber: serviceType?.CCBAccountNumber
+    }
 
-    toast.success("Account found! Redirecting...")
-    setTimeout(() => {
-      router.push("/branch-operations/profile")
-    }, 1000)
+    // Reference app redirects even if getCustomerInfo fails (e.g. 606 error)
+    // We strictly match this behavior to ensure flow parity
+    // Store result in session storage for the dashboard to pick up
+    sessionStorage.setItem("branchAccountData", JSON.stringify(result))
+    // Redirect to Account Dashboard
+    router.push("/branch-operations/account-dashboard")
   }
 
   const handleUserValidation = async () => {
@@ -158,6 +166,10 @@ export default function ValidateCustomerPage() {
     }
 
     toast.success("User validated successfully!")
+    setProfileData({
+      type: "USER",
+      data: result.data
+    })
     setActiveTab("profile")
   }
 
@@ -211,6 +223,10 @@ export default function ValidateCustomerPage() {
     }
 
     toast.success("Details retrieved successfully")
+    setProfileData({
+      type: "ROP",
+      data: result.data
+    })
     setActiveTab("profile")
   }
 
@@ -440,7 +456,7 @@ export default function ValidateCustomerPage() {
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full px-6">
         <TabsList className="grid w-full grid-cols-2 mb-6">
           <TabsTrigger value="validate">{language === "EN" ? "Validate" : "التحقق"}</TabsTrigger>
-          <TabsTrigger value="profile">{language === "EN" ? "Profile Data" : "بيانات الملف الشخصي"}</TabsTrigger>
+          <TabsTrigger value="profile" disabled={!profileData}>{language === "EN" ? "Profile Data" : "بيانات الملف الشخصي"}</TabsTrigger>
         </TabsList>
 
         <TabsContent value="validate" className="space-y-6">
@@ -473,11 +489,108 @@ export default function ValidateCustomerPage() {
           </div>
         </TabsContent>
 
-        <TabsContent value="profile" className="space-y-6">
+         <TabsContent value="profile" className="space-y-6">
           <div className="bg-white rounded-lg shadow-sm border p-6">
-            <p className="text-gray-500 text-center py-8">
-              {language === "EN" ? "Profile data will be displayed here after validation" : "سيتم عرض بيانات الملف الشخصي هنا بعد التحقق"}
-            </p>
+            {!profileData ? (
+               <p className="text-gray-500 text-center py-8">
+               {language === "EN" ? "Profile data will be displayed here after validation" : "سيتم عرض بيانات الملف الشخصي هنا بعد التحقق"}
+             </p>
+            ) : (
+              <div className="space-y-6">
+                <div className="border-b pb-4">
+                  <h3 className="text-lg font-semibold text-teal-900 mb-2">
+                    {language === "EN" ? "Customer Details" : "تفاصيل العميل"}
+                  </h3>
+                </div>
+
+                {profileData.type === "ROP" && (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                     <div>
+                      <Label className="text-gray-500">Full Name (Arabic)</Label>
+                      <p className="font-medium text-lg text-right">{profileData.data.FullNameAr || "-"}</p>
+                    </div>
+                    <div>
+                      <Label className="text-gray-500">Full Name (English)</Label>
+                      <p className="font-medium text-lg">{profileData.data.FullNameEn || "-"}</p>
+                    </div>
+                    <div>
+                      <Label className="text-gray-500">Civil ID</Label>
+                      <p className="font-medium">{profileData.data.NationalIDOrCivilID || "-"}</p>
+                    </div>
+                    <div>
+                      <Label className="text-gray-500">Expiry Date</Label>
+                      <p className="font-medium">{profileData.data.ExpiryDate || "-"}</p>
+                    </div>
+                     <div>
+                      <Label className="text-gray-500">GSM Number</Label>
+                      <p className="font-medium">{profileData.data.GsmNumber || "-"}</p>
+                    </div>
+                  </div>
+                )}
+
+                {profileData.type === "ACCOUNT" && (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                      <Label className="text-gray-500">Account Number</Label>
+                      <p className="font-medium text-lg">{profileData.data.accountNumber}</p>
+                    </div>
+                    <div>
+                      <Label className="text-gray-500">Service Type</Label>
+                      <p className="font-medium">{profileData.data.serviceType?.ServiceType || "-"}</p>
+                    </div>
+                     <div>
+                      <Label className="text-gray-500">Customer Name (En)</Label>
+                      <p className="font-medium">{profileData.data.customerInfo?.CustomerNameEn || profileData.data.customerInfo?.FullNameEn || "-"}</p>
+                    </div>
+                     <div>
+                      <Label className="text-gray-500">Customer Name (Ar)</Label>
+                      <p className="font-medium text-right">{profileData.data.customerInfo?.CustomerNameAr || profileData.data.customerInfo?.FullNameAr || "-"}</p>
+                    </div>
+                  </div>
+                )}
+
+                {profileData.type === "USER" && (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                     <div>
+                      <Label className="text-gray-500">User ID</Label>
+                      <p className="font-medium">{profileData.data.UserID || "-"}</p>
+                    </div>
+                     <div>
+                      <Label className="text-gray-500">Civil ID</Label>
+                      <p className="font-medium">{profileData.data.CivilID || "-"}</p>
+                    </div>
+                    <div>
+                      <Label className="text-gray-500">Full Name (En)</Label>
+                      <p className="font-medium">{profileData.data.FullNameEn || "-"}</p>
+                    </div>
+                    <div>
+                      <Label className="text-gray-500">Full Name (Ar)</Label>
+                      <p className="font-medium text-right">{profileData.data.FullNameAr || "-"}</p>
+                    </div>
+                     <div>
+                      <Label className="text-gray-500">Mobile Number</Label>
+                      <p className="font-medium">{profileData.data.MobileNumber || "-"}</p>
+                    </div>
+                     <div>
+                      <Label className="text-gray-500">Email ID</Label>
+                      <p className="font-medium">{profileData.data.EmailID || "-"}</p>
+                    </div>
+                  </div>
+                )}
+                 
+                 <div className="pt-4 flex justify-end">
+                    <Button 
+                      variant="outline" 
+                      onClick={() => {
+                        setProfileData(null)
+                        setActiveTab("validate")
+                      }}
+                    >
+                      {language === "EN" ? "Clear & New Search" : "مسح وبحث جديد"}
+                    </Button>
+                 </div>
+              </div>
+            )}
           </div>
         </TabsContent>
       </Tabs>

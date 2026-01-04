@@ -2,6 +2,9 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   async rewrites() {
+    if (process.env.NODE_ENV === 'development') {
+      process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
+    }
     return [
       {
         source: '/Menu/:path*',
@@ -34,6 +37,22 @@ const nextConfig: NextConfig = {
       {
         source: '/CommonService/:path*',
         destination: 'https://eservicesuat.nws.nama.om:444/api/CommonService/:path*',
+      },
+      {
+        source: '/AccountDetails/:path*',
+        destination: 'https://eservicesuat.nws.nama.om:444/api/AccountDetails/:path*',
+      },
+      {
+        source: '/Account/:path*',
+        destination: 'https://eservicesuat.nws.nama.om:444/api/Account/:path*',
+      },
+      {
+        source: '/MyRequest/:path*',
+        destination: 'https://eservicesuat.nws.nama.om:444/api/MyRequest/:path*',
+      },
+      {
+        source: '/WaterLeakAlarm/:path*',
+        destination: 'https://eservicesuat.nws.nama.om:444/api/WaterLeakAlarm/:path*',
       }
     ];
   },

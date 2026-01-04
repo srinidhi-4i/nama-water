@@ -205,8 +205,8 @@ export default function WaterShutdownList() {
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="ALL">All</SelectItem>
-                      {regionMaster.map((region) => (
-                         <SelectItem key={region.RegionID} value={region.RegionCode?.trim()}>
+                      {regionMaster.map((region, index) => (
+                         <SelectItem key={`${region.RegionID}-${index}`} value={region.RegionCode?.trim()}>
                             {region.RegionName || region.RegionCode}
                          </SelectItem>
                       ))}

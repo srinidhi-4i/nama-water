@@ -35,53 +35,86 @@ export const waterShutdownService = {
             let eventTypes: any[] = [];
             let templateTypes: any[] = [];
 
-            // Dynamically find tables based on content
-            const allTables = Object.keys(data)
-                .filter(key => key.startsWith('Table'))
-                .map(key => ({ name: key, data: data[key] }))
-                .filter(item => Array.isArray(item.data) && item.data.length > 0);
+            // Helper to get all arrays from the response object
+            const tables = Object.values(data).filter(val => Array.isArray(val) && val.length > 0) as any[][];
 
-            console.log('Available Tables:', allTables.map(t => ({ name: t.name, keys: Object.keys(t.data[0]) })));
+            // Strategy: Look for specific columns in the first item of each table to identify it
+            for (const table of tables) {
+                const firstItem = table[0];
+                const keys = Object.keys(firstItem).map(k => k.toLowerCase());
 
-            // Find EventTypes Table
-            const eventTypeTable = allTables.find(t => {
-                const keys = Object.keys(t.data[0]).map(k => k.toLowerCase());
-                return keys.some(k => k.includes('eventtypeid') || k.includes('eventtypename'));
-            });
-            if (eventTypeTable) {
-                eventTypes = eventTypeTable.data;
-                console.log(`Matched EventTypes in ${eventTypeTable.name}`);
+                // Identify Event Types
+                if (keys.some(k => k.includes('eventtypeid') || k.includes('event_type_id'))) {
+                    // Check if it's NOT template types (sometimes they share keys)
+                    if (!keys.some(k => k.includes('templatetypeid'))) {
+                        eventTypes = table;
+                        console.log('Found EventTypes table:', table.length);
+                        continue;
+                    }
+                }
+
+                // Identify Regions
+                if (keys.some(k => k.includes('regionid') || k.includes('region_id'))) {
+                    regions = table;
+                    console.log('Found Regions table:', table.length);
+                    continue;
+                }
+
+                // Identify Template Types
+                if (keys.some(k => k.includes('templatetypeid') || k.includes('template_type_id'))) {
+                    templateTypes = table;
+                    console.log('Found TemplateTypes table:', table.length);
+                    continue;
+                }
             }
 
-            // Find TemplateTypes Table
-            const templateTypeTable = allTables.find(t => {
-                const keys = Object.keys(t.data[0]).map(k => k.toLowerCase());
-                return keys.some(k => k.includes('templatetypeid') || k.includes('templatetypename'));
-            });
-            if (templateTypeTable) {
-                templateTypes = templateTypeTable.data;
-                console.log(`Matched TemplateTypes in ${templateTypeTable.name}`);
-            }
+            // Deduplicate logic helper
+            const deduplicate = (arr: any[], key: string) => {
+                const seen = new Set();
+                return arr.filter(item => {
+                    const val = item[key];
+                    if (seen.has(val)) return false;
+                    seen.add(val);
+                    return true;
+                });
+            };
 
-            // Find Regions Table
-            const regionTable = allTables.find(t => {
-                const keys = Object.keys(t.data[0]).map(k => k.toLowerCase());
-                return (keys.some(k => k.includes('regionid') || k.includes('regionname'))) &&
-                    t !== eventTypeTable && t !== templateTypeTable;
-            });
-            if (regionTable) {
-                regions = regionTable.data;
-                console.log(`Matched Regions in ${regionTable.name}`);
-            }
+            const uniqueRegions = deduplicate(regions.map(r => ({
+                RegionID: r.RegionID || r.RegionId || r.regionId,
+                RegionName: r.RegionName || r.RegionNameEn || r.regionName,
+                RegionCode: r.RegionCode || r.regionCode || r.RegionName
+            })), 'RegionID');
+
+            const uniqueEventTypes = deduplicate(eventTypes.map(e => ({
+                EventTypeID: e.EventTypeID || e.EventTypeId || e.eventTypeId,
+                EventTypeName: e.EventTypeName || e.EventTypeNameEn || e.eventTypeName,
+                EventTypeCode: e.EventTypeCode || e.eventTypeCode || e.EventTypeName
+            })), 'EventTypeID');
 
             return {
-                regions,
-                eventTypes,
+                regions: uniqueRegions,
+                eventTypes: uniqueEventTypes,
                 templateTypes
             };
         } catch (error) {
             console.error('Error fetching master data:', error);
             return { regions: [], eventTypes: [], templateTypes: [] };
+        }
+    },
+
+    // Get User List (Requested by user)
+    getWaterShutdownUserList: async (): Promise<any[]> => {
+        try {
+            const formData = new FormData();
+            const response = await api.post<any>('/WaterShutdown/GetWaterShutDownUserList', formData);
+            // Assume similar structure or direct array
+            const data = response.data?.Data || response.data;
+            if (Array.isArray(data)) return data;
+            if (data?.Table && Array.isArray(data.Table)) return data.Table;
+            return [];
+        } catch (error) {
+            console.error('Error fetching user list:', error);
+            return [];
         }
     },
 
@@ -261,7 +294,7 @@ export const waterShutdownService = {
             }));
         } catch (error: any) {
             console.error('Error fetching templates:', error);
-            return waterShutdownService.getMockTemplates();
+            return [];
         }
     },
 
@@ -353,85 +386,85 @@ export const waterShutdownService = {
     },
 
     // Mock Data Functions (for development)
-    getMockNotifications: (filters?: WaterShutdownFilters): WaterShutdownListResponse => {
-        const mockData: WaterShutdownNotification[] = [
-            {
-                eventId: 'Event/214',
-                eventType: 'Major Planned Event',
-                status: 'SCHEDULED',
-                region: 'MUSCAT',
-                startDateTime: '2025-12-02T09:00:00',
-                endDateTime: '2025-12-02T21:00:00',
-                reason: 'Maintenance of main water pipeline',
-                affectedCustomers: 1250,
-            },
-            {
-                eventId: 'Event/213',
-                eventType: 'Minor Planned Event',
-                status: 'CUSTOMER_TRIG',
-                region: 'MUSCAT',
-                startDateTime: '2025-11-27T05:01:00',
-                endDateTime: '2025-11-27T23:59:00',
-                reason: 'Customer triggered shutdown',
-                affectedCustomers: 850,
-            },
-            {
-                eventId: 'Event/212',
-                eventType: 'Minor Planned Event',
-                status: 'CUSTOMER_TRIG',
-                region: 'MUSCAT',
-                startDateTime: '2025-11-05T22:00:00',
-                endDateTime: '2025-11-06T00:00:00',
-                reason: 'Emergency repair work',
-                affectedCustomers: 450,
-            },
-        ];
+    // getMockNotifications: (filters?: WaterShutdownFilters): WaterShutdownListResponse => {
+    //     const mockData: WaterShutdownNotification[] = [
+    //         {
+    //             eventId: 'Event/214',
+    //             eventType: 'Major Planned Event',
+    //             status: 'SCHEDULED',
+    //             region: 'MUSCAT',
+    //             startDateTime: '2025-12-02T09:00:00',
+    //             endDateTime: '2025-12-02T21:00:00',
+    //             reason: 'Maintenance of main water pipeline',
+    //             affectedCustomers: 1250,
+    //         },
+    //         {
+    //             eventId: 'Event/213',
+    //             eventType: 'Minor Planned Event',
+    //             status: 'CUSTOMER_TRIG',
+    //             region: 'MUSCAT',
+    //             startDateTime: '2025-11-27T05:01:00',
+    //             endDateTime: '2025-11-27T23:59:00',
+    //             reason: 'Customer triggered shutdown',
+    //             affectedCustomers: 850,
+    //         },
+    //         {
+    //             eventId: 'Event/212',
+    //             eventType: 'Minor Planned Event',
+    //             status: 'CUSTOMER_TRIG',
+    //             region: 'MUSCAT',
+    //             startDateTime: '2025-11-05T22:00:00',
+    //             endDateTime: '2025-11-06T00:00:00',
+    //             reason: 'Emergency repair work',
+    //             affectedCustomers: 450,
+    //         },
+    //     ];
 
-        return {
-            data: mockData,
-            total: mockData.length,
-            page: 1,
-            pageSize: 10,
-        };
-    },
+    //     return {
+    //         data: mockData,
+    //         total: mockData.length,
+    //         page: 1,
+    //         pageSize: 10,
+    //     };
+    // },
 
-    getMockTemplates: (): WaterShutdownTemplate[] => {
-        return [
-            {
-                id: '1',
-                eventType: 'Major Planned Event',
-                templateType: 'Event Creation',
-                subject: 'Water Shutdown Notification',
-                body: 'Dear Customer, we would like to inform you about an upcoming water shutdown...',
-            },
-            {
-                id: '2',
-                eventType: 'Major Planned Event',
-                templateType: 'Reminder',
-                subject: 'Reminder: Water Shutdown Tomorrow',
-                body: 'This is a reminder about the scheduled water shutdown...',
-            },
-            {
-                id: '3',
-                eventType: 'Major Planned Event',
-                templateType: 'Apology',
-                subject: 'Apology for Water Shutdown Inconvenience',
-                body: 'We apologize for any inconvenience caused...',
-            },
-            {
-                id: '4',
-                eventType: 'Major Planned Event',
-                templateType: 'Cancellation',
-                subject: 'Water Shutdown Cancelled',
-                body: 'We are pleased to inform you that the scheduled water shutdown has been cancelled...',
-            },
-            {
-                id: '5',
-                eventType: 'Major Planned Event',
-                templateType: 'Event Completion',
-                subject: 'Water Service Restored',
-                body: 'We are happy to inform you that water service has been restored...',
-            },
-        ];
-    },
+    // getMockTemplates: (): WaterShutdownTemplate[] => {
+    //     return [
+    //         {
+    //             id: '1',
+    //             eventType: 'Major Planned Event',
+    //             templateType: 'Event Creation',
+    //             subject: 'Water Shutdown Notification',
+    //             body: 'Dear Customer, we would like to inform you about an upcoming water shutdown...',
+    //         },
+    //         {
+    //             id: '2',
+    //             eventType: 'Major Planned Event',
+    //             templateType: 'Reminder',
+    //             subject: 'Reminder: Water Shutdown Tomorrow',
+    //             body: 'This is a reminder about the scheduled water shutdown...',
+    //         },
+    //         {
+    //             id: '3',
+    //             eventType: 'Major Planned Event',
+    //             templateType: 'Apology',
+    //             subject: 'Apology for Water Shutdown Inconvenience',
+    //             body: 'We apologize for any inconvenience caused...',
+    //         },
+    //         {
+    //             id: '4',
+    //             eventType: 'Major Planned Event',
+    //             templateType: 'Cancellation',
+    //             subject: 'Water Shutdown Cancelled',
+    //             body: 'We are pleased to inform you that the scheduled water shutdown has been cancelled...',
+    //         },
+    //         {
+    //             id: '5',
+    //             eventType: 'Major Planned Event',
+    //             templateType: 'Event Completion',
+    //             subject: 'Water Service Restored',
+    //             body: 'We are happy to inform you that water service has been restored...',
+    //         },
+    //     ];
+    // },
 };

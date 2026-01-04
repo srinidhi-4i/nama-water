@@ -82,7 +82,7 @@ export function Sidebar({ menuItems, language = 'EN', isOpen, onMobileClose }: S
             </g>
           </svg>
         )
-      case 'Water Shutdown':
+      case 'Water Shutdown' :
         return (
           <svg xmlns="http://www.w3.org/2000/svg" width="30" height="30" viewBox="0 0 200 200" className="fill-current">
             <g transform="translate(21 19.966)">
@@ -176,9 +176,7 @@ export function Sidebar({ menuItems, language = 'EN', isOpen, onMobileClose }: S
                 {openMenu === appName && (!isCollapsed || isOpen) && (
                   <ul className="bg-teal-900">
                     {groupedMenus[appName].map((menu, idx) => {
-                      // #region agent log
-                      fetch('http://127.0.0.1:7242/ingest/839c7757-441a-490f-a720-0ae555f4ea7b',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'Sidebar.tsx:178',message:'Menu item rendered',data:{menuURL:menu.MenuURL,menuName:menu.MenuNameEn,currentPathname:pathname},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'B'})}).catch(()=>{});
-                      // #endregion
+
                       return (
                         <li key={idx}>
                           <Link

@@ -24,6 +24,7 @@ export interface User {
 
 // Menu Types
 export interface MenuItem {
+    personTypeCode?: string | null;
     MenuId: number
     Parent_Id: number | null
     Menu_Name_EN: string

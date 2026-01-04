@@ -157,10 +157,7 @@ export function DataTable<TData, TValue>({
 
       <div className="flex flex-col lg:flex-row items-center justify-between py-4 gap-4 select-none">
           {/* Left Side: Page info */}
-          <div className="text-sm text-muted-foreground min-w-[200px] text-center lg:text-left">
-             Page {table.getState().pagination.pageIndex + 1} of{" "}
-            {table.getPageCount()} <span className="hidden sm:inline">• Showing {table.getState().pagination.pageSize} items</span>
-          </div>
+        
 
           {/* Middle: Pagination Controls */}
            <Pagination className="w-auto mx-0">

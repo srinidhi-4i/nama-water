@@ -62,6 +62,13 @@ export const DEFAULT_VALIDATION_TYPES: ValidationType[] = [
     { ValidateTypeId: 8, ValidateTypeCode: "VALIDATE_CUSTOMER_DETAILS_ROP", ValidateTypeName: "Validate Customer Details in Using BOP" }
 ]
 
+export interface CommonData {
+    Description?: string
+    Value?: string
+    Key?: string
+    [key: string]: any
+}
+
 export interface GuestService {
     MenuId: number
     Module_Name: string
