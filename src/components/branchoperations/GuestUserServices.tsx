@@ -240,10 +240,7 @@ export const GuestUserServices: React.FC = () => {
         </CardContent>
       </Card>
       
-      {/* Footer info */}
-      <p className="text-center mt-8 text-gray-400 text-[10px] font-medium uppercase tracking-[0.2em] opacity-80">
-        © 2024 NAMA WATER SERVICES
-      </p>
+      
     </div>
   )
 }

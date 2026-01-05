@@ -1,0 +1,5 @@
+export { WaterIcon } from "./water-icon"
+export { BranchIcon } from "./branch-icon"
+export { AppointmentIcon } from "./appointment-icon"
+export { WetlandIcon } from "./wetland-icon"
+export { NotificationIcon } from "./notification-icon"
