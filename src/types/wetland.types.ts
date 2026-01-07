@@ -74,3 +74,50 @@ export interface MonthCalendar {
     year: number;
     days: DaySlots[];
 }
+
+// Holiday Calendar Types
+
+// Master data response
+export interface HolidayMasterData {
+    HolidayReasonType: string;
+    HolidayReasonTypeNameEN: string;
+    HolidayReasonTypeNameAR: string;
+}
+
+export interface WetlandConfiguration {
+    WetlandSlotDaysPerWeek: number;
+}
+
+// Holiday list item from API
+export interface WetlandHolidayListItem {
+    HolidayDate: string; // ISO date string
+    HolidayReason: 'WO' | 'SH'; // Weekend Off or Special Holiday
+    HolidayDescriptionEn: string;
+    HolidayDescriptionAr: string;
+}
+
+// Insert/Update/Delete request
+export interface InsertHolidayRequest {
+    Lang: string;
+    Action: 'I' | 'U' | 'D'; // Insert, Update, Delete
+    HolidayType: 'WO' | 'SH';
+    StartDate: string;
+    EndDate: string;
+    InternalUserID: string | null;
+    HolidayDesriptionEN: string;
+    HolidayDesriptionAR: string;
+    Weekends?: string; // Comma-separated day names (for WO)
+    Year?: number; // For WO
+}
+
+// Grouped holidays by month
+export interface GroupedHolidays {
+    [yearMonth: string]: WetlandHolidayListItem[];
+}
+
+// Day of week selector
+export interface WeekDay {
+    id: number;
+    value: string;
+    selected: boolean;
+}

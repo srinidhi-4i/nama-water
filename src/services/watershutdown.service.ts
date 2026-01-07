@@ -238,7 +238,7 @@ export const waterShutdownService = {
 
     deleteNotification: async (id: string): Promise<void> => {
         try {
-            const response = await api.delete<any>(`/api/watershutdown/notifications/${id}`);
+            const response = await api.delete<any>(`/WaterShutdown/notifications/${id}`);
 
             if (response.data && response.data.StatusCode !== 605) {
                 throw new Error(response.data?.Status || 'Failed to delete notification');
@@ -260,7 +260,7 @@ export const waterShutdownService = {
             if (filters?.toDate) params.append('toDate', filters.toDate);
             if (filters?.searchQuery) params.append('search', filters.searchQuery);
 
-            const response = await api.get(`/api/watershutdown/notifications/export?${params.toString()}`, {
+            const response = await api.get(`/WaterShutdown/notifications/export?${params.toString()}`, {
                 responseType: 'blob',
             });
 

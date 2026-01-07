@@ -34,7 +34,7 @@ apiClient.interceptors.response.use(
         return response;
     },
     (error: AxiosError) => {
-        console.error('Axios Error Details:', {
+        const errorDetails = {
             message: error.message,
             code: error.code,
             status: error.response?.status,
@@ -45,7 +45,9 @@ apiClient.interceptors.response.use(
                 method: error.config?.method,
                 baseURL: error.config?.baseURL,
             }
-        });
+        };
+
+        console.error('Axios Error Details:', errorDetails);
 
         const apiError: ApiError = {
             message: 'An unexpected error occurred',
