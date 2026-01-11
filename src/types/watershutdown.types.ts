@@ -8,6 +8,26 @@ export interface RegionItem {
     RegionCode: string;
     RegionName: string; // Assuming Name is available or mapped
     RegionNameAr?: string;
+    wilayats?: WillayatItem[]; // Hierarchical structure
+}
+
+export interface WillayatItem {
+    WillayathID: string;
+    WillayathCode: string;
+    WillayathNameEn: string;
+    WillayathNameAr?: string;
+    RegionID: string;
+    RegionCode: string;
+    DMAs?: DMAItem[]; // Hierarchical structure
+}
+
+export interface DMAItem {
+    DMAID: string;
+    DMACode: string;
+    DMANameEn: string;
+    DMANameAr?: string;
+    RegionID: string;
+    WillayathID: string;
 }
 
 export interface EventTypeItem {
@@ -29,8 +49,26 @@ export type TemplateType =
     | "Cancellation"
     | "Event Completion";
 
+export interface TeamActionConfig {
+    teamName: string;
+    isActive: boolean;
+    actions: string[];
+    code?: string;
+}
+
+export interface FocalPoint {
+    Name: string;
+    Email: string;
+    "Contact Number": string;
+}
+
+export interface Contractor {
+    contractorName: string;
+}
+
 export interface WaterShutdownNotification {
     eventId: string;
+    internalId?: number;
     eventType: EventType;
     status: WaterShutdownStatus;
     region: Region;
@@ -38,7 +76,33 @@ export interface WaterShutdownNotification {
     endDateTime: string; // ISO 8601 format
     reason?: string;
     reasonAr?: string;
-    affectedCustomers?: number;
+    affectedCustomers: number;
+    notificationTitle?: string;
+    eventTypeName?: string;
+    regionCode?: string;
+    locationDetails?: string;
+    scheduleNotificationDate?: string;
+    remainderNotificationDate?: string;
+    apologyNotificationDate?: string;
+    reasonForShutdown?: string;
+    notificationDetails?: string;
+    eventJsonData?: string; // Raw JSON from API
+
+    // Technical Details
+    valveLock?: string;
+    sizeOfPipeline?: string;
+    typeOfPipeline?: string;
+    numberOfHours?: string;
+
+    // Parsed fields for easier access / Form state
+    affectedWillayats?: string[];
+    affectedDMAs?: string[];
+    contractors?: Contractor[];
+    actionsRequired?: string[]; // Legacy/Global actions
+    teamActions?: TeamActionConfig[]; // New per-team config
+    focalPoint?: FocalPoint[];
+    mapLocations?: string[];
+    initiatedBy?: string;
     createdBy?: string;
     createdAt?: string;
     updatedAt?: string;
@@ -57,6 +121,7 @@ export interface WaterShutdownTemplate {
     emailBody?: string;
     createdAt?: string;
     updatedAt?: string;
+    TemplateTypeCode?: string;
 }
 
 // Filter and Request Types
@@ -78,19 +143,32 @@ export interface WaterShutdownListResponse {
     pageSize: number;
 }
 
-export interface CreateNotificationRequest {
-    eventType: EventType;
-    region: Region;
+export interface SaveNotificationRequest {
+    eventId?: string; // Present for update, missing for create
+    notificationTitle: string;
+    eventTypeId: number;
+    regionId: string;
     startDateTime: string;
     endDateTime: string;
-    reason: string;
-    reasonAr?: string;
-    affectedCustomers?: number;
-}
+    apologyNotificationDate?: string;
+    reminderNotificationDate?: string;
+    valveLock: string;
+    typeOfPipeline: string;
+    sizeOfPipeline: string;
+    numberOfHours: string;
+    notificationDetails: string;
+    reasonForShutdown: string;
 
-export interface UpdateNotificationRequest extends Partial<CreateNotificationRequest> {
+    // JSON Data structure
+    eventJsonData: string;
+
+    // Legacy support if needed
+    reason?: string;
     status?: WaterShutdownStatus;
 }
+
+export interface CreateNotificationRequest extends SaveNotificationRequest { }
+export interface UpdateNotificationRequest extends SaveNotificationRequest { }
 
 export interface CreateTemplateRequest {
     eventType: EventType;

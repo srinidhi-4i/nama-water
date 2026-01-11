@@ -7,6 +7,7 @@ import {
     WaterShutdownListResponse,
     CreateNotificationRequest,
     UpdateNotificationRequest,
+    SaveNotificationRequest,
     CreateTemplateRequest,
     UpdateTemplateRequest,
     RegionItem,
@@ -38,35 +39,14 @@ export const waterShutdownService = {
             // Helper to get all arrays from the response object
             const tables = Object.values(data).filter(val => Array.isArray(val) && val.length > 0) as any[][];
 
-            // Strategy: Look for specific columns in the first item of each table to identify it
-            for (const table of tables) {
-                const firstItem = table[0];
-                const keys = Object.keys(firstItem).map(k => k.toLowerCase());
-
-                // Identify Event Types
-                if (keys.some(k => k.includes('eventtypeid') || k.includes('event_type_id'))) {
-                    // Check if it's NOT template types (sometimes they share keys)
-                    if (!keys.some(k => k.includes('templatetypeid'))) {
-                        eventTypes = table;
-                        console.log('Found EventTypes table:', table.length);
-                        continue;
-                    }
+            // Diagnostic: Log all found tables and their first item's keys
+            console.log('--- GetWaterShutdown Diagnostic Start ---');
+            Object.entries(data).forEach(([key, val]) => {
+                if (Array.isArray(val)) {
+                    console.log(`Table "${key}" (length: ${val.length}) keys:`, val[0] ? Object.keys(val[0]) : 'empty');
                 }
-
-                // Identify Regions
-                if (keys.some(k => k.includes('regionid') || k.includes('region_id'))) {
-                    regions = table;
-                    console.log('Found Regions table:', table.length);
-                    continue;
-                }
-
-                // Identify Template Types
-                if (keys.some(k => k.includes('templatetypeid') || k.includes('template_type_id'))) {
-                    templateTypes = table;
-                    console.log('Found TemplateTypes table:', table.length);
-                    continue;
-                }
-            }
+            });
+            console.log('--- GetWaterShutdown Diagnostic End ---');
 
             // Deduplicate logic helper
             const deduplicate = (arr: any[], key: string) => {
@@ -79,16 +59,78 @@ export const waterShutdownService = {
                 });
             };
 
+            // Strategy: Look for specific columns in the first item of each table to identify it
+            for (const table of tables) {
+                const firstItem = table[0];
+                const keys = Object.keys(firstItem).map(k => k.toLowerCase());
+
+                // Identify Event Types (Table 0 usually)
+                if (keys.some(k => k.includes('eventtypeid')) && !keys.some(k => k.includes('templatetypeid'))) {
+                    eventTypes = table;
+                }
+
+                // Identify Regions (Table 6 usually)
+                if (keys.some(k => k.includes('regionid')) && !keys.some(k => k.includes('willayathid'))) {
+                    // Regions table has RegionID but NOT WillayathID
+                    regions = table;
+                }
+
+                // Identify Template Types (Table 9 usually)
+                if (keys.some(k => k.includes('templatetypeid'))) {
+                    templateTypes = table;
+                }
+            }
+
+            // Identify Willayats (Table 7) & DMAs (Table 8) based on known columns in reference app
+            // Table 7: WillayathID, RegionID
+            // Table 8: DMAID, WillayathID
+            let willayatsRaw: any[] = [];
+            let dmasRaw: any[] = [];
+
+            for (const table of tables) {
+                const firstItem = table[0];
+                if (firstItem.WillayathID && firstItem.RegionID && !firstItem.DMAID) {
+                    willayatsRaw = table;
+                }
+                if (firstItem.DMAID && firstItem.WillayathID) {
+                    dmasRaw = table;
+                }
+            }
+
+            // Build Hierarchy: Region -> Willayats -> DMAs
+            // 1. Map DMAs
+            const dmas = dmasRaw.map(d => ({
+                DMAID: d.DMAID,
+                DMACode: d.DMACode,
+                DMANameEn: d.DMANameEn,
+                DMANameAr: d.DMANameAr,
+                RegionID: d.RegionID ? d.RegionID.trim() : "",
+                WillayathID: d.WillayathID
+            }));
+
+            // 2. Map Willayats and attach DMAs
+            const willayats = willayatsRaw.map(w => ({
+                WillayathID: w.WillayathID,
+                WillayathCode: w.WillayathCode,
+                WillayathNameEn: w.WillayathNameEn,
+                WillayathNameAr: w.WillayathNameAr,
+                RegionID: w.RegionID ? w.RegionID.trim() : "",
+                RegionCode: w.RegionCode ? w.RegionCode.trim() : "",
+                DMAs: dmas.filter(d => d.WillayathID === w.WillayathID)
+            }));
+
+            // 3. Map Regions and attach Willayats
             const uniqueRegions = deduplicate(regions.map(r => ({
-                RegionID: r.RegionID || r.RegionId || r.regionId,
-                RegionName: r.RegionName || r.RegionNameEn || r.regionName,
-                RegionCode: r.RegionCode || r.regionCode || r.RegionName
+                RegionID: r.RegionID ? r.RegionID.trim() : "",
+                RegionCode: r.RegionCode ? r.RegionCode.trim() : "",
+                RegionName: r.RegionNameEn || r.RegionName_EN || r.RegionName || r.regionName || r.NameEn || r.RegionCode,
+                wilayats: willayats.filter(w => w.RegionID === (r.RegionID ? r.RegionID.trim() : ""))
             })), 'RegionID');
 
             const uniqueEventTypes = deduplicate(eventTypes.map(e => ({
-                EventTypeID: e.EventTypeID || e.EventTypeId || e.eventTypeId,
-                EventTypeName: e.EventTypeName || e.EventTypeNameEn || e.eventTypeName,
-                EventTypeCode: e.EventTypeCode || e.eventTypeCode || e.EventTypeName
+                EventTypeID: e.EventTypeID || e.EventTypeId || e.eventTypeId || e.ID || e.Id,
+                EventTypeName: e.EventTypeName || e.EventTypeNameEn || e.eventTypeName || e.Name || e.NameEn || e.EventTypeCode,
+                EventTypeCode: e.EventTypeCode || e.eventTypeCode || e.EventTypeName || e.Code
             })), 'EventTypeID');
 
             return {
@@ -119,14 +161,136 @@ export const waterShutdownService = {
     },
 
     // Notification Operations
-    getNotificationById: async (id: string): Promise<any> => {
+    getNotificationById: async (id: string): Promise<WaterShutdownNotification> => {
         try {
+            console.log(`Fetching notification by ID: ${id}`);
             const formData = new FormData();
             formData.append('EventID', id);
+            // Fallback for some APIs that might expect EventUniqueId
+            formData.append('EventUniqueId', id);
+            // Fallback for some APIs that might expect internal ID as id
+            formData.append('id', id);
 
             const response = await api.post<any>('/WaterShutdown/GetWaterShutDownEventDetailsSingle', formData);
-            if (response.data && (response.data.StatusCode === 605 || response.data.Table)) {
-                return response.data; // Return the full response containing Table, Table1, etc.
+            console.log('Get Notification Detail Raw Response:', response.data);
+
+            if (response.data && (response.data.StatusCode === 605 || response.data.Table || response.data.Data?.Table)) {
+                const dataRoot = response.data.Data || response.data;
+                const mainTable = dataRoot.Table ? dataRoot.Table[0] : null;
+
+                if (!mainTable) {
+                    console.error('No notification data found in Table array. Full response:', response.data);
+                    throw new Error('No notification data found');
+                }
+
+                // Basic mapping
+                const result: WaterShutdownNotification = {
+                    eventId: mainTable.EventUniqueId,
+                    internalId: mainTable.EventId,
+                    eventType: mainTable.EventTypeName,
+                    status: mainTable.StatusCode,
+                    region: mainTable.RegionName,
+                    regionCode: mainTable.RegionCode, // Crucial for edit mode pre-fill
+                    startDateTime: mainTable.StartDateAndTime,
+                    endDateTime: mainTable.EndDateAndTime,
+                    reason: mainTable.ReasonForShutDown || mainTable.ReasonForShutdown || '',
+                    affectedCustomers: 0,
+                    notificationTitle: mainTable.NotificationTitle,
+                    locationDetails: mainTable.LocationDetails,
+                    scheduleNotificationDate: mainTable.ScheduleNotificationDate,
+                    remainderNotificationDate: mainTable.RemainderNotificationDat,
+                    apologyNotificationDate: mainTable.ApologyNotificationDate,
+                    reasonForShutdown: mainTable.ReasonForShutDown,
+                    notificationDetails: mainTable.NotificationDetails,
+                    eventJsonData: mainTable.EventJsonData,
+                    initiatedBy: mainTable.InitiatedBy,
+
+                    // Technical Details
+                    valveLock: 'No',
+                    sizeOfPipeline: '',
+                    typeOfPipeline: '',
+                    numberOfHours: ''
+                };
+
+                // Parse Actions (Table 1) if available
+                const actionTable = dataRoot.Table1 || [];
+                if (actionTable.length > 0) {
+                    result.teamActions = [];
+                    // We need to map this carefully in the UI, or store raw here
+                    // For now, let's extract them if they follow the expected format
+                    try {
+                        // Logic from reference: response.Table1.map...
+                        // We will pass this to UI to handle matching with TEAMS constant
+                        result.teamActions = actionTable.map((item: any) => {
+                            let actions = [];
+                            try {
+                                const parsed = item.TemplateTypes ? JSON.parse(item.TemplateTypes) : [];
+                                // Handle case where parsed is array of objects or strings
+                                actions = parsed.map((p: any) => typeof p === 'string' ? p : (p.TemplateCode || p.ActionName || ''));
+                            } catch (e) {
+                                // Fallback if not JSON
+                                actions = [];
+                            }
+
+                            return {
+                                teamName: item.TeamName || item.Team || "", // Try to get name from API
+                                isActive: true,
+                                actions: actions.filter((a: string) => a !== ''),
+                                code: item.EventActionCode // Helper for UI mapping
+                            };
+                        });
+                    } catch (e) { console.error('Error parsing Table1 actions', e); }
+                }
+
+                // Parse Locations (Table 2) if available
+                // In reference app, Table 2 seems to be location data too? Or Table 6,7,8 used for reconstruction?
+                // Actually reference uses Table 2 for checking selected checkboxes.
+
+                // Parse EventJsonData if available (Primary source for details)
+                if (mainTable.EventJsonData) {
+                    try {
+                        const eventJson = JSON.parse(mainTable.EventJsonData);
+                        result.affectedWillayats = eventJson.AffectedWillayats || [];
+                        result.affectedDMAs = eventJson.AffectedDMAs || [];
+                        result.contractors = eventJson.ContractorName || [];
+
+                        // Merge or override actions from JSON if Table1 was empty
+                        if (!result.teamActions || result.teamActions.length === 0) {
+                            result.actionsRequired = eventJson.ActionsRequired || [];
+                            result.teamActions = eventJson.TeamActions || [];
+                        }
+
+                        result.valveLock = eventJson.ValveLock || result.valveLock;
+
+                        // Handle legacy vs new valve lock (ID vs Name)
+                        if (mainTable.ValveLock) result.valveLock = mainTable.ValveLock;
+
+                        result.sizeOfPipeline = eventJson.SizeOfPipeline || mainTable.PipelineSize || result.sizeOfPipeline;
+                        result.typeOfPipeline = eventJson.TypeOfPipeline || result.typeOfPipeline;
+                        result.numberOfHours = eventJson.NumberOfHours || mainTable.EventHours || result.numberOfHours;
+
+                        // Focal Points
+                        const fpRaw = mainTable.FocalPointDetails || eventJson.FocalPoint;
+                        if (typeof fpRaw === 'string') {
+                            try { result.focalPoint = JSON.parse(fpRaw); } catch { result.focalPoint = []; }
+                        } else if (Array.isArray(fpRaw)) {
+                            result.focalPoint = fpRaw;
+                        }
+
+                        result.mapLocations = eventJson.MapLocations || [];
+                    } catch (e) {
+                        console.error('Error parsing EventJsonData:', e);
+                    }
+                }
+
+                // Contractor fallback
+                if (mainTable.ContractorName && (!result.contractors || result.contractors.length === 0)) {
+                    try {
+                        result.contractors = JSON.parse(mainTable.ContractorName);
+                    } catch { /* ignore */ }
+                }
+
+                return result;
             }
             throw new Error('Failed to fetch notification details');
         } catch (error) {
@@ -145,26 +309,28 @@ export const waterShutdownService = {
 
             const response = await api.post<any>('/WaterShutdown/GetEventDetails', formData);
 
-            console.log('Water Shutdown Response:', response.data); // Debug log
-
-            // The API response structure seems to return the list in response.data.Table directly
-            // based on the logs seen (Status: success, StatusCode: 605, Data: Object, Table: Array...)
+            console.log('Water Shutdown List Response Raw:', response.data);
             if (response.data && (response.data.StatusCode === 605 || response.data.Table)) {
-
                 const notifications = response.data.Table || response.data.Data?.Table || [];
 
-                // Map API response to our type if necessary, or use as is if types match
-                // Assuming keys might be PascalCase in API and we use camelCase or matching types
-                // Let's map it safely
                 const mappedNotifications: WaterShutdownNotification[] = notifications.map((item: any) => ({
                     eventId: item.EventUniqueId,
+                    internalId: item.EventId,
                     eventType: item.EventTypeName,
                     status: item.StatusCode,
                     region: item.RegionName,
                     startDateTime: item.StartDateAndTime,
                     endDateTime: item.EndDateAndTime,
-                    reason: item.ReasonForShutdown || '', // Add other fields as needed
-                    affectedCustomers: 0 // Placeholder if not available
+                    reason: item.ReasonForShutDown || item.ReasonForShutdown || '',
+                    notificationTitle: item.NotificationTitle,
+                    locationDetails: item.LocationDetails,
+                    scheduleNotificationDate: item.ScheduleNotificationDate,
+                    remainderNotificationDate: item.RemainderNotificationDat,
+                    reasonForShutdown: item.ReasonForShutDown || item.ReasonForShutdown,
+                    notificationDetails: item.NotificationDetails,
+                    eventJsonData: item.EventJsonData,
+                    initiatedBy: item.InitiatedBy,
+                    affectedCustomers: 0
                 }));
 
                 return {
@@ -174,67 +340,59 @@ export const waterShutdownService = {
                     pageSize: filters?.pageSize || 10,
                 };
             }
-
             throw new Error(response.data?.Status || 'Failed to fetch notifications');
-
         } catch (error: any) {
             console.error('Error fetching water shutdown notifications:', error);
-            // Return mock data for development if API fails differently than expected
-            // console.warn('Using mock data for water shutdown notifications');
-            // return waterShutdownService.getMockNotifications(filters);
             throw error;
         }
     },
 
-    createNotification: async (data: CreateNotificationRequest): Promise<WaterShutdownNotification> => {
+    saveNotification: async (data: SaveNotificationRequest): Promise<any> => {
         try {
             const formData = new FormData();
-            formData.append('eventType', data.eventType);
-            formData.append('region', data.region);
-            formData.append('startDateTime', data.startDateTime);
-            formData.append('endDateTime', data.endDateTime);
-            formData.append('reason', data.reason);
-            if (data.reasonAr) formData.append('reasonAr', data.reasonAr);
-            if (data.affectedCustomers) formData.append('affectedCustomers', data.affectedCustomers.toString());
+            if (data.eventId) formData.append('EventUniqueId', data.eventId);
+            formData.append('NotificationTitle', data.notificationTitle);
+            formData.append('EventTypeId', data.eventTypeId.toString());
+            formData.append('RegionId', data.regionId);
+            formData.append('StartDateAndTime', data.startDateTime);
+            formData.append('EndDateAndTime', data.endDateTime);
+            formData.append('ScheduleNotificationDate', data.reminderNotificationDate || '');
+            formData.append('ApologyNotificationDate', data.apologyNotificationDate || '');
+            formData.append('NotificationDetails', data.notificationDetails);
+            formData.append('ReasonForShutDown', data.reasonForShutdown);
+            formData.append('EventJsonData', data.eventJsonData);
 
-            const response = await api.post<any>('/WaterShutdown/SaveEventDetails', formData);
+            // Required by some backends even if using EventJsonData
+            formData.append('ValveLock', data.valveLock);
+            formData.append('TypeOfPipeline', data.typeOfPipeline);
+            formData.append('SizeOfPipeline', data.sizeOfPipeline);
+            formData.append('NumberOfHours', data.numberOfHours);
 
-            if (response.data && response.data.StatusCode === 605) {
-                return response.data.Data;
+            const response = await api.post<any>('/WaterShutdown/SaveWaterShutDownEventDetails', formData);
+
+            if (response.data && (response.data.StatusCode === 605 || response.data.IsSuccess === 1)) {
+                return response.data.Data || response.data;
             }
 
-            throw new Error(response.data?.Status || 'Failed to create notification');
+            throw new Error(response.data?.Status || 'Failed to save notification');
         } catch (error: any) {
-            console.error('Error creating notification:', error);
+            console.error('Error saving notification:', error);
             throw error;
         }
     },
 
-    updateNotification: async (id: string, data: UpdateNotificationRequest): Promise<WaterShutdownNotification> => {
-        try {
-            const formData = new FormData();
-            formData.append('eventId', id);
-            if (data.eventType) formData.append('eventType', data.eventType);
-            if (data.region) formData.append('region', data.region);
-            if (data.startDateTime) formData.append('startDateTime', data.startDateTime);
-            if (data.endDateTime) formData.append('endDateTime', data.endDateTime);
-            if (data.reason) formData.append('reason', data.reason);
-            if (data.reasonAr) formData.append('reasonAr', data.reasonAr);
-            if (data.status) formData.append('status', data.status);
-            if (data.affectedCustomers) formData.append('affectedCustomers', data.affectedCustomers.toString());
-
-            const response = await api.post<any>('/WaterShutdown/SaveEventDetails', formData);
-
-            if (response.data && response.data.StatusCode === 605) {
-                return response.data.Data;
-            }
-
-            throw new Error(response.data?.Status || 'Failed to update notification');
-        } catch (error: any) {
-            console.error('Error updating notification:', error);
-            throw error;
-        }
+    createNotification: async (data: any): Promise<any> => {
+        return waterShutdownService.saveNotification(data);
     },
+
+    updateNotification: async (id: string, data: any): Promise<any> => {
+        return waterShutdownService.saveNotification({ ...data, eventId: id });
+    },
+
+    // Master Data for Willayats and DMAs
+    // Old standalone endpoints removed in favor of Unified Master Data approach
+    // getWillayats and getDMAs are no longer needed as they are client-filtered 
+    // from the rich master data object.
 
     deleteNotification: async (id: string): Promise<void> => {
         try {
@@ -374,7 +532,7 @@ export const waterShutdownService = {
 
             const response = await api.post<any>('/WaterShutdown/InsertEventTemplateDetails', formData);
 
-            if (response.data && (response.data.IsSuccess === 1 || response.data.Status === "Success")) {
+            if (response.data && (response.data.IsSuccess === 1 || response.data.Status?.toLowerCase() === "success" || response.data.StatusCode === 605)) {
                 return response.data.Data || response.data;
             }
 
@@ -385,86 +543,102 @@ export const waterShutdownService = {
         }
     },
 
-    // Mock Data Functions (for development)
-    // getMockNotifications: (filters?: WaterShutdownFilters): WaterShutdownListResponse => {
-    //     const mockData: WaterShutdownNotification[] = [
-    //         {
-    //             eventId: 'Event/214',
-    //             eventType: 'Major Planned Event',
-    //             status: 'SCHEDULED',
-    //             region: 'MUSCAT',
-    //             startDateTime: '2025-12-02T09:00:00',
-    //             endDateTime: '2025-12-02T21:00:00',
-    //             reason: 'Maintenance of main water pipeline',
-    //             affectedCustomers: 1250,
-    //         },
-    //         {
-    //             eventId: 'Event/213',
-    //             eventType: 'Minor Planned Event',
-    //             status: 'CUSTOMER_TRIG',
-    //             region: 'MUSCAT',
-    //             startDateTime: '2025-11-27T05:01:00',
-    //             endDateTime: '2025-11-27T23:59:00',
-    //             reason: 'Customer triggered shutdown',
-    //             affectedCustomers: 850,
-    //         },
-    //         {
-    //             eventId: 'Event/212',
-    //             eventType: 'Minor Planned Event',
-    //             status: 'CUSTOMER_TRIG',
-    //             region: 'MUSCAT',
-    //             startDateTime: '2025-11-05T22:00:00',
-    //             endDateTime: '2025-11-06T00:00:00',
-    //             reason: 'Emergency repair work',
-    //             affectedCustomers: 450,
-    //         },
-    //     ];
+    deleteTemplate: async (id: string): Promise<void> => {
+        try {
+            const formData = new FormData();
+            formData.append('UpdateType', 'DELETE');
+            formData.append('TemplateDetailsID', id);
+            // Required placeholders
+            formData.append('EventTypeID', '');
+            formData.append('TemplateTypeID', '');
+            formData.append('EmailTemplateEn', '');
+            formData.append('EmailTemplateAr', '');
+            formData.append('SMSTemplateEn', '');
+            formData.append('SMSTemplateAr', '');
+            formData.append('UserID', '');
 
-    //     return {
-    //         data: mockData,
-    //         total: mockData.length,
-    //         page: 1,
-    //         pageSize: 10,
-    //     };
-    // },
+            const response = await api.post<any>('/WaterShutdown/InsertEventTemplateDetails', formData);
 
-    // getMockTemplates: (): WaterShutdownTemplate[] => {
-    //     return [
-    //         {
-    //             id: '1',
-    //             eventType: 'Major Planned Event',
-    //             templateType: 'Event Creation',
-    //             subject: 'Water Shutdown Notification',
-    //             body: 'Dear Customer, we would like to inform you about an upcoming water shutdown...',
-    //         },
-    //         {
-    //             id: '2',
-    //             eventType: 'Major Planned Event',
-    //             templateType: 'Reminder',
-    //             subject: 'Reminder: Water Shutdown Tomorrow',
-    //             body: 'This is a reminder about the scheduled water shutdown...',
-    //         },
-    //         {
-    //             id: '3',
-    //             eventType: 'Major Planned Event',
-    //             templateType: 'Apology',
-    //             subject: 'Apology for Water Shutdown Inconvenience',
-    //             body: 'We apologize for any inconvenience caused...',
-    //         },
-    //         {
-    //             id: '4',
-    //             eventType: 'Major Planned Event',
-    //             templateType: 'Cancellation',
-    //             subject: 'Water Shutdown Cancelled',
-    //             body: 'We are pleased to inform you that the scheduled water shutdown has been cancelled...',
-    //         },
-    //         {
-    //             id: '5',
-    //             eventType: 'Major Planned Event',
-    //             templateType: 'Event Completion',
-    //             subject: 'Water Service Restored',
-    //             body: 'We are happy to inform you that water service has been restored...',
-    //         },
-    //     ];
-    // },
+            if (response.data && (response.data.IsSuccess === 1 || response.data.Status === "Success" || response.data.StatusCode === 605)) {
+                return;
+            }
+
+            throw new Error(response.data?.Status || 'Failed to delete template');
+        } catch (error: any) {
+            console.error('Error deleting template:', error);
+            throw error;
+        }
+    },
+
+
+    // Intermediate SMS Operations
+    getIntermediateHistory: async (eventId: string): Promise<any[]> => {
+        try {
+            const formData = new FormData();
+            formData.append('EventId', eventId);
+
+            const response = await api.post<any>('/WaterShutdown/GetIntermediateHistory', formData);
+            return response.data?.Data || response.data || [];
+        } catch (error: any) {
+            console.error('Error fetching intermediate history:', error);
+            return [];
+        }
+    },
+
+    async resendIntermediateNotifications(eventId: string | null): Promise<any> {
+        if (!eventId) return;
+        const response = await api.post<any>(`/WaterShutdown/ResendIntermediateNotifications?EventUniqueId=${eventId}`);
+        return response.data;
+    },
+
+    sendIntermediateSMS: async (eventId: string, data: {
+        fromHour: string;
+        toHour: string;
+        templateEn: string;
+        templateAr: string;
+    }): Promise<void> => {
+        try {
+            const formData = new FormData();
+            formData.append('UpdateType', 'INTERMEDIATE TRIGGERED');
+            formData.append('EventId', eventId);
+            formData.append('UserId', ''); // UserID handled by interceptor or optional
+            formData.append('FromHour', data.fromHour);
+            formData.append('ToHour', data.toHour);
+            formData.append('TemplateEn', data.templateEn);
+            formData.append('TemplateAr', data.templateAr);
+            formData.append('Lang', 'EN');
+
+            const response = await api.post<any>('/WaterShutdown/IntermediateSmsEvent', formData);
+
+            if (response.data && (response.data.IsSuccess === 1 || response.data.Status === 'Success')) {
+                return;
+            }
+            throw new Error(response.data?.Status || 'Failed to send SMS');
+        } catch (error: any) {
+            console.error('Error sending intermediate SMS:', error);
+            throw error;
+        }
+    },
+
+    // Completion Notification
+    sendCompletionNotification: async (eventId: string): Promise<void> => {
+        try {
+            const formData = new FormData();
+            formData.append('UpdateType', 'COMPLETION TRIGGERED');
+            formData.append('EventId', eventId);
+            formData.append('UserId', ''); // UserID handled by interceptor
+            formData.append('Comments', 'Completion Success');
+            formData.append('Lang', 'EN');
+
+            const response = await api.post<any>('/WaterShutdown/CompletionNotificationEvent', formData);
+
+            if (response.data && (response.data.IsSuccess === 1 || response.data.Status === 'Success')) {
+                return;
+            }
+            throw new Error(response.data?.Status || 'Failed to send completion notification');
+        } catch (error: any) {
+            console.error('Error sending completion notification:', error);
+            throw error;
+        }
+    },
 };

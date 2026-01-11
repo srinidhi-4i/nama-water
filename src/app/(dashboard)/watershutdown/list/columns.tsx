@@ -81,7 +81,7 @@ export const getWaterShutdownColumns = ({
                 <Button
                   variant="ghost"
                   size="sm"
-                  onClick={() => onView?.(item.eventId)}
+                  onClick={() => onView?.(item.internalId?.toString() || item.eventId)}
                   title="View"
                   className="h-8 w-8 p-0"
                 >
@@ -90,7 +90,7 @@ export const getWaterShutdownColumns = ({
                 <Button
                   variant="ghost"
                   size="sm"
-                  onClick={() => onDownload?.(item.eventId)}
+                  onClick={() => onDownload?.(item.internalId?.toString() || item.eventId)}
                   title="Download"
                   className="h-8 w-8 p-0"
                 >
@@ -99,7 +99,7 @@ export const getWaterShutdownColumns = ({
                 <Button
                   variant="ghost"
                   size="sm"
-                  onClick={() => onEdit?.(item.eventId)}
+                  onClick={() => onEdit?.(item.internalId?.toString() || item.eventId)}
                   title="Edit"
                   className="h-8 w-8 p-0"
                   disabled={item.status === 'COMPLETED'}
@@ -111,7 +111,8 @@ export const getWaterShutdownColumns = ({
                   size="sm" 
                   title="Intermediate SMS"
                   className="h-8 w-8 p-0"
-                  onClick={() => onSMS?.(item.eventId)}
+                  onClick={() => onSMS?.(item.internalId?.toString() || item.eventId)}
+                  disabled={!isActionEnabled(item, 'SMS')}
                  >
                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#006A72" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-message-square-text"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/><path d="M13 8H7"/><path d="M17 12H7"/></svg>
                  </Button>
@@ -120,12 +121,33 @@ export const getWaterShutdownColumns = ({
                   size="sm" 
                   title="Completion Notification"
                   className="h-8 w-8 p-0"
-                  onClick={() => onComplete?.(item.eventId)}
+                  onClick={() => onComplete?.(item.internalId?.toString() || item.eventId)}
+                  disabled={!isActionEnabled(item, 'COMPLETE')}
                  >
                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#006A72" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-check-circle-2"><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></svg>
                  </Button>
               </div>
+
             )
         }
     })
 ]
+
+function isActionEnabled(item: WaterShutdownNotification, type: 'SMS' | 'COMPLETE'): boolean {
+    const isEnded = ['COMPLETED', 'CANCELLED', 'COMPLETION TRIGGERED'].includes(item.status);
+
+    if (type === 'SMS') {
+        // SMS enabled if Not Ended (allow seeing history even if not started)
+        return !isEnded;
+    }
+    
+    if (type === 'COMPLETE') {
+         // Completion enabled if Started AND Not Ended
+        const now = new Date();
+        const startDate = new Date(item.startDateTime);
+        const isStarted = now >= startDate;
+        return isStarted && !isEnded;
+    }
+    
+    return true;
+}
