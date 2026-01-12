@@ -27,9 +27,21 @@ import { cn } from "@/lib/utils"
 
 import { branchOpsService } from "@/services/branchops.service"
 import { useLanguage } from "@/components/providers/LanguageProvider"
-import { ValidationType } from "@/types/branchops.types"
 import Link from "next/link"
 import PageHeader from "@/components/layout/PageHeader"
+import { ValidationType, AccountPaymentDetails, DEFAULT_VALIDATION_TYPES } from "@/types/branchops.types"
+import { AccountPaymentResult } from "@/components/branchoperations/AccountPaymentResult"
+import { Alert, AlertDescription } from "@/components/ui/alert"
+import { Loader2, Search, AlertCircle, LogOut } from "lucide-react"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 
 export default function ValidateCustomerPage() {
   const router = useRouter()
@@ -45,14 +57,26 @@ export default function ValidateCustomerPage() {
   const [activeTab, setActiveTab] = useState("validate")
   const [profileData, setProfileData] = useState<any>(null)
   const [commonData, setCommonData] = useState<any>(null)
+  const [paymentResult, setPaymentResult] = useState<AccountPaymentDetails | null>(null)
+  const [showSessionExpired, setShowSessionExpired] = useState<boolean>(false)
+  const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
     loadValidationTypes()
   }, [])
 
   const loadValidationTypes = async () => {
-    const types = await branchOpsService.getValidationTypes()
-    setValidationTypes(types)
+    try {
+      const types = await branchOpsService.getValidationTypes()
+      setValidationTypes(types)
+    } catch (err: any) {
+        console.error("Failed to load validation types", err)
+        if (err?.response?.status === 401 || err?.response?.status === 403) {
+            setShowSessionExpired(true)
+        } else {
+            setValidationTypes(DEFAULT_VALIDATION_TYPES)
+        }
+    }
   }
 
   const handleValidationTypeChange = (value: string) => {
@@ -65,12 +89,9 @@ export default function ValidateCustomerPage() {
     setProfileData(null)
     setActiveTab("validate")
     setExpiryDate(undefined)
+    setError(null)
 
-    // Handle special cases
-    if (value === "ACCOUNT_PAYMENT") {
-        // Redirect to PayBillBranch as per reference
-        router.push("/PayBillBranch")
-    }
+    // Removed the redirect to /PayBillBranch that was causing 404
   }
 
   const handleSearch = async () => {
@@ -80,6 +101,9 @@ export default function ValidateCustomerPage() {
       switch (selectedType) {
         case "ACCOUNT_SEARCH":
           await handleAccountSearch()
+          break
+        case "ACCOUNT_PAYMENT":
+          await handleAccountPayment()
           break
         case "CIVIL_ID":
         case "GSM_NUMBER":
@@ -99,7 +123,13 @@ export default function ValidateCustomerPage() {
           toast.error("Please select a validation type")
       }
     } catch (error: any) {
-      toast.error(error.message || "An error occurred")
+      console.error("Search error:", error)
+      if (error?.response?.status === 401 || error?.response?.status === 403) {
+          setShowSessionExpired(true)
+      } else {
+          toast.error(error.message || "An error occurred")
+          setError(error.message || "An error occurred")
+      }
     } finally {
       setIsLoading(false)
     }
@@ -142,6 +172,21 @@ export default function ValidateCustomerPage() {
     sessionStorage.setItem("branchAccountData", JSON.stringify(result))
     // Redirect to Account Dashboard
     router.push("/branch-operations/account-dashboard")
+  }
+
+  const handleAccountPayment = async () => {
+      const val = inputValue.trim() || accountNumber.trim()
+      if (!val) {
+          toast.error("Please enter account number")
+          return
+      }
+
+      const result = await branchOpsService.getAccountPaymentDetails(val)
+      if (result) {
+          setPaymentResult(result)
+      } else {
+          toast.error("Account not found or invalid account number")
+      }
   }
 
   const handleUserValidation = async () => {
@@ -195,7 +240,7 @@ export default function ValidateCustomerPage() {
       return
     }
 
-    if (!/^[79][0-9]{7}$/.test(inputValue)) {
+    if (!/^(968)?[79][0-9]{7}$/.test(inputValue)) {
       toast.error("Invalid mobile number")
       return
     }
@@ -370,12 +415,12 @@ export default function ValidateCustomerPage() {
                 value={inputValue}
                 onChange={(e) => {
                   const value = e.target.value
-                  if (value === "" || /^[79][0-9]{0,7}$/.test(value)) {
+                  if (value === "" || /^[0-9]*$/.test(value)) {
                     setInputValue(value)
                   }
                 }}
                 placeholder="Please enter GSM number"
-                maxLength={8}
+                maxLength={11}
                 className="mt-2"
               />
             </div>
@@ -430,11 +475,36 @@ export default function ValidateCustomerPage() {
             <Button 
               onClick={handleSearch} 
               disabled={isLoading}
-              className="bg-teal-900 hover:bg-teal-800"
+              className="bg-[#1F4E58] hover:bg-[#16373e]"
             >
               {isLoading ? "Searching..." : "Search"}
             </Button>
           </div>
+        )
+
+      case "ACCOUNT_PAYMENT":
+        return (
+            <div className="space-y-4">
+                <div>
+                <Label htmlFor="accPayment">{language === "EN" ? "Account ID / Consumer Number" : "رقم الحساب / المشترك"}</Label>
+                <Input
+                    id="accPayment"
+                    type="text"
+                    value={inputValue}
+                    onChange={(e) => setInputValue(e.target.value)}
+                    placeholder={language === "EN" ? "Please Enter Your Account ID / Consumer Number" : "الرجاء إدخال رقم الحساب"}
+                    className="mt-2 h-11"
+                    onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
+                />
+                </div>
+                <Button 
+                    onClick={handleSearch} 
+                    disabled={isLoading}
+                    className="bg-[#006A72] hover:bg-[#005a61] h-11 px-8"
+                >
+                    {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : (language === "EN" ? "Submit" : "إرسال")}
+                </Button>
+            </div>
         )
 
       default:
@@ -452,6 +522,15 @@ export default function ValidateCustomerPage() {
         breadcrumbAr="التحقق من صحة / البحث عن عميل"
       />
      
+      {paymentResult ? (
+          <div className="px-6 py-6 animate-in fade-in zoom-in-95 duration-300">
+             <AccountPaymentResult 
+                data={paymentResult} 
+                onBack={() => setPaymentResult(null)} 
+             />
+          </div>
+      ) : (
+      <>
       {/* Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full px-6">
         <TabsList className="grid w-full grid-cols-2 mb-6">
@@ -481,7 +560,7 @@ export default function ValidateCustomerPage() {
               </Select>
             </div>
 
-            {selectedType && selectedType !== "ACCOUNT_PAYMENT" && (
+            {selectedType && (
               <div className="pt-4 border-t">
                 {renderInputField()}
               </div>
@@ -594,6 +673,33 @@ export default function ValidateCustomerPage() {
           </div>
         </TabsContent>
       </Tabs>
+      </>
+      )}
+
+      {/* Session Expired Alert Dialog */}
+      <AlertDialog open={showSessionExpired} onOpenChange={setShowSessionExpired}>
+          <AlertDialogContent>
+              <AlertDialogHeader>
+                  <AlertDialogTitle className="flex items-center gap-2 text-red-600">
+                      <LogOut className="h-5 w-5" />
+                      {language === "EN" ? "Session Expired" : "انتهت الجلسة"}
+                  </AlertDialogTitle>
+                  <AlertDialogDescription>
+                      {language === "EN" 
+                          ? "Your session has expired. Please login again to continue."
+                          : "انتهت جلسة العمل الخاصة بك. يرجى تسجيل الدخول مرة أخرى للمتابعة."}
+                  </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                  <AlertDialogAction 
+                      onClick={() => router.push('/login')}
+                      className="bg-[#006A72] hover:bg-[#005a61]"
+                  >
+                      {language === "EN" ? "Login Now" : "تسجيل الدخول"}
+                  </AlertDialogAction>
+              </AlertDialogFooter>
+          </AlertDialogContent>
+      </AlertDialog>
     </div>
   )
 }

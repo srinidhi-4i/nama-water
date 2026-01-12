@@ -83,9 +83,32 @@ export interface GuestService {
     order: number
 }
 
+
 export interface GuestServiceGroup {
     title: string
     titleAr: string
     icon: string
     services: GuestService[]
+}
+
+export interface AccountPaymentDetails {
+    AccountHolderName: string
+    OldAccountNumber: string
+    NewAccountNumber: string
+    ServiceType: string
+    LastPaymentAmount: string
+    LastPaymentDate: string
+    TotalOutstandingAmount: string
+    CurrentBalance: string
+    WasteWaterFixedCharge: string
+    VAT: string
+    NetTopUpAmount: string
+    OutstandingFetchError?: boolean
+}
+
+export interface OTPLog {
+    SI_No: number
+    GSM_Number: string
+    OTP_Triggered_Date_Time: string
+    Message_Delivery_Status: string
 }

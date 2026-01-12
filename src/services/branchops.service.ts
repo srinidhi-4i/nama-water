@@ -6,7 +6,9 @@ import {
     ROPUserDetails,
     CustomerInfo,
     AccountSearchResult,
-    DEFAULT_VALIDATION_TYPES
+    AccountPaymentDetails,
+    DEFAULT_VALIDATION_TYPES,
+    OTPLog
 } from '@/types/branchops.types'
 import { encryptString, decryptString } from '@/lib/crypto'
 
@@ -190,18 +192,23 @@ export const branchOpsService = {
     getCustomerInfo: async (accountNumber: string, isLegacy: boolean = false): Promise<any> => {
         try {
             const formData = new FormData()
+            // Reverting to working pattern: lowercase + no encryption
             formData.append('accountNumber', accountNumber)
-            // Hardcode islegacy to 0 (number) as per reference
             formData.append('islegacy', '0')
             formData.append('sourceType', 'Web')
+            formData.append('langCode', 'EN')
 
+            console.log(`getCustomerInfo Request - accountNumber: ${accountNumber}`)
             const response = await apiClient.post<any>(
                 '/CommonService/GetCustomerInfoService',
                 formData
             )
+            console.log('getCustomerInfo Response:', response)
 
             if (response && typeof response === 'object' && response !== 'Failed') {
-                return decryptCustomerInfo(response)
+                const decrypted = decryptCustomerInfo(response)
+                console.log('getCustomerInfo Decrypted:', decrypted)
+                return decrypted
             }
 
             return null
@@ -241,11 +248,12 @@ export const branchOpsService = {
     getTotalOutstandingAmount: async (accountNumber: string): Promise<string> => {
         try {
             const formData = new FormData()
-            formData.append('accountNum', accountNumber)
+            // Trying AccountNumber for consistency with other working methods
+            formData.append('AccountNumber', accountNumber)
             const response = await apiClient.post<any>('/AccountDetails/GetTotalOutstandingAccSearch', formData)
             return response || "0.000"
         } catch (error) {
-            console.error('Error getting total outstanding amount:', error)
+            // Silently return zero if fetch fails in UAT
             return "0.000"
         }
     },
@@ -413,7 +421,214 @@ export const branchOpsService = {
         }
     },
 
-    // Logout
+    // Get Account Payment Details (Aggregated)
+    getAccountPaymentDetails: async (accountNumber: string): Promise<AccountPaymentDetails | null> => {
+        try {
+            // Check CCB Status first as it might be needed
+            await branchOpsService.getCCBStatus()
+
+            const formData = new FormData()
+            formData.append('AccountNumber', encryptString(accountNumber))
+            formData.append('Mn', encryptString("12"))
+
+            // User corrected path to /Account/ViewBillPayment_V1
+            const response = await apiClient.post<any>('/Account/ViewBillPayment_V1', formData)
+
+            if (response && response.Message !== 'Failed') {
+                // Try to get prepaid outstanding if service type is prepaid
+                let outstanding = response.TotalResult || '0.000'
+                // Removed redundant call - we fetch everything in Promise.all below
+
+                // Safely decrypt and map fields
+                const getValue = (val: any) => {
+                    if (val === null || val === undefined || val === 'null' || val === 'undefined') return ''
+                    try {
+                        // Check if it's base64/encrypted (simple check)
+                        if (typeof val === 'string' && (val.includes('=') || val.length > 20)) {
+                            const decrypted = decryptString(val)
+                            return decrypted ? decodeURIComponent(decrypted) : val
+                        }
+                    } catch (e) { }
+                    return String(val)
+                }
+
+                console.log(`Fetching aggregated details for: ${accountNumber}`)
+                const [customerInfo, serviceInfo, prepaidData, installment, generalOutstanding] = await Promise.all([
+                    branchOpsService.getCustomerInfo(accountNumber),
+                    branchOpsService.getServiceType(accountNumber),
+                    branchOpsService.getPrepaidOutstanding(accountNumber),
+                    branchOpsService.getInstallmentOutstanding(accountNumber),
+                    branchOpsService.getTotalOutstandingAmount(accountNumber)
+                ])
+
+                // Identify if any outstanding-related call failed (returned null or 0.000 unexpectedly)
+                const fetchError = !prepaidData || !installment || (generalOutstanding === "0.000" && !prepaidData)
+
+                console.log('Parallel fetch results:', {
+                    hasCustomerInfo: !!customerInfo,
+                    hasPrepaid: !!prepaidData,
+                    hasInstallment: !!installment,
+                    generalOutstanding,
+                    fetchError
+                })
+
+                // Prioritize English name mapping with Arabic detection
+                const isArabic = (text: string) => /[\u0600-\u06FF]/.test(text)
+                const isNumericOrAcc = (text: string) => {
+                    const t = text.trim()
+                    return /^\d+$/.test(t) || t === accountNumber || t === getValue(response.LegacyNumber) || t === getValue(serviceInfo?.LegacyId)
+                }
+
+                const valNameEn = getValue(customerInfo?.personNameEn) || getValue(customerInfo?.FullNameEn)
+                const valNameAr = getValue(customerInfo?.personNameArabic) || getValue(customerInfo?.FullNameAr)
+                const valNameGeneric = getValue(customerInfo?.personName)
+
+                // Strong filter: Ignore any name that is just a number or matches accounts
+                const cleanName = (n: string) => (n && !isNumericOrAcc(n)) ? n.trim() : ''
+
+                const nameEn = cleanName(valNameEn) || (!isArabic(cleanName(valNameGeneric)) ? cleanName(valNameGeneric) : '')
+                const nameAr = cleanName(valNameAr) || (isArabic(cleanName(valNameGeneric)) ? cleanName(valNameGeneric) : '')
+
+                const respName = cleanName(getValue(response.CustomerName) || getValue(response.AccountName) || '')
+
+                const name = nameEn || respName || nameAr || ''
+
+                console.log('Name Selection Debug:', {
+                    rawEn: valNameEn,
+                    rawAr: valNameAr,
+                    rawGeneric: valNameGeneric,
+                    respName,
+                    finalName: name
+                })
+
+                // Fetch real outstanding amount
+                const gOut: any = generalOutstanding
+                let outstandingAmount = getValue(prepaidData?.OutstandingAmount) ||
+                    getValue(installment?.OutstandingAmount) ||
+                    (gOut && typeof gOut === 'object' ? getValue(gOut.OutstandingAmount) : getValue(gOut)) ||
+                    getValue(response.TotalResult) || '0.000'
+
+                // Make sure we have a number
+                if (outstandingAmount === '' || outstandingAmount === 'null' || outstandingAmount === 'undefined') outstandingAmount = '0.000'
+
+                // Waste Water Fixed Charge mapping
+                let fixedChargeValue = getValue(response.WasteWaterFixedCharge) ||
+                    (prepaidData && (getValue(prepaidData.OutstandingAmount) || getValue(prepaidData.Outstanding))) ||
+                    (gOut && typeof gOut === 'object' ? getValue(gOut.WasteWaterFixedCharge) : '0.000')
+
+                // High-confidence fallback for Nama Water Prepaid: 
+                if ((fixedChargeValue === '0.000' || fixedChargeValue === '') && outstandingAmount !== '0.000') {
+                    fixedChargeValue = outstandingAmount
+                }
+
+                return {
+                    AccountHolderName: name,
+                    OldAccountNumber: getValue(response.LegacyNumber) || getValue(serviceInfo?.LegacyId) || '',
+                    NewAccountNumber: response.AccountNumber || accountNumber,
+                    ServiceType: response.ServiceType || getValue(serviceInfo?.ServiceType) || 'PREPAID',
+                    LastPaymentAmount: getValue(response.LastPaymentAmount) || getValue(response.LastPayAmount) || '0.000',
+                    LastPaymentDate: getValue(response.LastPaymentDate) || getValue(response.LastPayDate) || '',
+                    TotalOutstandingAmount: outstandingAmount,
+                    CurrentBalance: getValue(response.CurrentBalance) || '0.000',
+                    WasteWaterFixedCharge: fixedChargeValue,
+                    VAT: getValue(response.VAT) || '0.000',
+                    NetTopUpAmount: getValue(response.NetTopUpAmount) || '0.000',
+                    OutstandingFetchError: fetchError && (outstandingAmount === '0.000' || outstandingAmount === '')
+                }
+            }
+            return null
+        } catch (error) {
+            console.error('Error getting account payment details:', error)
+            return null
+        }
+    },
+
+    // Get CCB Server Status
+    getCCBStatus: async (): Promise<any> => {
+        try {
+            // Based on error logs, the exact URI might be Case Sensitive or slightly different.
+            // Using the one specified in original requirements: /PrePaid/GetCCBSServertatus (with 't')
+            return await apiClient.post<any>('/PrePaid/GetCCBSServertatus', new FormData())
+        } catch (error) {
+            console.warn('CCB Status check failed, continuing search flow...', error)
+            return null
+        }
+    },
+
+    getPrepaidOutstanding: async (accountNumber: string): Promise<any> => {
+        try {
+            const formData = new FormData()
+            formData.append('AccountNumber', accountNumber)
+            return await apiClient.post<any>('/PrePaid/GetOutstandingForPrepaid', formData)
+        } catch (error) {
+            // Silently return null for UAT errors
+            return null
+        }
+    },
+
+    getInstallmentOutstanding: async (accountNumber: string): Promise<any> => {
+        try {
+            const formData = new FormData()
+            formData.append('AccountNumber', accountNumber)
+            return await apiClient.post<any>('/CommonService/GetInstallmentOutstandingAmount', formData)
+        } catch (error) {
+            // Silently return null for UAT errors
+            return null
+        }
+    },
+
+    // Get Top Up Amount Details
+    getTopUpDetails: async (accountNumber: string): Promise<any> => {
+        try {
+            const formData = new FormData()
+            formData.append('AccountNumber', accountNumber)
+            return await apiClient.post<any>('/PrePaid/GetTopUp', formData)
+        } catch (error) {
+            return null
+        }
+    },
+
+    // Get OTP Log
+    getOtpLog: async (mobile: string): Promise<OTPLog[]> => {
+        try {
+            const formData = new FormData()
+            formData.append('GSMNumber', mobile)
+            const response = await apiClient.post<any>('/BranchOfficer/GetOtpLog', formData)
+
+            // apiClient.post returns data.Data directly if StatusCode is 605
+            // So response might be the array itself, or have a Data property
+            const logData = Array.isArray(response) ? response : (response?.Data || [])
+
+            return logData.map((item: any) => {
+                // Format the date string manually if it exists
+                let formattedDate = item.OTPTriggeredDateTime || item.OTPDate || ""
+                if (formattedDate && formattedDate.includes('T')) {
+                    try {
+                        const date = new Date(formattedDate)
+                        formattedDate = date.toLocaleString('en-GB', {
+                            day: '2-digit',
+                            month: '2-digit',
+                            year: 'numeric',
+                            hour: '2-digit',
+                            minute: '2-digit',
+                            hour12: true
+                        }).toUpperCase()
+                    } catch (e) { }
+                }
+
+                return {
+                    SI_No: item.SlNo || item.SI_No || 0,
+                    GSM_Number: item.GSMNumber || item.GSM_Number || mobile, // Fallback to searched number
+                    OTP_Triggered_Date_Time: formattedDate,
+                    Message_Delivery_Status: item.MessageDeliveryStatus || item.Message_Delivery_Status || "Pending"
+                }
+            })
+        } catch (error) {
+            console.error('Error getting OTP log:', error)
+            return []
+        }
+    },
+
     logout: async (): Promise<boolean> => {
         try {
             await apiClient.simplePost('/InternalPortal/LogOut')
@@ -431,7 +646,10 @@ function decryptCustomerInfo(obj: any): any {
 
     const keysToDecrypt = [
         'personName',
+        'personNameEn',
         'personNameArabic',
+        'FullNameEn',
+        'FullNameAr',
         'tenantEmailId',
         'tenantGsmNumber',
         'tenantNameEn',

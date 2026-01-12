@@ -53,6 +53,10 @@ const nextConfig: NextConfig = {
       {
         source: '/WaterLeakAlarm/:path*',
         destination: 'https://eservicesuat.nws.nama.om:444/api/WaterLeakAlarm/:path*',
+      },
+      {
+        source: '/PrePaid/:path*',
+        destination: 'https://eservicesuat.nws.nama.om:444/api/PrePaid/:path*',
       }
     ];
   },
