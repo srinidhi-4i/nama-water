@@ -57,6 +57,10 @@ const nextConfig: NextConfig = {
       {
         source: '/PrePaid/:path*',
         destination: 'https://eservicesuat.nws.nama.om:444/api/PrePaid/:path*',
+      },
+      {
+        source: '/UserActionWeb/:path*',
+        destination: 'https://eservicesuat.nws.nama.om:444/api/UserActionWeb/:path*',
       }
     ];
   },

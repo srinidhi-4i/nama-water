@@ -29,8 +29,10 @@ import { branchOpsService } from "@/services/branchops.service"
 import { useLanguage } from "@/components/providers/LanguageProvider"
 import Link from "next/link"
 import PageHeader from "@/components/layout/PageHeader"
-import { ValidationType, AccountPaymentDetails, DEFAULT_VALIDATION_TYPES } from "@/types/branchops.types"
+import { ValidationType, AccountPaymentDetails, DEFAULT_VALIDATION_TYPES, ROPUserDetails, CustomerInfo } from "@/types/branchops.types"
 import { AccountPaymentResult } from "@/components/branchoperations/AccountPaymentResult"
+import { ProfileData } from "@/components/branchoperations/ProfileData"
+import { ProfileDataROP } from "@/components/branchoperations/ProfileDataROP"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Loader2, Search, AlertCircle, LogOut } from "lucide-react"
 import {
@@ -59,6 +61,7 @@ export default function ValidateCustomerPage() {
   const [commonData, setCommonData] = useState<any>(null)
   const [paymentResult, setPaymentResult] = useState<AccountPaymentDetails | null>(null)
   const [showSessionExpired, setShowSessionExpired] = useState<boolean>(false)
+  const [showUserNotFound, setShowUserNotFound] = useState<boolean>(false)
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
@@ -203,10 +206,14 @@ export default function ValidateCustomerPage() {
       }
     }
 
-    const result = await branchOpsService.validateUser(selectedType, inputValue)
-
+    const result = await branchOpsService.validateUser(selectedType, inputValue.trim())
+    
     if (!result.success) {
-      toast.error(result.message || "User not found")
+      if (result.message === "User not found") {
+        setShowUserNotFound(true)
+      } else {
+        toast.error(result.message || "User not found")
+      }
       return
     }
 
@@ -235,17 +242,18 @@ export default function ValidateCustomerPage() {
   }
 
   const handleOTPLogRetrieval = async () => {
-    if (!inputValue.trim()) {
+    const val = inputValue.trim()
+    if (!val) {
       toast.error("Please enter mobile number")
       return
     }
 
-    if (!/^(968)?[79][0-9]{7}$/.test(inputValue)) {
+    if (!/^(968)?[79][0-9]{7}$/.test(val)) {
       toast.error("Invalid mobile number")
       return
     }
 
-    router.push(`/branch-operations/otp-log?mobile=${inputValue}`)
+    router.push(`/branch-operations/otp-log?mobile=${val}`)
   }
 
   const handleROPValidation = async () => {
@@ -575,100 +583,34 @@ export default function ValidateCustomerPage() {
                {language === "EN" ? "Profile data will be displayed here after validation" : "سيتم عرض بيانات الملف الشخصي هنا بعد التحقق"}
              </p>
             ) : (
-              <div className="space-y-6">
-                <div className="border-b pb-4">
-                  <h3 className="text-lg font-semibold text-teal-900 mb-2">
-                    {language === "EN" ? "Customer Details" : "تفاصيل العميل"}
-                  </h3>
-                </div>
-
-                {profileData.type === "ROP" && (
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                     <div>
-                      <Label className="text-gray-500">Full Name (Arabic)</Label>
-                      <p className="font-medium text-lg text-right">{profileData.data.FullNameAr || "-"}</p>
-                    </div>
-                    <div>
-                      <Label className="text-gray-500">Full Name (English)</Label>
-                      <p className="font-medium text-lg">{profileData.data.FullNameEn || "-"}</p>
-                    </div>
-                    <div>
-                      <Label className="text-gray-500">Civil ID</Label>
-                      <p className="font-medium">{profileData.data.NationalIDOrCivilID || "-"}</p>
-                    </div>
-                    <div>
-                      <Label className="text-gray-500">Expiry Date</Label>
-                      <p className="font-medium">{profileData.data.ExpiryDate || "-"}</p>
-                    </div>
-                     <div>
-                      <Label className="text-gray-500">GSM Number</Label>
-                      <p className="font-medium">{profileData.data.GsmNumber || "-"}</p>
-                    </div>
-                  </div>
-                )}
-
-                {profileData.type === "ACCOUNT" && (
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div>
-                      <Label className="text-gray-500">Account Number</Label>
-                      <p className="font-medium text-lg">{profileData.data.accountNumber}</p>
-                    </div>
-                    <div>
-                      <Label className="text-gray-500">Service Type</Label>
-                      <p className="font-medium">{profileData.data.serviceType?.ServiceType || "-"}</p>
-                    </div>
-                     <div>
-                      <Label className="text-gray-500">Customer Name (En)</Label>
-                      <p className="font-medium">{profileData.data.customerInfo?.CustomerNameEn || profileData.data.customerInfo?.FullNameEn || "-"}</p>
-                    </div>
-                     <div>
-                      <Label className="text-gray-500">Customer Name (Ar)</Label>
-                      <p className="font-medium text-right">{profileData.data.customerInfo?.CustomerNameAr || profileData.data.customerInfo?.FullNameAr || "-"}</p>
-                    </div>
-                  </div>
-                )}
-
+              <>
                 {profileData.type === "USER" && (
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                     <div>
-                      <Label className="text-gray-500">User ID</Label>
-                      <p className="font-medium">{profileData.data.UserID || "-"}</p>
-                    </div>
-                     <div>
-                      <Label className="text-gray-500">Civil ID</Label>
-                      <p className="font-medium">{profileData.data.CivilID || "-"}</p>
-                    </div>
-                    <div>
-                      <Label className="text-gray-500">Full Name (En)</Label>
-                      <p className="font-medium">{profileData.data.FullNameEn || "-"}</p>
-                    </div>
-                    <div>
-                      <Label className="text-gray-500">Full Name (Ar)</Label>
-                      <p className="font-medium text-right">{profileData.data.FullNameAr || "-"}</p>
-                    </div>
-                     <div>
-                      <Label className="text-gray-500">Mobile Number</Label>
-                      <p className="font-medium">{profileData.data.MobileNumber || "-"}</p>
-                    </div>
-                     <div>
-                      <Label className="text-gray-500">Email ID</Label>
-                      <p className="font-medium">{profileData.data.EmailID || "-"}</p>
-                    </div>
-                  </div>
+                  <ProfileData 
+                    data={profileData.data} 
+                    onBack={() => {
+                      setProfileData(null)
+                      setActiveTab("validate")
+                    }}
+                    onProceed={() => {
+                      // Handle proceed action
+                      toast.success("Proceeding with customer...")
+                    }}
+                  />
                 )}
-                 
-                 <div className="pt-4 flex justify-end">
-                    <Button 
-                      variant="outline" 
-                      onClick={() => {
-                        setProfileData(null)
-                        setActiveTab("validate")
-                      }}
-                    >
-                      {language === "EN" ? "Clear & New Search" : "مسح وبحث جديد"}
-                    </Button>
-                 </div>
-              </div>
+                {profileData.type === "ROP" && (
+                  <ProfileDataROP
+                    data={profileData.data}
+                    onBack={() => {
+                      setProfileData(null)
+                      setActiveTab("validate")
+                    }}
+                    onProceed={() => {
+                      // Handle proceed action
+                      toast.success("Proceeding with ROP customer...")
+                    }}
+                  />
+                )}
+              </>
             )}
           </div>
         </TabsContent>
@@ -698,6 +640,50 @@ export default function ValidateCustomerPage() {
                       {language === "EN" ? "Login Now" : "تسجيل الدخول"}
                   </AlertDialogAction>
               </AlertDialogFooter>
+          </AlertDialogContent>
+      </AlertDialog>
+
+      {/* User Not Found Alert Dialog */}
+      <AlertDialog open={showUserNotFound} onOpenChange={setShowUserNotFound}>
+          <AlertDialogContent className="max-w-md bg-white border-2 border-teal-800 p-0 overflow-hidden">
+              <div className="flex justify-end p-2">
+                <Button variant="ghost" size="icon" onClick={() => setShowUserNotFound(false)} className="h-8 w-8">
+                  <span className="text-xl">×</span>
+                </Button>
+              </div>
+              <div className="p-8 pt-0 flex flex-col items-center text-center space-y-6">
+                  <div className="h-16 w-16 rounded-full border-4 border-teal-800 flex items-center justify-center">
+                    <span className="text-teal-800 text-4xl font-bold">!</span>
+                  </div>
+                  <AlertDialogTitle className="text-3xl font-bold text-teal-900 tracking-tight">
+                      USER NOT FOUND
+                  </AlertDialogTitle>
+                  <AlertDialogDescription className="text-gray-600 text-lg">
+                      This user is not registered<br />
+                      Please register user account using the option below.
+                  </AlertDialogDescription>
+                  <div className="flex flex-col w-full gap-3 pt-4">
+                      <Button 
+                        onClick={() => {
+                          setShowUserNotFound(false)
+                          router.push('/branch-operations/registration')
+                        }}
+                        className="bg-teal-900 hover:bg-teal-800 text-white font-bold h-12 uppercase tracking-wide"
+                      >
+                          REGISTER
+                      </Button>
+                      <Button 
+                        variant="outline"
+                        onClick={() => {
+                          setShowUserNotFound(false)
+                          router.push('/branch-operations/guest')
+                        }}
+                        className="border-teal-900 text-teal-900 hover:bg-teal-50 font-bold h-12"
+                      >
+                          Proceed As Guest User
+                      </Button>
+                  </div>
+              </div>
           </AlertDialogContent>
       </AlertDialog>
     </div>

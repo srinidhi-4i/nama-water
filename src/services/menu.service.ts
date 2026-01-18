@@ -7,6 +7,7 @@ export const GUEST_BRANCH_SERVICE_URLS = [
     "GenericComplaintsBranch",
     "ReportWaterLeakingBop",
     "ReportCompanyVehiclesBop",
+    "VehicleComplaintsBranch",
     "ContractorWorkComplaintBranch",
     "ReportQualityBop",
     "ReportHighPressure",

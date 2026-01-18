@@ -33,6 +33,14 @@ export async function POST(request: NextRequest) {
         const response = await fetch(uatUrl, {
             method: 'POST',
             body: uatFormData,
+            headers: {
+                // Forward incoming cookies if any
+                'Cookie': request.headers.get('cookie') || '',
+                'Host': 'eservicesuat.nws.nama.om:444',
+                'Origin': 'https://eservicesuat.nws.nama.om',
+                'Referer': 'https://eservicesuat.nws.nama.om/Validateuser',
+                'User-Agent': request.headers.get('user-agent') || 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36',
+            }
         });
 
         console.log('LDAP Validation: UAT response status:', response.status);

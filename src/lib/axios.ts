@@ -6,6 +6,7 @@ import { ApiError } from '@/types/auth.types';
 // No default headers - let each request set its own (especially important for FormData)
 const apiClient: AxiosInstance = axios.create({
     timeout: 30000, // 30 seconds
+    withCredentials: true,
 });
 
 // Request interceptor - Add auth token if available
@@ -13,11 +14,15 @@ apiClient.interceptors.request.use(
     (config) => {
         // Get token from sessionStorage or localStorage
         const token = typeof window !== 'undefined'
-            ? sessionStorage.getItem('AU/@/#/TO/#/VA') || localStorage.getItem('AU/@/#/TO/#/VA')
+            ? localStorage.getItem('AU/@/#/TO/#/VA') || sessionStorage.getItem('AU/@/#/TO/#/VA')
             : null;
 
-        if (token && config.headers) {
+        if (token && token !== 'branch-authenticated' && config.headers) {
+            console.log(`axios: Sending Authorization header (Bearer ${token.substring(0, 10)}...)`);
             config.headers.Authorization = `Bearer ${token}`;
+        } else {
+            const reason = !token ? 'No token found' : 'Placeholder token detected';
+            console.log(`axios: ${reason}, NOT sending Authorization header`);
         }
 
         return config;

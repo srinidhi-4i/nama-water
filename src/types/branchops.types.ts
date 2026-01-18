@@ -39,6 +39,8 @@ export interface CustomerInfo {
     EmailID: string
     MobileNumber: string
     CivilID: string
+    ExpiryDate?: string
+    CustomerType?: string
     [key: string]: any
 }
 

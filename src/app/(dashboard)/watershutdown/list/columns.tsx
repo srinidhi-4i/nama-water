@@ -102,7 +102,7 @@ export const getWaterShutdownColumns = ({
                   onClick={() => onEdit?.(item.internalId?.toString() || item.eventId)}
                   title="Edit"
                   className="h-8 w-8 p-0"
-                  disabled={item.status === 'COMPLETED'}
+                  disabled={item.status === 'COMPLETED' || item.status === 'CANCELLED' || item.status === '2'}
                 >
                   <Edit className="h-4 w-4 text-[#006A72]" />
                 </Button>

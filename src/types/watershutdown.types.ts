@@ -1,6 +1,6 @@
 // Water Shutdown Notification Types
 
-export type WaterShutdownStatus = "SCHEDULED" | "CUSTOMER_TRIG" | "COMPLETED";
+export type WaterShutdownStatus = "SCHEDULED" | "CUSTOMER_TRIG" | "COMPLETED" | "CANCELLED" | "PLANNED" | "UNPLANNED" | string;
 
 // Master Data Types
 export interface RegionItem {
@@ -70,6 +70,7 @@ export interface WaterShutdownNotification {
     eventId: string;
     internalId?: number;
     eventType: EventType;
+    eventTypeId?: number; // EventTypeID from API for Edit mode
     status: WaterShutdownStatus;
     region: Region;
     startDateTime: string; // ISO 8601 format
@@ -147,7 +148,11 @@ export interface SaveNotificationRequest {
     eventId?: string; // Present for update, missing for create
     notificationTitle: string;
     eventTypeId: number;
+    eventType?: string;
+    eventTypeCategory?: string;
     regionId: string;
+    regionCode?: string;
+    locationDetails: string;
     startDateTime: string;
     endDateTime: string;
     apologyNotificationDate?: string;
@@ -158,9 +163,18 @@ export interface SaveNotificationRequest {
     numberOfHours: string;
     notificationDetails: string;
     reasonForShutdown: string;
+    contractors: Contractor[];
+    focalPoints: FocalPoint[];
+    eventNotificationDetails: any[];
+    locationObjects?: {
+        region: any;
+        willayats: any[];
+        dmas: any[];
+    };
 
     // JSON Data structure
     eventJsonData: string;
+    comments?: string;
 
     // Legacy support if needed
     reason?: string;

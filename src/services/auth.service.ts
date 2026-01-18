@@ -72,6 +72,7 @@ export const authService = {
                 };
 
                 if (typeof window !== 'undefined' && apiData) {
+                    console.log('Login successful, processing user data');
                     // Save the complete user data structure
                     const encryptedUser = encryptData(userData);
                     localStorage.setItem(STORAGE_KEYS.BRANCH_USER_DATA, encryptedUser);
@@ -81,13 +82,20 @@ export const authService = {
                         localStorage.setItem('b\\u//n\\', encryptedUsername);
                     }
 
-                    const dummyToken = 'branch-authenticated';
-                    // Always use localStorage for token to support multiple tabs/persistence 
-                    // as requested by user ("opening same url in another tab should directly enter application")
-                    localStorage.setItem(STORAGE_KEYS.AUTH_TOKEN, dummyToken);
+                    // Try to find a real token in the response
+                    const realToken = apiData.Token || apiData.token || apiData.Data?.Token || apiData.Data?.token;
+                    const tokenToUse = realToken || 'branch-authenticated';
+
+                    if (realToken) {
+                        console.log('Real token found in response, using it');
+                    } else {
+                        console.warn('No real token found in response, using dummy token');
+                    }
+
+                    // Always use localStorage for token to support multiple tabs/persistence
+                    localStorage.setItem(STORAGE_KEYS.AUTH_TOKEN, tokenToUse);
                     if (!rememberMe) {
-                        // If not rememberMe, we still keep it in sessionStorage as a backup or for session-only logic
-                        sessionStorage.setItem(STORAGE_KEYS.AUTH_TOKEN, dummyToken);
+                        sessionStorage.setItem(STORAGE_KEYS.AUTH_TOKEN, tokenToUse);
                     }
                 }
 

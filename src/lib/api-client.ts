@@ -23,16 +23,14 @@ class ApiClient {
                 // Add auth token
                 if (typeof window !== 'undefined') {
                     try {
-                        const userStr = localStorage.getItem('wcb/APtiypx/sw7lu83P7A==')
-                        if (userStr) {
-                            const user = JSON.parse(userStr)
-                            const token = user.token || user.AuraToken
-                            if (token) {
-                                config.headers.Authorization = `Bearer ${token}`
-                            }
+                        const token = localStorage.getItem('AU/@/#/TO/#/VA') || sessionStorage.getItem('AU/@/#/TO/#/VA')
+                        // If it's the dummy token, don't send it as Bearer header.
+                        // The backend might be rejecting it for specific endpoints.
+                        if (token && token !== 'branch-authenticated') {
+                            config.headers.Authorization = `Bearer ${token}`
                         }
                     } catch (error) {
-                        console.error("Error parsing auth token", error)
+                        console.error("Error setting auth token", error)
                     }
                 }
                 return config
@@ -63,8 +61,8 @@ class ApiClient {
 
             case 604: // Session timeout / Unauthorized
                 if (typeof window !== 'undefined') {
-                    localStorage.removeItem('wcb/APtiypx/sw7lu83P7A==')
-                    sessionStorage.removeItem('v!s#c')
+                    localStorage.removeItem('AU/@/#/TO/#/VA')
+                    localStorage.removeItem('brUd/APtiypx/sw7lu83P7A==')
                     localStorage.clear()
                     // window.location.href = '/login' // Debugging
                     console.warn('Session expired (604) - Auto-logout disabled for debugging')
@@ -79,8 +77,8 @@ class ApiClient {
 
             case 612: // Branch login session timeout
                 if (typeof window !== 'undefined') {
+                    localStorage.removeItem('AU/@/#/TO/#/VA')
                     localStorage.removeItem('brUd/APtiypx/sw7lu83P7A==')
-                    localStorage.removeItem('wcb/APtiypx/sw7lu83P7A==')
                     localStorage.clear()
                     // window.location.href = '/login' // Debugging
                     console.warn('Session expired (612) - Auto-logout disabled for debugging')

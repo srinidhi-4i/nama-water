@@ -3,26 +3,34 @@
 import React from "react"
 import { useParams } from "next/navigation"
 import { GuestServiceForm, FormTab } from "@/components/branchoperations/GuestServiceForm"
+import { WaterLeakageForm } from "@/components/branchoperations/WaterLeakageForm"
 
 const SERVICE_CONFIGS: Record<string, { en: string; ar: string; tabs: FormTab[]; layout?: "simple" | "account-search" }> = {
-  "ReportWaterLeakBranchOperation": { 
-    en: "REPORT A WATER LEAKAGE", 
+  "ReportWaterLeakingBop": { 
+    en: "Report on Water Leaking", 
     ar: "الإبلاغ عن تسرب المياه",
     tabs: [
       { id: "contact", labelEn: "Contact Details", labelAr: "تفاصيل الاتصال" },
       { id: "premise", labelEn: "Premise Details", labelAr: "تفاصيل المبنى" },
       { id: "attachment", labelEn: "Attachment & Leakage Details", labelAr: "المرفقات وتفاصيل التسرب" },
-      { id: "otp", labelEn: "OTP Verification", labelAr: "التحقق من رمز OTP" },
     ]
   },
-  "VehicleComplaintsBranch": { 
-    en: "Vehicle Complaints", 
-    ar: "شكاوى المركبات",
+  "ReportCompanyVehiclesBop": { 
+    en: "Report on Company Vehicles", 
+    ar: "شكاوى مركبات الشركة",
     tabs: [
       { id: "contact", labelEn: "Contact Details", labelAr: "تفاصيل الاتصال" },
       { id: "location", labelEn: "Location Details", labelAr: "تفاصيل الموقع" },
       { id: "attachment", labelEn: "Attachment & Case Details", labelAr: "المرفقات وتفاصيل الحالة" },
-      { id: "otp", labelEn: "OTP Verification", labelAr: "التحقق من رمز OTP" },
+    ]
+  },
+  "VehicleComplaintsBranch": { 
+    en: "Report on Company Vehicles", 
+    ar: "شكاوى مركبات الشركة",
+    tabs: [
+      { id: "contact", labelEn: "Contact Details", labelAr: "تفاصيل الاتصال" },
+      { id: "location", labelEn: "Location Details", labelAr: "تفاصيل الموقع" },
+      { id: "attachment", labelEn: "Attachment & Case Details", labelAr: "المرفقات وتفاصيل الحالة" },
     ]
   },
   "ReportHighPressure": { 
@@ -33,7 +41,7 @@ const SERVICE_CONFIGS: Record<string, { en: string; ar: string; tabs: FormTab[];
       { id: "customer", labelEn: "Customer Details", labelAr: "تفاصيل العميل" },
     ]
   },
-  "GenericComplaintsBranch": { 
+  "WastewaterServiceBranch": { 
     en: "Report on Wastewater Services", 
     ar: "الإبلاغ عن خدمات مياه الصرف الصحي",
     layout: "account-search",
@@ -56,9 +64,11 @@ const SERVICE_CONFIGS: Record<string, { en: string; ar: string; tabs: FormTab[];
   "SewerOdorComplaintBranch": { 
     en: "Sewer Odor Complaint", 
     ar: "شكوى رائحة الصرف الصحي",
+    layout: "account-search",
     tabs: [
-      { id: "contact", labelEn: "Contact Details", labelAr: "تفاصيل الاتصال" },
       { id: "customer", labelEn: "Customer Details", labelAr: "تفاصيل العميل" },
+      { id: "property", labelEn: "Property Details", labelAr: "تفاصيل العقار" },
+      { id: "complaint", labelEn: "Complaint Details", labelAr: "تفاصيل الشكوى" },
     ]
   },
   "ReportQualityBop": { 
@@ -83,6 +93,17 @@ export default function GuestServicePage() {
   const params = useParams()
   const serviceId = params?.serviceId as string
   
+  // Use dedicated Water Leakage form for this service
+  if (serviceId === "ReportWaterLeakingBop") {
+    return (
+      <WaterLeakageForm 
+        titleEn="REPORT A WATER LEAKAGE"
+        titleAr="الإبلاغ عن تسرب المياه"
+        serviceId={serviceId}
+      />
+    )
+  }
+  
   const config = SERVICE_CONFIGS[serviceId] || { 
     en: serviceId ? serviceId.replace(/([A-Z])/g, ' $1').trim() : "Service Request", 
     ar: "طلب خدمة",
@@ -96,6 +117,7 @@ export default function GuestServicePage() {
         titleAr={config.ar} 
         tabs={config.tabs}
         layout={config.layout}
+        serviceId={serviceId}
       />
     </div>
   )

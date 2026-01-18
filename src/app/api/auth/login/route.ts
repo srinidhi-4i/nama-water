@@ -18,7 +18,11 @@ export async function POST(request: NextRequest) {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'Accept': 'application/json',
+                'Accept': 'application/json, text/plain, */*',
+                'Host': 'eservicesuat.nws.nama.om:444',
+                'Origin': 'https://eservicesuat.nws.nama.om',
+                'Referer': 'https://eservicesuat.nws.nama.om/Validateuser',
+                'User-Agent': request.headers.get('user-agent') || 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36',
             },
             body: JSON.stringify(body),
         });

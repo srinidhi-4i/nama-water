@@ -3,14 +3,6 @@
 import React, { useEffect, useState } from "react"
 import { 
   AlertCircle, 
-  Droplet, 
-  Truck, 
-  HardHat, 
-  FlaskConical, 
-  Gauge, 
-  Waves, 
-  Wind,
-  LucideIcon,
   Loader2,
   ChevronRight
 } from "lucide-react"
@@ -21,17 +13,18 @@ import { GuestService, GuestServiceGroup } from "@/types/branchops.types"
 import { useLanguage } from "@/components/providers/LanguageProvider"
 
 // Icon mapping based on English names from the reference image
-const getIconForServiceName = (name: string): LucideIcon => {
+// Icon mapping based on UAT assets from e-poral-paw
+const getIconForServiceName = (name: string): string => {
   const n = name.toLowerCase()
-  if (n.includes("leak")) return Droplet // Report on Water Leaking
-  if (n.includes("vehicle") || n.includes("company")) return Truck // Report on Company Vehicles
-  if (n.includes("contractor")) return HardHat // Report on Contractor Work
-  if (n.includes("quality")) return FlaskConical // Report on Water Quality
-  if (n.includes("pressure") || n.includes("network")) return Gauge // Pressure issues
-  if (n.includes("wastewater")) return Waves // Wastewater
-  if (n.includes("overflow")) return Droplet // Water overflow
-  if (n.includes("odor") || n.includes("sewer")) return Wind // Sewer Odor
-  return AlertCircle // Default icon
+  if (n.includes("leak")) return "/Assets/Images/global/water_leakage.png"
+  if (n.includes("vehicle") || n.includes("company")) return "/Assets/Images/TankerServices.png"
+  if (n.includes("contractor")) return "/Assets/Images/global/raise_a_complaint.png"
+  if (n.includes("quality")) return "/Assets/Images/WaterRequests.png"
+  if (n.includes("pressure") || n.includes("network")) return "/Assets/Images/meter_number.png"
+  if (n.includes("wastewater")) return "/Assets/Images/WastewaterRequests.png"
+  if (n.includes("overflow")) return "/Assets/Images/waterOverflow.png"
+  if (n.includes("odor") || n.includes("odour") || n.includes("sewer")) return "/Assets/Images/Odour.svg"
+  return "/Assets/Images/icon-new.png"
 }
 
 export const GuestUserServices: React.FC = () => {
@@ -44,7 +37,6 @@ export const GuestUserServices: React.FC = () => {
     try {
       setLoading(true)
       setError(null)
-      setServiceGroups([])
       
       const lang = language || "EN"
       
@@ -54,72 +46,91 @@ export const GuestUserServices: React.FC = () => {
         menuService.getCommonData()
       ])
       
-      console.log("GuestUserServices: rawMenuData received:", rawMenuData);
-      console.log("GuestUserServices: commonData received:", commonData);
-
       // Transform raw menu data
-      const menuData = menuService.transformMenuItems(rawMenuData);
-      console.log("GuestUserServices: transformed menuData:", menuData);
+      const menuData = menuService.transformMenuItems(rawMenuData) || [];
 
-      if (!menuData || menuData.length === 0) {
-        console.warn("GuestUserServices: menuData is empty after transform");
-        setServiceGroups([])
-        return
-      }
+      // Unified base list of 8 services in exact UAT order with embedded icon paths
+      const requiredServices = [
+        { 
+          name: "Report on Water Leaking", 
+          url: "ReportWaterLeakingBop", 
+          ar: "الإبلاغ عن تسرب المياه", 
+          icon: "/Assets/Images/water_leakage.png"
+        },
+        { 
+          name: "Report on Company Vehicles", 
+          url: "ReportCompanyVehiclesBop", 
+          ar: "شكاوى مركبات الشركة", 
+          icon: "/Assets/Images/TankerServices.png"
+        },
+        { 
+          name: "Report on Contractor Work", 
+          url: "ContractorWorkComplaintBranch", 
+          ar: "الإبلاغ عن أعمال المقاول", 
+          icon: "/Assets/Images/global/raise_a_complaint.png"
+        },
+        { 
+          name: "Report on Water Quality", 
+          url: "ReportQualityBop", 
+          ar: "الإبلاغ عن جودة المياه", 
+          icon: "/Assets/Images/WaterRequests.png"
+        },
+        { 
+          name: "Report on Low, High or No pressure in network", 
+          url: "ReportHighPressure", 
+          ar: "الإبلاغ عن ضغط منخفض/مرتفع", 
+          icon: "/Assets/Images/meter_number.png"
+        },
+        { 
+          name: "Report on Wastewater Services", 
+          url: "WastewaterServiceBranch", 
+          ar: "الإبلاغ عن خدمات مياه الصرف الصحي", 
+          icon: "/Assets/Images/WastewaterRequests.png"
+        },
+        { 
+          name: "Report a water overflow", 
+          url: "WaterOverflowBranch", 
+          ar: "الإبلاغ عن فيضان المياه", 
+          icon: "/Assets/Images/waterOverflow.png"
+        },
+        { 
+          name: "Sewer Odour Complaint", 
+          url: "SewerOdorComplaintBranch", 
+          ar: "شكوى رائحة الصرف الصحي", 
+          icon: "/Assets/Images/Odour.svg"
+        }
+      ];
 
-      // Deduplicate menuData by MenuId to avoid duplicate key errors
-      const uniqueMenuData = Array.from(new Map(menuData.map(item => [item.MenuId, item])).values());
+      // Map API data back to this base list if found, otherwise use fallback
+      const finalServices: GuestService[] = requiredServices.map((req, index) => {
+        const apiService = menuData.find((m: any) => {
+          const url = (m.BracnhServiceURL || m.BranchServiceURL || m.branchServiceURL || m.Target_Url || m.targetUrl || m.MenuURL || m.MenuUrl || "").toString();
+          return url.includes(req.url) || (m.Menu_Name_EN && m.Menu_Name_EN.toLowerCase().includes(req.name.toLowerCase()));
+        });
 
-      // Step 1: Find "Guest User Service" parent menu
-      const parentMenu: any = uniqueMenuData.find((m: any) => 
-        (m.Parent_Id === null || m.Parent_Id === undefined || m.Parent_Id === 0) && 
-        (m.Menu_Name_EN === "Guest User Service" || m.MenuId === 2 || m.Module_Name === "Guest User Service" || m.MenuNameEn === "Guest User Service")
-      );
+        return {
+          MenuId: typeof apiService?.MenuId === 'number' ? apiService.MenuId : index + 10000,
+          Module_Name: req.name,
+          Module_Name_Arabic: req.ar,
+          Menu_Icon: req.icon,
+          Target_Url: req.url,
+          BracnhServiceURL: req.url, 
+          BranchServiceURL: req.url,
+          BranchServiceEnablementFlag: (apiService as any)?.BranchServiceEnablementFlag !== undefined ? (apiService as any).BranchServiceEnablementFlag : 1,
+          order: index
+        };
+      });
 
-      const parentId = parentMenu?.MenuId || 2;
+      console.log("Final services count:", finalServices.length);
+      console.log("Final services:", finalServices.map(s => ({ name: s.Module_Name, icon: s.Menu_Icon, enabled: s.BranchServiceEnablementFlag })));
 
-      // Step 2: Filter children - ONLY include guest services as per requirement
-      const services = uniqueMenuData
-        .filter((m: any) => {
-          const mId = m.MenuId || m.menuId;
-          const pId = m.Parent_Id || m.parentId || m.ParentId;
-          const url = (m.BracnhServiceURL || m.BranchServiceURL || m.branchServiceURL || m.Target_Url || m.targetUrl || m.MenuURL || m.MenuUrl || m.URL || m.Url || "").toString();
-          
-          if (mId === parentId || mId === 2) return false;
+      setServiceGroups([{
+        title: "Raise Complaint", 
+        titleAr: "تقديم شكوى",
+        icon: "/Assets/Images/icon__raise_a_complaint.png",
+        services: finalServices
+      }])
 
-          const isDirectChild = pId === parentId;
-          const isInGuestList = GUEST_BRANCH_SERVICE_URLS.some(gUrl => url && url.includes(gUrl));
-          
-          // Only show if it's explicitly in our Guest Service URL list OR a direct child of the Guest Menu
-          return isInGuestList || isDirectChild;
-        })
-        .map((m: any) => ({
-          MenuId: m.MenuId || m.menuId,
-          Module_Name: m.Menu_Name_EN || m.Module_Name || m.MenuNameEn || m.Menu_Name || "",
-          Module_Name_Arabic: m.Menu_Name_AR || m.Module_Name_Arabic || m.MenuNameAr || m.Menu_Name_AR || "",
-          Menu_Icon: m.Icon_Class || m.Menu_Icon || m.Icon || "",
-          Target_Url: m.Target_Url || m.targetUrl || m.MenuURL || m.MenuUrl || "",
-          BranchServiceURL: m.BracnhServiceURL || m.BranchServiceURL || m.branchServiceURL || m.Target_Url || m.MenuURL || m.MenuUrl || "",
-          BranchServiceEnablementFlag: m.BranchServiceEnablementFlag !== undefined ? m.BranchServiceEnablementFlag : 1,
-          PersonTypeCode: m.PersonTypeCode || m.personTypeCode,
-          quickMenu: m.quickMenu || m.QuickMenu,
-          order: m.order || m.Order || 0
-        }))
-        .sort((a, b) => a.order - b.order)
-
-      console.log("GuestUserServices: filtered services:", services);
-
-      // Step 3: Group under "Raise Complaint" parent
-      if (services.length > 0) {
-        setServiceGroups([{
-          title: "Raise Complaint", 
-          titleAr: "تقديم شكوى",
-          icon: parentMenu?.Icon_Class || parentMenu?.Menu_Icon || "AlertCircle",
-          services: services
-        }])
-      } else {
-        setServiceGroups([])
-      }
     } catch (error) {
       console.error("Error loading guest services:", error)
       setError("Failed to load services. Please try again.")
@@ -179,9 +190,13 @@ export const GuestUserServices: React.FC = () => {
       
       <Card className="overflow-hidden border-none shadow-[0_20px_40px_rgba(0,0,0,0.08)] rounded-xl bg-white/50 backdrop-blur-sm">
         {/* Card Header - Compact Premium Look */}
-        <div className="bg-white border-b border-slate-100 flex items-center gap-4 px-1">
-          <div className="p-2 bg-[#D92D20] rounded-lg shadow-[0_4px_12px_rgba(217,45,32,0.25)]">
-            <AlertCircle className="w-5 h-5 text-white" />
+        <div className="bg-white border-b border-slate-100 flex items-center gap-4 p-4">
+          <div className="p-2.5 bg-[#D92D20]/10 rounded-xl">
+            <img 
+              src="/Assets/Images/icon__raise_a_complaint.png" 
+              alt="" 
+              className="w-8 h-8 object-contain"
+            />
           </div>
           <div>
             <h2 className="text-lg font-bold text-[#1F4E58] tracking-tight">
@@ -197,7 +212,7 @@ export const GuestUserServices: React.FC = () => {
         <CardContent className="p-0 bg-white">
           <ul className="flex flex-col">
             {group.services.map((service, sIdx) => {
-              const Icon = getIconForServiceName(service.Module_Name)
+              const iconPath = service.Menu_Icon
               const isDisabled = service.BranchServiceEnablementFlag === 0
               const serviceUrl = service.BracnhServiceURL || service.Target_Url || "#"
               const serviceName = language === "AR" ? service.Module_Name_Arabic : service.Module_Name
@@ -210,21 +225,29 @@ export const GuestUserServices: React.FC = () => {
                   }`}
                 >
                   {isDisabled ? (
-                    <div className="w-full flex items-center gap-5 text-left">
-                      <div className="p-1 text-gray-300">
-                        <Icon className="w-5 h-5" />
+                    <div className="w-full flex items-center gap-5 px-6 py-3.5 text-left transition-all">
+                      <div className="p-1 flex-shrink-0">
+                        <img 
+                          src={iconPath} 
+                          alt="" 
+                          className="w-6 h-6 object-contain filter grayscale" 
+                        />
                       </div>
-                      <span className="text-gray-400 text-sm font-medium flex-1">{serviceName}</span>
+                      <span className="text-gray-400 text-sm font-medium flex-1 tracking-tight">{serviceName}</span>
                     </div>
                   ) : (
                     <Link 
                       href={`/branch-operations/guest/${serviceUrl}`}
                       className="w-full flex items-center px-6 py-3.5 text-left transition-all"
                     >
-                      <div className="p-1 text-[#006A72] transition-transform duration-300 group-hover:scale-110 group-hover:text-[#D92D20]">
-                        <Icon className="w-5 h-5 stroke-[1.5]" />
+                      <div className="p-1 flex-shrink-0 transition-transform duration-300 group-hover:scale-110">
+                        <img 
+                          src={iconPath} 
+                          alt="" 
+                          className="w-6 h-6 object-contain" 
+                        />
                       </div>
-                      <span className="text-[#344054] text-sm font-semibold flex-1 group-hover:text-[#006A72] transition-colors tracking-tight">
+                      <span className="text-[#344054] text-sm font-semibold flex-1 group-hover:text-[#006A72] transition-colors tracking-tight ml-4">
                         {serviceName}
                       </span>
                       <div className="flex items-center gap-2 opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-300">

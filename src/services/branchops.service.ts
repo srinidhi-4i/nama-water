@@ -1,4 +1,4 @@
-import { apiClient } from '@/lib/api-client'
+import { api } from '@/lib/axios'
 import {
     ValidationType,
     ValidationRequest,
@@ -16,16 +16,17 @@ export const branchOpsService = {
     // Get all validation types
     getValidationTypes: async (): Promise<ValidationType[]> => {
         try {
-            const response = await apiClient.simplePost<any>('/BranchOfficer/GetAllList')
+            // Use empty FormData to trigger multipart/form-data
+            const formData = new FormData()
+            const response = await api.post<any>('/BranchOfficer/GetAllList', formData)
+            const data = response.data.Data || response.data
 
-            if (response && Array.isArray(response) && response.length > 0) {
-                return response
-            } else if (response && response.ValidateTypes && Array.isArray(response.ValidateTypes) && response.ValidateTypes.length > 0) {
-                return response.ValidateTypes
+            if (data && Array.isArray(data) && data.length > 0) {
+                return data
+            } else if (data && data.ValidateTypes && Array.isArray(data.ValidateTypes) && data.ValidateTypes.length > 0) {
+                return data.ValidateTypes
             }
 
-            // Return default types if API fails or returns empty
-            console.log('API returned invalid or empty validation types, using defaults')
             return DEFAULT_VALIDATION_TYPES
         } catch (error) {
             console.warn('Using default validation types due to API error:', error)
@@ -37,18 +38,15 @@ export const branchOpsService = {
     validateUser: async (type: string, value: string): Promise<ValidationResponse> => {
         try {
             const formData = new FormData()
-
-            // Determine parameter name based on type
             let paramName = ''
-            let paramValue = value
+            let paramValue = value.trim() // Ensure whitespace is removed
 
             switch (type) {
                 case 'GSM_NUMBER':
-                    paramName = 'gsmNumber'
-                    paramValue = '968' + value // Add prefix
+                    paramName = 'GSMNumber' // Keep as is if getOtpLog works
                     break
                 case 'CIVIL_ID':
-                    paramName = 'civilId'
+                    paramName = 'civilId' // Match UAT camelCase exactly
                     break
                 case 'CR_NUMBER':
                     paramName = 'crNumber'
@@ -58,35 +56,55 @@ export const branchOpsService = {
             }
 
             formData.append(paramName, paramValue)
+            formData.append('sourceType', 'Web')
+            formData.append('langCode', 'EN')
+            formData.append('islegacy', '0')
 
-            const response = await apiClient.post<any>(
-                '/BranchOfficer/GetBranchOfficerCivilID',
+            // Log final payload for debugging
+            const payload: any = {}
+            formData.forEach((val, key) => { payload[key] = val })
+            console.log(`validateUser Payload [${type}]:`, payload)
+
+            const response = await api.post<any>(
+                '/api/BranchOfficer/GetBranchOfficerCivilID',
                 formData
             )
 
-            if (response === 'Failed' || !response) {
+            const data = response.data
+            console.log('validateUser Response:', data)
+
+            if (data.StatusCode === 612) {
+                console.warn('Backend returned 612 - Session or Token Invalid');
+                return {
+                    success: false,
+                    message: "Session expired. Please login again."
+                }
+            }
+
+            if (data === 'Failed' || !data || data.StatusCode === 606 || (data.Data === 'User not found')) {
                 return {
                     success: false,
                     message: 'User not found'
                 }
             }
 
-            if (response && response.UserID) {
-                // Chain call to get full user details
-                const userDetails = await branchOpsService.getUserDetails(response.UserID)
+            // Handle both unwrapped (apiClient style) and wrapped (api style) data
+            const UserID = data.Data?.UserID || data.UserID
+
+            if (UserID) {
+                const userDetails = await branchOpsService.getUserDetails(UserID)
                 return {
                     success: true,
-                    data: userDetails || response
+                    data: userDetails || data.Data || data
                 }
             }
 
             return {
                 success: true,
-                data: response
+                data: data.Data || data
             }
         } catch (error: any) {
             console.warn('API/Validation failed:', error)
-            // Mock Fallback removed to expose real error
             throw error
         }
     },
@@ -95,25 +113,30 @@ export const branchOpsService = {
     getUserDetails: async (userId: string): Promise<any> => {
         try {
             const formData = new FormData()
-            formData.append('userID', userId)
+            formData.append('UserID', userId)
+            formData.append('sourceType', 'Web')
+            formData.append('langCode', 'EN')
+            formData.append('islegacy', '0')
 
-            const response = await apiClient.post<any>(
+            const response = await api.post<any>(
                 '/UserActionWeb/GetUserDetailsByUserID',
                 formData
             )
 
-            if (response && response.UserID) {
-                // Decrypt fields as per reference user.actions.js
-                const decryptedUser = {
-                    ...response,
-                    FullNameEn: response.FullNameEn ? decodeURIComponent(decryptString(response.FullNameEn)) : response.FullNameEn,
-                    FullNameAr: response.FullNameAr ? decodeURIComponent(decryptString(response.FullNameAr)) : response.FullNameAr,
-                    MobileNumber: response.MobileNumber ? decodeURIComponent(decryptString(response.MobileNumber)) : response.MobileNumber,
-                    EmailID: response.EmailID ? decodeURIComponent(decryptString(response.EmailID)) : response.EmailID
+            const data = response.data.Data || response.data
+
+            if (data && typeof data === 'object') {
+                return {
+                    ...data,
+                    FullNameEn: data.FullNameEn ? decodeURIComponent(decryptString(data.FullNameEn)) : '',
+                    FullNameAr: data.FullNameAr ? decodeURIComponent(decryptString(data.FullNameAr)) : '',
+                    MobileNumber: data.MobileNumber ? decodeURIComponent(decryptString(data.MobileNumber)) : '',
+                    EmailID: data.EmailID ? decodeURIComponent(decryptString(data.EmailID)) : '',
+                    ExpiryDate: data.ExpiryDate ? decodeURIComponent(decryptString(data.ExpiryDate)) : '',
+                    CustomerType: data.CustomerType ? decodeURIComponent(decryptString(data.CustomerType)) : ''
                 }
-                return decryptedUser
             }
-            return response
+            return data
         } catch (error) {
             console.error('Error getting user details:', error)
             return null
@@ -124,28 +147,32 @@ export const branchOpsService = {
     getROPUserDetails: async (civilId: string, expiryDate: string): Promise<ValidationResponse> => {
         try {
             const formData = new FormData()
-            formData.append('civilId', encryptString(civilId))
-            formData.append('expiryDate', encryptString(expiryDate))
+            formData.append('CivilID', encryptString(civilId))
+            formData.append('ExpiryDate', encryptString(expiryDate))
+            formData.append('sourceType', 'Web')
+            formData.append('langCode', 'EN')
+            formData.append('islegacy', '0')
 
-            const response = await apiClient.post<any>(
-                '/BranchOfficer/GetROPUserDetails',
+            const response = await api.post<any>(
+                '/api/BranchOfficer/GetROPUserDetails',
                 formData
             )
 
-            if (!response || response === 'Failed') {
+            const data = response.data.Data || response.data
+
+            if (!data || data === 'Failed') {
                 return {
                     success: false,
                     message: 'ROP user details not found'
                 }
             }
 
-            // Decrypt response fields
             const ropUserDetails: ROPUserDetails = {
-                FullNameAr: response.FullNameAr ? decodeURIComponent(decryptString(response.FullNameAr)) : '',
-                FullNameEn: response.FullNameEn ? decodeURIComponent(decryptString(response.FullNameEn)) : '',
+                FullNameAr: data.FullNameAr ? decodeURIComponent(decryptString(data.FullNameAr)) : '',
+                FullNameEn: data.FullNameEn ? decodeURIComponent(decryptString(data.FullNameEn)) : '',
                 ExpiryDate: expiryDate,
                 NationalIDOrCivilID: civilId,
-                GsmNumber: response.GSMNumber ? decodeURIComponent(decryptString(response.GSMNumber)) : ''
+                GsmNumber: data.GSMNumber ? decodeURIComponent(decryptString(data.GSMNumber)) : ''
             }
 
             return {
@@ -155,7 +182,7 @@ export const branchOpsService = {
         } catch (error: any) {
             return {
                 success: false,
-                error: error.message || 'Failed to get ROP user details'
+                message: error.message || 'Failed to get ROP user details'
             }
         }
     },
@@ -164,20 +191,23 @@ export const branchOpsService = {
     getServiceType: async (accountNumber: string): Promise<AccountSearchResult | null> => {
         try {
             const formData = new FormData()
-            // Encrypt account number for this specific API call
-            formData.append('accountNumber', encryptString(accountNumber))
+            formData.append('AccountNumber', encryptString(accountNumber))
+            formData.append('sourceType', 'Web')
+            formData.append('langCode', 'EN')
 
-            const response = await apiClient.post<any>(
+            const response = await api.post<any>(
                 '/CommonService/GetServiceType',
                 formData
             )
 
-            if (response) {
+            const data = response.data.Data || response.data
+
+            if (data) {
                 return {
-                    AccountNumber: response.AccountNumber || accountNumber,
-                    ServiceType: response.ServiceType || '',
-                    LegacyId: response.LegacyId || '',
-                    CCBAccountNumber: response.AccountNumber || ''
+                    AccountNumber: data.AccountNumber || accountNumber,
+                    ServiceType: data.ServiceType || '',
+                    LegacyId: data.LegacyId || '',
+                    CCBAccountNumber: data.AccountNumber || ''
                 }
             }
 
@@ -192,22 +222,20 @@ export const branchOpsService = {
     getCustomerInfo: async (accountNumber: string, isLegacy: boolean = false): Promise<any> => {
         try {
             const formData = new FormData()
-            // Reverting to working pattern: lowercase + no encryption
-            formData.append('accountNumber', accountNumber)
-            formData.append('islegacy', '0')
+            formData.append('AccountNumber', accountNumber)
+            formData.append('Islegacy', '0')
             formData.append('sourceType', 'Web')
             formData.append('langCode', 'EN')
 
-            console.log(`getCustomerInfo Request - accountNumber: ${accountNumber}`)
-            const response = await apiClient.post<any>(
+            const response = await api.post<any>(
                 '/CommonService/GetCustomerInfoService',
                 formData
             )
-            console.log('getCustomerInfo Response:', response)
 
-            if (response && typeof response === 'object' && response !== 'Failed') {
-                const decrypted = decryptCustomerInfo(response)
-                console.log('getCustomerInfo Decrypted:', decrypted)
+            const data = response.data.Data || response.data
+
+            if (data && typeof data === 'object' && data !== 'Failed') {
+                const decrypted = decryptCustomerInfo(data)
                 return decrypted
             }
 
@@ -224,16 +252,20 @@ export const branchOpsService = {
             const formData = new FormData()
             formData.append('SRNo', serviceNumber)
             formData.append('ENV', 'UAT')
+            formData.append('sourceType', 'Web')
+            formData.append('langCode', 'EN')
 
-            const response = await apiClient.post<any>(
+            const response = await api.post<any>(
                 '/BranchOfficer/GetAQUrlfromServiceNo',
                 formData
             )
 
-            if (response && response.AQURL && response.ViewFormToken) {
+            const data = response.data.Data || response.data
+
+            if (data && data.AQURL && data.ViewFormToken) {
                 return {
-                    url: response.AQURL,
-                    token: response.ViewFormToken
+                    url: data.AQURL,
+                    token: data.ViewFormToken
                 }
             }
 
@@ -248,12 +280,14 @@ export const branchOpsService = {
     getTotalOutstandingAmount: async (accountNumber: string): Promise<string> => {
         try {
             const formData = new FormData()
-            // Trying AccountNumber for consistency with other working methods
             formData.append('AccountNumber', accountNumber)
-            const response = await apiClient.post<any>('/AccountDetails/GetTotalOutstandingAccSearch', formData)
-            return response || "0.000"
+            formData.append('sourceType', 'Web')
+            formData.append('langCode', 'EN')
+
+            const response = await api.post<any>('/AccountDetails/GetTotalOutstandingAccSearch', formData)
+            const data = response.data.Data || response.data
+            return data || "0.000"
         } catch (error) {
-            // Silently return zero if fetch fails in UAT
             return "0.000"
         }
     },
@@ -262,10 +296,13 @@ export const branchOpsService = {
     getMyRequestDashboard: async (accountNumber: string): Promise<any> => {
         try {
             const formData = new FormData()
-            formData.append('accountNum', accountNumber)
-            formData.append('Option', '') // Default option
-            const response = await apiClient.post<any>('/MyRequest/GetDashboradMyRequestAccSearch', formData)
-            return response
+            formData.append('AccountNum', accountNumber)
+            formData.append('Option', '')
+            formData.append('sourceType', 'Web')
+            formData.append('langCode', 'EN')
+
+            const response = await api.post<any>('/MyRequest/GetDashboradMyRequestAccSearch', formData)
+            return response.data.Data || response.data
         } catch (error) {
             console.error('Error getting my request dashboard:', error)
             return null
@@ -276,11 +313,14 @@ export const branchOpsService = {
     getPaymentHistory: async (accountNumber: string): Promise<any[]> => {
         try {
             const formData = new FormData()
-            formData.append('accountNum', accountNumber)
-            formData.append('fromDate', '')
-            formData.append('toDate', '')
-            const response = await apiClient.post<any[]>('/AccountDetails/GetPaymentDashboardHistoryAccSearch', formData)
-            return response || []
+            formData.append('AccountNum', accountNumber)
+            formData.append('FromDate', '')
+            formData.append('ToDate', '')
+            formData.append('sourceType', 'Web')
+            formData.append('langCode', 'EN')
+
+            const response = await api.post<any>('/AccountDetails/GetPaymentDashboardHistoryAccSearch', formData)
+            return response.data.Data || response.data || []
         } catch (error) {
             console.error('Error getting payment history:', error)
             return []
@@ -313,8 +353,8 @@ export const branchOpsService = {
             formData.append('End_Date', formatDate(today))
 
 
-            const response = await apiClient.post<any[]>('/WaterLeakAlarm/GetAMRAlertHistoryAccSearch', formData)
-            return response || []
+            const response = await api.post<any>('/WaterLeakAlarm/GetAMRAlertHistoryAccSearch', formData)
+            return response.data.Data || response.data || []
         } catch (error) {
             console.error('Error getting AMR alert history:', error)
             return []
@@ -332,8 +372,8 @@ export const branchOpsService = {
             formData.append("ServiceName", "null")
             formData.append("ToDate", "null")
 
-            const response = await apiClient.post<any[]>('/MyRequest/GetMyRequestAccSearch', formData)
-            return response || []
+            const response = await api.post<any>('/MyRequest/GetMyRequestAccSearch', formData)
+            return response.data.Data || response.data || []
         } catch (error) {
             console.error('Error getting request list:', error)
             return []
@@ -346,8 +386,9 @@ export const branchOpsService = {
             const formData = new FormData()
             formData.append('accountNum', accountNumber)
             // Reference doesn't show params clearly in view_file but typically accountNum
-            const response = await apiClient.post<any>('/BranchOfficer/GetAppointmentDetailsForAccount', formData)
-            return response?.Table || []
+            const response = await api.post<any>('/BranchOfficer/GetAppointmentDetailsForAccount', formData)
+            const data = response.data.Data || response.data
+            return data?.Table || []
         } catch (error) {
             console.error('Error getting appointment list:', error)
             return []
@@ -360,8 +401,8 @@ export const branchOpsService = {
         try {
             const formData = new FormData()
             formData.append('accountNumber', encryptString(accountNumber))
-            const response = await apiClient.post<any>('/BranchOfficer/GetChangeServiceTypeDet', formData)
-            return response
+            const response = await api.post<any>('/BranchOfficer/GetChangeServiceTypeDet', formData)
+            return response.data.Data || response.data
         } catch (error) {
             console.error('Error getting change service type details:', error)
             return null
@@ -373,8 +414,8 @@ export const branchOpsService = {
         try {
             const formData = new FormData()
 
-            const response = await apiClient.post<any>('/MyRequest/GetServiceNamesAccSearch', formData)
-            return response
+            const response = await api.post<any>('/MyRequest/GetServiceNamesAccSearch', formData)
+            return response.data.Data || response.data
         } catch (error) {
             console.error('Error getting service names:', error)
             return null
@@ -386,8 +427,8 @@ export const branchOpsService = {
         try {
             const formData = new FormData()
             formData.append('accountNum', accountNumber)
-            const response = await apiClient.post<any>('/AccountDetails/GetOutstandingByGroupAccSearch', formData)
-            return response
+            const response = await api.post<any>('/AccountDetails/GetOutstandingByGroupAccSearch', formData)
+            return response.data.Data || response.data
         } catch (error) {
             console.error('Error getting outstanding by group:', error)
             return null
@@ -399,8 +440,8 @@ export const branchOpsService = {
         try {
             const formData = new FormData()
             formData.append('AccountNumber', accountNumber)
-            const response = await apiClient.post<any>('/AccountDetails/GetActConsumptionDataMonthlyAccSearch', formData)
-            return response
+            const response = await api.post<any>('/AccountDetails/GetActConsumptionDataMonthlyAccSearch', formData)
+            return response.data.Data || response.data
         } catch (error) {
             console.error('Error getting consumption data:', error)
             return null
@@ -413,8 +454,8 @@ export const branchOpsService = {
             const formData = new FormData()
             formData.append('AccountNumber', encryptString(accountNumber))
             formData.append('Mn', encryptString("12")) // Hardcoded as per reference
-            const response = await apiClient.post<any>('/AccountDetails/ViewBillPayment_V1', formData)
-            return response
+            const response = await api.post<any>('/AccountDetails/ViewBillPayment_V1', formData)
+            return response.data.Data || response.data
         } catch (error) {
             console.error('Error viewing bill payment:', error)
             return null
@@ -432,11 +473,12 @@ export const branchOpsService = {
             formData.append('Mn', encryptString("12"))
 
             // User corrected path to /Account/ViewBillPayment_V1
-            const response = await apiClient.post<any>('/Account/ViewBillPayment_V1', formData)
+            const response = await api.post<any>('/Account/ViewBillPayment_V1', formData)
+            const responseData = response.data.Data || response.data
 
-            if (response && response.Message !== 'Failed') {
+            if (responseData && responseData.Message !== 'Failed') {
                 // Try to get prepaid outstanding if service type is prepaid
-                let outstanding = response.TotalResult || '0.000'
+                let outstanding = responseData.TotalResult || '0.000'
                 // Removed redundant call - we fetch everything in Promise.all below
 
                 // Safely decrypt and map fields
@@ -476,7 +518,7 @@ export const branchOpsService = {
                 const isArabic = (text: string) => /[\u0600-\u06FF]/.test(text)
                 const isNumericOrAcc = (text: string) => {
                     const t = text.trim()
-                    return /^\d+$/.test(t) || t === accountNumber || t === getValue(response.LegacyNumber) || t === getValue(serviceInfo?.LegacyId)
+                    return /^\d+$/.test(t) || t === accountNumber || t === getValue(responseData.LegacyNumber) || t === getValue(serviceInfo?.LegacyId)
                 }
 
                 const valNameEn = getValue(customerInfo?.personNameEn) || getValue(customerInfo?.FullNameEn)
@@ -489,7 +531,7 @@ export const branchOpsService = {
                 const nameEn = cleanName(valNameEn) || (!isArabic(cleanName(valNameGeneric)) ? cleanName(valNameGeneric) : '')
                 const nameAr = cleanName(valNameAr) || (isArabic(cleanName(valNameGeneric)) ? cleanName(valNameGeneric) : '')
 
-                const respName = cleanName(getValue(response.CustomerName) || getValue(response.AccountName) || '')
+                const respName = cleanName(getValue(responseData.CustomerName) || getValue(responseData.AccountName) || '')
 
                 const name = nameEn || respName || nameAr || ''
 
@@ -506,13 +548,13 @@ export const branchOpsService = {
                 let outstandingAmount = getValue(prepaidData?.OutstandingAmount) ||
                     getValue(installment?.OutstandingAmount) ||
                     (gOut && typeof gOut === 'object' ? getValue(gOut.OutstandingAmount) : getValue(gOut)) ||
-                    getValue(response.TotalResult) || '0.000'
+                    getValue(responseData.TotalResult) || '0.000'
 
                 // Make sure we have a number
                 if (outstandingAmount === '' || outstandingAmount === 'null' || outstandingAmount === 'undefined') outstandingAmount = '0.000'
 
                 // Waste Water Fixed Charge mapping
-                let fixedChargeValue = getValue(response.WasteWaterFixedCharge) ||
+                let fixedChargeValue = getValue(responseData.WasteWaterFixedCharge) ||
                     (prepaidData && (getValue(prepaidData.OutstandingAmount) || getValue(prepaidData.Outstanding))) ||
                     (gOut && typeof gOut === 'object' ? getValue(gOut.WasteWaterFixedCharge) : '0.000')
 
@@ -523,16 +565,16 @@ export const branchOpsService = {
 
                 return {
                     AccountHolderName: name,
-                    OldAccountNumber: getValue(response.LegacyNumber) || getValue(serviceInfo?.LegacyId) || '',
-                    NewAccountNumber: response.AccountNumber || accountNumber,
-                    ServiceType: response.ServiceType || getValue(serviceInfo?.ServiceType) || 'PREPAID',
-                    LastPaymentAmount: getValue(response.LastPaymentAmount) || getValue(response.LastPayAmount) || '0.000',
-                    LastPaymentDate: getValue(response.LastPaymentDate) || getValue(response.LastPayDate) || '',
+                    OldAccountNumber: getValue(responseData.LegacyNumber) || getValue(serviceInfo?.LegacyId) || '',
+                    NewAccountNumber: responseData.AccountNumber || accountNumber,
+                    ServiceType: responseData.ServiceType || getValue(serviceInfo?.ServiceType) || 'PREPAID',
+                    LastPaymentAmount: getValue(responseData.LastPaymentAmount) || getValue(responseData.LastPayAmount) || '0.000',
+                    LastPaymentDate: getValue(responseData.LastPaymentDate) || getValue(responseData.LastPayDate) || '',
                     TotalOutstandingAmount: outstandingAmount,
-                    CurrentBalance: getValue(response.CurrentBalance) || '0.000',
+                    CurrentBalance: getValue(responseData.CurrentBalance) || '0.000',
                     WasteWaterFixedCharge: fixedChargeValue,
-                    VAT: getValue(response.VAT) || '0.000',
-                    NetTopUpAmount: getValue(response.NetTopUpAmount) || '0.000',
+                    VAT: getValue(responseData.VAT) || '0.000',
+                    NetTopUpAmount: getValue(responseData.NetTopUpAmount) || '0.000',
                     OutstandingFetchError: fetchError && (outstandingAmount === '0.000' || outstandingAmount === '')
                 }
             }
@@ -548,7 +590,11 @@ export const branchOpsService = {
         try {
             // Based on error logs, the exact URI might be Case Sensitive or slightly different.
             // Using the one specified in original requirements: /PrePaid/GetCCBSServertatus (with 't')
-            return await apiClient.post<any>('/PrePaid/GetCCBSServertatus', new FormData())
+            const formData = new FormData()
+            formData.append('sourceType', 'Web')
+            formData.append('langCode', 'EN')
+            const response = await api.post<any>('/PrePaid/GetCCBSServertatus', formData)
+            return response.data.Data || response.data
         } catch (error) {
             console.warn('CCB Status check failed, continuing search flow...', error)
             return null
@@ -559,7 +605,8 @@ export const branchOpsService = {
         try {
             const formData = new FormData()
             formData.append('AccountNumber', accountNumber)
-            return await apiClient.post<any>('/PrePaid/GetOutstandingForPrepaid', formData)
+            const response = await api.post<any>('/PrePaid/GetOutstandingForPrepaid', formData)
+            return response.data.Data || response.data
         } catch (error) {
             // Silently return null for UAT errors
             return null
@@ -570,7 +617,8 @@ export const branchOpsService = {
         try {
             const formData = new FormData()
             formData.append('AccountNumber', accountNumber)
-            return await apiClient.post<any>('/CommonService/GetInstallmentOutstandingAmount', formData)
+            const response = await api.post<any>('/CommonService/GetInstallmentOutstandingAmount', formData)
+            return response.data.Data || response.data
         } catch (error) {
             // Silently return null for UAT errors
             return null
@@ -582,7 +630,8 @@ export const branchOpsService = {
         try {
             const formData = new FormData()
             formData.append('AccountNumber', accountNumber)
-            return await apiClient.post<any>('/PrePaid/GetTopUp', formData)
+            const response = await api.post<any>('/PrePaid/GetTopUp', formData)
+            return response.data.Data || response.data
         } catch (error) {
             return null
         }
@@ -593,14 +642,16 @@ export const branchOpsService = {
         try {
             const formData = new FormData()
             formData.append('GSMNumber', mobile)
-            const response = await apiClient.post<any>('/BranchOfficer/GetOtpLog', formData)
+            formData.append('sourceType', 'Web')
+            formData.append('langCode', 'EN')
+            formData.append('islegacy', '0')
 
-            // apiClient.post returns data.Data directly if StatusCode is 605
-            // So response might be the array itself, or have a Data property
-            const logData = Array.isArray(response) ? response : (response?.Data || [])
+            const response = await api.post<any>('/api/BranchOfficer/GetOtpLog', formData)
+
+            const data = response.data.Data || response.data || []
+            const logData = Array.isArray(data) ? data : []
 
             return logData.map((item: any) => {
-                // Format the date string manually if it exists
                 let formattedDate = item.OTPTriggeredDateTime || item.OTPDate || ""
                 if (formattedDate && formattedDate.includes('T')) {
                     try {
@@ -618,7 +669,7 @@ export const branchOpsService = {
 
                 return {
                     SI_No: item.SlNo || item.SI_No || 0,
-                    GSM_Number: item.GSMNumber || item.GSM_Number || mobile, // Fallback to searched number
+                    GSM_Number: item.GSMNumber || item.GSM_Number || mobile,
                     OTP_Triggered_Date_Time: formattedDate,
                     Message_Delivery_Status: item.MessageDeliveryStatus || item.Message_Delivery_Status || "Pending"
                 }
@@ -629,9 +680,80 @@ export const branchOpsService = {
         }
     },
 
+    // Submit Guest Service (Generic)
+    submitGuestService: async (endpoint: string, serviceType: string, processData: any): Promise<any> => {
+        try {
+            const formData = new FormData()
+            formData.append('ServiceType', serviceType)
+            formData.append('ProcessType', 'New')
+            formData.append('SourceType', 'Web')
+            formData.append('RequestedBy', '') // Empty for guest
+
+            // Format date as DD-MM-YYYY
+            const now = new Date()
+            const day = String(now.getDate()).padStart(2, '0')
+            const month = String(now.getMonth() + 1).padStart(2, '0')
+            const year = now.getFullYear()
+            formData.append('RequestedTime', `${day}-${month}-${year}`)
+
+            formData.append('SecurityToken', 'INTERTEC')
+
+            if (processData.ServiceSeggreagation) {
+                formData.append('ServiceSeggreagation', processData.ServiceSeggreagation.toString())
+                delete processData.ServiceSeggreagation
+            }
+
+            formData.append('ProcessData', JSON.stringify({
+                ...processData,
+                LanguageCode: 'EN'
+            }))
+
+            const response = await api.post<any>(`/${endpoint}`, formData)
+            const data = response.data.Data || response.data
+
+            if (data === 'Failed' || !data) {
+                return { success: false, message: 'Submission failed' }
+            }
+
+            return { success: true, requestNumber: data }
+        } catch (error: any) {
+            console.error(`Error submitting guest service [${serviceType}]:`, error)
+            return { success: false, message: error.message || 'Submission failed' }
+        }
+    },
+
+    // Specific Guest Service Wrappers
+    submitContractorWorkComplaint: (data: any) =>
+        branchOpsService.submitGuestService('CommonService/CWGuestSubmitNewDetails', 'CMCACWRK', data),
+
+    submitWastewaterComplaint: (data: any) =>
+        branchOpsService.submitGuestService('CommonService/ReportWasteWaterSubmitNewDetails', 'WASTEWSRVC', data),
+
+    submitWaterQualityComplaint: (data: any) =>
+        branchOpsService.submitGuestService('CommonService/ReportWaterQualitySubmitNewDetails', 'WATERQUALT', data),
+
+    submitWaterLeakageComplaint: (data: any) =>
+        branchOpsService.submitGuestService('CommonService/ReportWaterLeakageSubmitNewDetails', 'WATERLEAK', data),
+
+    submitWaterOverflowComplaint: (data: any) =>
+        branchOpsService.submitGuestService('CommonService/ReportWasteWaterSubmitNewDetails', 'WASTEWSRVC', data),
+
+    submitSewerOdorComplaint: (data: any) =>
+        branchOpsService.submitGuestService('CommonService/ReportWasteWaterSubmitNewDetails', 'WASTEWSRVC', {
+            ...data,
+            ServiceSeggreagation: 2539
+        }),
+
+    submitPressureComplaint: (data: any) =>
+        branchOpsService.submitGuestService('CommonService/OperationIssueSubmitNewDetails', 'WLOPRISU', data),
+
+    submitCompanyVehicleComplaint: (data: any) =>
+        branchOpsService.submitGuestService('CommonService/VehicleComplaintSubmitNewDetails', 'VEHICLECOMP', data),
+
     logout: async (): Promise<boolean> => {
         try {
-            await apiClient.simplePost('/InternalPortal/LogOut')
+            const formData = new FormData()
+            await api.post('/InternalPortal/LogOut', formData)
             return true
         } catch (error) {
             console.error('Error during logout:', error)

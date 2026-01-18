@@ -1,54 +1,45 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-// Get Branch Details endpoint - Step 2
-export async function POST(request: NextRequest) {
+export async function POST(
+    request: NextRequest,
+    { params }: { params: { path: string[] } }
+) {
     try {
-        // Get FormData from the request
+        const path = (await params).path.join('/');
+        const uatUrl = `https://eservicesuat.nws.nama.om:444/api/BranchOfficer/${path}`;
+
+        console.log(`BranchOfficer Proxy [POST]: ${uatUrl}`);
+
+        const incomingCookies = request.headers.get('cookie') || '';
+        console.log(`BranchOfficer Proxy: Incoming Cookies string length: ${incomingCookies.length}`);
+
+        // Forward FormData
         const formData = await request.formData();
-
-        const userADId = formData.get('UserADId');
-
-        console.log('Branch Details: Received request');
-        console.log('Branch Details: UserADId (plain):', userADId);
-
-        if (!userADId) {
-            return NextResponse.json(
-                { Status: 'fail', StatusCode: 400, Data: null },
-                { status: 400 }
-            );
-        }
-
-        // Create FormData for UAT with plain UserADId
-        const uatFormData = new FormData();
-        uatFormData.append('UserADId', userADId as string);
-
-        // Forward to GetBranchDetails endpoint
-        const uatUrl = 'https://eservicesuat.nws.nama.om:444/api/InternalPortal/GetBranchDetails';
-
-        console.log('Branch Details: Forwarding to UAT with plain UserADId');
 
         const response = await fetch(uatUrl, {
             method: 'POST',
-            body: uatFormData,
+            body: formData,
             headers: {
-                // Forward incoming cookies if any (IMPORTANT for session maintenance between Step 1 and 2)
-                'Cookie': request.headers.get('cookie') || '',
+                'Cookie': incomingCookies,
                 'Host': 'eservicesuat.nws.nama.om:444',
                 'Origin': 'https://eservicesuat.nws.nama.om',
                 'Referer': 'https://eservicesuat.nws.nama.om/Validateuser',
                 'User-Agent': request.headers.get('user-agent') || 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36',
+                'Authorization': request.headers.get('authorization') || '',
+                'Accept': 'application/json, text/plain, */*',
+                'Accept-Language': 'en-GB,en-US;q=0.9,en;q=0.8',
             }
         });
 
-        console.log('Branch Details: UAT response status:', response.status);
+        console.log(`BranchOfficer Proxy: UAT status: ${response.status}`);
 
         const data = await response.json();
-        console.log('Branch Details: UAT response:', data);
+        console.log(`BranchOfficer Proxy: Response StatusCode: ${data.StatusCode}`);
 
-        // Create response with headers
+        // Create response and forward cookies with Path=/
         const nextResponse = NextResponse.json(data, { status: response.status });
 
-        // Forward Set-Cookie header if present
+        // Robust cookie forwarding
         const rawCookies = (response.headers as any).getSetCookie
             ? (response.headers as any).getSetCookie()
             : [response.headers.get('set-cookie')].filter((c: string | null) => !!c);
@@ -62,17 +53,15 @@ export async function POST(request: NextRequest) {
                     .replace(/SameSite=[^;]+;?/gi, 'SameSite=Lax;');
 
                 modifiedCookie = modifiedCookie + '; Path=/';
-
-                console.log('Branch Details: Forwarding cookie:', modifiedCookie);
                 nextResponse.headers.append('set-cookie', modifiedCookie);
             });
         }
 
         return nextResponse;
     } catch (error: any) {
-        console.error('Branch Details: Error:', error);
+        console.error('BranchOfficer Proxy Error:', error);
         return NextResponse.json(
-            { Status: 'fail', StatusCode: 500, Data: null },
+            { Status: 'fail', StatusCode: 500, Data: error.message },
             { status: 500 }
         );
     }
