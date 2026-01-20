@@ -43,6 +43,10 @@ export const authService = {
                 };
             }
 
+            // Capture token from LDAP response (it's returned here, not in branch details)
+            const ldapToken = ldapResponse.data?.Data?.Token;
+            console.log('LDAP Token captured:', ldapToken ? 'Yes' : 'No');
+
             console.log('Step 2: Getting branch details');
             console.log('Using plain UserADId:', loginData.username);
 
@@ -82,14 +86,14 @@ export const authService = {
                         localStorage.setItem('b\\u//n\\', encryptedUsername);
                     }
 
-                    // Try to find a real token in the response
-                    const realToken = apiData.Token || apiData.token || apiData.Data?.Token || apiData.Data?.token;
+                    // Use the token from LDAP response
+                    const realToken = ldapToken || apiData.Token || apiData.token || apiData.Data?.Token || apiData.Data?.token;
                     const tokenToUse = realToken || 'branch-authenticated';
 
                     if (realToken) {
-                        console.log('Real token found in response, using it');
+                        console.log('Real token found, storing it');
                     } else {
-                        console.warn('No real token found in response, using dummy token');
+                        console.warn('No real token found, using dummy token');
                     }
 
                     // Always use localStorage for token to support multiple tabs/persistence

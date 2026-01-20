@@ -115,7 +115,6 @@ export default function HolidayList({
                                         </td>
                                         {holidayType === 'SH' && (
                                             <td className="px-6 py-4 whitespace-nowrap text-sm text-center">
-                                                {!isPastDate && (
                                                     <div className="flex items-center justify-center gap-3">
                                                         <button
                                                             onClick={() => onEdit?.(holiday)}
@@ -134,7 +133,6 @@ export default function HolidayList({
                                                             <Trash2 className="w-4 h-4" />
                                                         </button>
                                                     </div>
-                                                )}
                                             </td>
                                         )}
                                     </tr>

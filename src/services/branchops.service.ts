@@ -71,7 +71,7 @@ export const branchOpsService = {
             )
 
             const data = response.data
-            console.log('validateUser Response:', data)
+            console.log('DEBUG: validateUser RAW Response:', JSON.stringify(data))
 
             if (data.StatusCode === 612) {
                 console.warn('Backend returned 612 - Session or Token Invalid');
@@ -81,7 +81,8 @@ export const branchOpsService = {
                 }
             }
 
-            if (data === 'Failed' || !data || data.StatusCode === 606 || (data.Data === 'User not found')) {
+            if (data === 'Failed' || !data || data.StatusCode === 606 || (typeof data.Data === 'string' && data.Data.includes('User not found'))) {
+                console.log('DEBUG: validateUser identified as "Not Found"', { StatusCode: data.StatusCode, Data: data.Data })
                 return {
                     success: false,
                     message: 'User not found'
@@ -90,9 +91,19 @@ export const branchOpsService = {
 
             // Handle both unwrapped (apiClient style) and wrapped (api style) data
             const UserID = data.Data?.UserID || data.UserID
+            console.log('DEBUG: UserID found:', UserID)
 
             if (UserID) {
                 const userDetails = await branchOpsService.getUserDetails(UserID)
+                console.log('DEBUG: userDetails result:', userDetails ? 'FOUND' : 'NULL')
+
+                // If we have a CivilID, sync with ROP/MOC as per UAT flow
+                const civilIdForSync = userDetails?.CivilID || userDetails?.NationalID
+                if (civilIdForSync) {
+                    console.log('Syncing ROP/MOC data for CivilID:', civilIdForSync)
+                    await branchOpsService.getROPMOCSyncData(civilIdForSync)
+                }
+
                 return {
                     success: true,
                     data: userDetails || data.Data || data
@@ -105,7 +116,11 @@ export const branchOpsService = {
             }
         } catch (error: any) {
             console.warn('API/Validation failed:', error)
-            throw error
+            // Handle GSM specific not available message if requested by UI logic
+            return {
+                success: false,
+                message: type === 'GSM_NUMBER' ? 'GSM number not available' : (error.message || 'Validation failed')
+            }
         }
     },
 
@@ -119,7 +134,7 @@ export const branchOpsService = {
             formData.append('islegacy', '0')
 
             const response = await api.post<any>(
-                '/UserActionWeb/GetUserDetailsByUserID',
+                '/api/UserActionWeb/GetUserDetailsByUserID',
                 formData
             )
 
@@ -139,6 +154,29 @@ export const branchOpsService = {
             return data
         } catch (error) {
             console.error('Error getting user details:', error)
+            return null
+        }
+    },
+
+    // Get ROP/MOC sync data
+    getROPMOCSyncData: async (civilId: string): Promise<any> => {
+        try {
+            const formData = new FormData()
+            formData.append('CivilID', civilId)
+            formData.append('sourceType', 'Web')
+            formData.append('langCode', 'EN')
+            formData.append('islegacy', '0')
+
+            const response = await api.post<any>(
+                '/api/UserActionWeb/GetROPMOCSyncData',
+                formData
+            )
+
+            const data = response.data
+            console.log('GetROPMOCSyncData Response:', data)
+            return data.Data || data
+        } catch (error) {
+            console.error('Error syncing ROP/MOC data:', error)
             return null
         }
     },

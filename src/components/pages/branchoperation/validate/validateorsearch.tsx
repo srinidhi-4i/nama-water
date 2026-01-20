@@ -207,6 +207,7 @@ export default function ValidateCustomerPage() {
     }
 
     const result = await branchOpsService.validateUser(selectedType, inputValue.trim())
+    console.log('DEBUG: handleUserValidation Result:', result)
     
     if (!result.success) {
       if (result.message === "User not found") {

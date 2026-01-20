@@ -1,56 +1,21 @@
 "use client"
 
-import { useState } from "react"
-import { useLanguage } from "@/components/providers/LanguageProvider"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import Link from "next/link"
-import PageHeader from "@/components/layout/PageHeader"
+import { useEffect } from "react"
 
 export default function AppointmentGenerateToken() {
-  const { language } = useLanguage()
-  const [token, setToken] = useState<string>("")
-
-  const handleGenerateToken = () => {
-    // TODO: Implement token generation
-    setToken("TOKEN-" + Math.random().toString(36).substr(2, 9))
-  }
+  useEffect(() => {
+    // Open external URL in new tab as per requirement
+    window.open("https://eservicesuat.nws.nama.om/AppointmentGenerateToken?AuraPortalMode=true&UserData=B6oc%2BA%2BxYQ6HLNjSkX4PUw%3D%3D&lng=EN", "_blank")
+    // Redirect back to home or previous page after opening
+    window.location.href = "/branchhome"
+  }, [])
 
   return (
-    <div className="flex-1 bg-slate-100 overflow-x-hidden pb-8 min-h-[calc(100vh-200px)]">
-      <PageHeader
-        language={language}
-        titleEn="Generate Appointment Token"
-        titleAr="إنشاء رمز الموعد"
-        breadcrumbEn="Generate Appointment Token"
-        breadcrumbAr="إنشاء رمز الموعد"
-      />
-
-      <div className="px-6">
-        <div className="max-w-2xl mx-auto">
-          <Card>
-            <CardHeader>
-              <CardTitle>
-                {language === "EN" ? "Generate Appointment Token" : "إنشاء رمز الموعد"}
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div>
-                <Input
-                  placeholder={language === "EN" ? "Generated token will appear here" : "سيظهر الرمز المُنشأ هنا"}
-                  value={token}
-                  readOnly
-                />
-              </div>
-              <Button onClick={handleGenerateToken} className="w-full">
-                {language === "EN" ? "Generate Token" : "إنشاء رمز"}
-              </Button>
-            </CardContent>
-          </Card>
-        </div>
+    <div className="flex items-center justify-center min-h-[400px]">
+      <div className="text-center space-y-4">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-teal-600 mx-auto"></div>
+        <p className="text-slate-500 font-medium tracking-wide">Redirecting to Token Generation...</p>
       </div>
     </div>
   )
 }
-

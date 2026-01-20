@@ -2,23 +2,29 @@ import { NextRequest, NextResponse } from 'next/server';
 
 export async function POST(
     request: NextRequest,
-    { params }: { params: Promise<{ path: string[] }> }
+    { params }: { params: { path: string[] } }
 ) {
     try {
         const path = (await params).path.join('/');
-        const uatUrl = `https://eservicesuat.nws.nama.om:444/api/BranchOfficer/${path}`;
+        const uatUrl = `https://eservicesuat.nws.nama.om:444/api/UserActionWeb/${path}`;
 
-        console.log(`BranchOfficer Proxy [POST]: ${uatUrl}`);
+        console.log(`UserActionWeb Proxy [POST]: ${uatUrl}`);
 
         const incomingCookies = request.headers.get('cookie') || '';
-        console.log(`BranchOfficer Proxy: Incoming Cookies string length: ${incomingCookies.length}`);
 
-        // Forward FormData
-        const formData = await request.formData();
+        // Forward FormData or JSON
+        let body;
+        const contentType = request.headers.get('content-type') || '';
+
+        if (contentType.includes('multipart/form-data')) {
+            body = await request.formData();
+        } else {
+            body = await request.text();
+        }
 
         const response = await fetch(uatUrl, {
             method: 'POST',
-            body: formData,
+            body: body,
             headers: {
                 'Cookie': incomingCookies,
                 'Host': 'eservicesuat.nws.nama.om:444',
@@ -31,12 +37,9 @@ export async function POST(
             }
         });
 
-        console.log(`BranchOfficer Proxy: UAT status: ${response.status}`);
+        console.log(`UserActionWeb Proxy: UAT status: ${response.status}`);
 
         const data = await response.json();
-        console.log(`BranchOfficer Proxy: Response StatusCode: ${data.StatusCode}`);
-
-        // Create response and forward cookies with Path=/
         const nextResponse = NextResponse.json(data, { status: response.status });
 
         // Robust cookie forwarding
@@ -59,7 +62,7 @@ export async function POST(
 
         return nextResponse;
     } catch (error: any) {
-        console.error('BranchOfficer Proxy Error:', error);
+        console.error('UserActionWeb Proxy Error:', error);
         return NextResponse.json(
             { Status: 'fail', StatusCode: 500, Data: error.message },
             { status: 500 }

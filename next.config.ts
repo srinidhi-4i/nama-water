@@ -27,6 +27,10 @@ const nextConfig: NextConfig = {
         destination: 'https://eservicesuat.nws.nama.om:444/api/Wetland/:path*',
       },
       {
+        source: '/WetLand/:path*',
+        destination: 'https://eservicesuat.nws.nama.om:444/api/WetLand/:path*',
+      },
+      {
         source: '/Appointment/:path*',
         destination: 'https://eservicesuat.nws.nama.om:444/api/Appointment/:path*',
       },
@@ -61,6 +65,14 @@ const nextConfig: NextConfig = {
       {
         source: '/UserActionWeb/:path*',
         destination: 'https://eservicesuat.nws.nama.om:444/api/UserActionWeb/:path*',
+      },
+      {
+        source: '/AppointmentReqest/:path*',
+        destination: 'https://eservicesuat.nws.nama.om:444/api/AppointmentReqest/:path*',
+      },
+      {
+        source: '/AppointmentRequest/:path*',
+        destination: 'https://eservicesuat.nws.nama.om:444/api/AppointmentRequest/:path*',
       }
     ];
   },

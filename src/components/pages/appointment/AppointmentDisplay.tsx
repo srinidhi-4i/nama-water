@@ -1,39 +1,21 @@
 "use client"
 
-import { useState, useEffect } from "react"
-import { useLanguage } from "@/components/providers/LanguageProvider"
-import { DataTable } from "@/components/ui/data-table"
-import { Button } from "@/components/ui/button"
-import Link from "next/link"
-import PageHeader from "@/components/layout/PageHeader"
+import { useEffect } from "react"
 
 export default function AppointmentDisplay() {
-  const { language } = useLanguage()
-  const [appointments, setAppointments] = useState<any[]>([])
-  const [isLoading, setIsLoading] = useState(false)
-
   useEffect(() => {
-    // TODO: Load appointments data
+    // Open external URL in new tab as per requirement
+    window.open("https://eservicesuat.nws.nama.om/AppointmentCounterPage?AuraPortalMode=true&UserData=B6oc%2BA%2BxYQ6HLNjSkX4PUw%3D%3D&lng=EN", "_blank")
+    // Redirect back to home or previous page after opening
+    window.location.href = "/branchhome"
   }, [])
 
   return (
-    <div className="flex-1 bg-slate-100 overflow-x-hidden pb-8 min-h-[calc(100vh-200px)]">
-      <PageHeader
-        language={language}
-        titleEn="Appointments Display"
-        titleAr="عرض المواعيد"
-        breadcrumbEn="Appointments Display"
-        breadcrumbAr="عرض المواعيد"
-      />
-
-      <div className="px-6">
-        <div className="bg-white p-6 rounded-lg shadow-sm border">
-          <p className="text-gray-500 text-center py-8">
-            {language === "EN" ? "Appointments display will be implemented here" : "سيتم تنفيذ عرض المواعيد هنا"}
-          </p>
-        </div>
+    <div className="flex items-center justify-center min-h-[400px]">
+      <div className="text-center space-y-4">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-teal-600 mx-auto"></div>
+        <p className="text-slate-500 font-medium tracking-wide">Redirecting to Appointment Counter Display...</p>
       </div>
     </div>
   )
 }
-
