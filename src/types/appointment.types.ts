@@ -93,3 +93,31 @@ export interface GenerateTokenRequest {
     InternalUserID: string | null;
     Lang: string;
 }
+
+// Walk-In Setup Types
+export interface WalkInEmployeeDetails {
+    BranchId: string
+    EmployeeId: string
+    GovernorateEn: string
+    WillayatEn: string
+    BranchNameEn: string
+    BranchAddress: string
+    Governorate: string
+    Willayat: string
+    BranchName: string
+    AllowedToday: number
+    BookedToday: number
+    FreeForDay: number
+    OnlineAllowed: number
+    OnlineBooked: number
+    OnlineFree: number
+    WalkInAllowed: number
+    WalkInBooked: number
+    WalkInFree: number
+}
+
+export interface WalkInSetupResponse {
+    Status: string
+    StatusCode: number
+    Data: WalkInEmployeeDetails
+}

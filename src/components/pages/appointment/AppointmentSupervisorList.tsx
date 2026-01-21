@@ -106,7 +106,7 @@ export default function AppointmentSupervisorList() {
   }
 
   return (
-    <div className="flex-1 bg-[#F8FAFC] overflow-x-hidden min-h-screen pb-12">
+    <div className="flex-1 bg-slate-100 overflow-x-hidden ">
       <PageHeader
         language={language}
         titleEn="Appointment Supervisor"

@@ -432,21 +432,13 @@ export const waterShutdownService = {
         return waterShutdownService._submitHelper("", data, '/WaterShutdown/CreateEvent', false);
     },
 
-    // Note: Placing helper function outside object or here? 
-    // Typescript object literal cannot have standalone function decl inside easily without property key.
-    // I will implementation private function pattern by defining it outside, OR define it as property.
-    // Defining as property is safer for `this` context issues, but `api` is closure.
-    // I'll define `submitWaterShutdownEvent` OUTSIDE the object in the file scope if possible, 
-    // OR inline it here within the replace block if I can't reach outer scope.
-    // Since I am replacing a Block inside the object, I MUST define it as a method or inline it?
-    // BUT I can't easily share it if I inline it 3 times.
-    // I will define it as `_submitHelper` property.
+
 
     _submitHelper: async (id: string, data: CreateNotificationRequest, endpoint: string, isEdit: boolean = false, isCancel: boolean = false) => {
         try {
             const formData = new FormData();
 
-            const formatDateString = (date: Date | string, type: '24h' | '12h' = '24h') => {
+            const formatDateString = (date: Date | string, type: '24h' | '12h' | 'iso' | 'uat-special' = '24h') => {
                 if (!date) return "";
                 try {
                     const d = typeof date === 'string' ? new Date(date) : date;
@@ -458,6 +450,16 @@ export const waterShutdownService = {
                         const ampm = hours >= 12 ? 'PM' : 'AM';
                         const formattedHours = hours % 12 === 0 ? 12 : hours % 12;
                         return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(formattedHours)}:${pad(d.getMinutes())} ${ampm}`;
+                    }
+                    if (type === 'iso') {
+                        // UAT FromDate format: 2026-03-19T15:57 (no seconds)
+                        return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+                    }
+                    if (type === 'uat-special') {
+                        // UAT ScheduleNotificationDate format: 2026-01-23 15:00 PM (24h + AM/PM)
+                        const hours = d.getHours();
+                        const ampm = hours >= 12 ? 'PM' : 'AM';
+                        return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(hours)}:${pad(d.getMinutes())} ${ampm}`;
                     }
                     // Restore .000 as it was part of the working legacy create format
                     return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}.000`;
@@ -475,7 +477,7 @@ export const waterShutdownService = {
                 formData.append("UpdateType", "CANCELLED"); // For cancellation
                 formData.append("Comments", data.comments || ""); // Add comments for cancellation
             } else if (isEdit) {
-                formData.append("UpdateType", "UPDATE"); // Standardized to uppercase for Phase 8
+                formData.append("UpdateType", ""); // Changed to empty string to match UAT Payload
             }
 
             // ID Mapping: 
@@ -486,8 +488,11 @@ export const waterShutdownService = {
                 formData.append("EventUniqueId", id);
                 formData.append("NotifyID", id);
                 formData.append("id", id);
+                // CRITICAL DISCOVERY: UAT sends the Event's Record ID in EventTypeID field for updates
+                formData.append("EventTypeID", id);
+            } else {
+                formData.append("EventTypeID", data.eventTypeId.toString());
             }
-            formData.append("EventTypeID", data.eventTypeId.toString());
 
             // "EventType" - Category
             // In Phase 7, we send the full category name (e.g., "Unplanned Shutdown Leakage")
@@ -497,6 +502,11 @@ export const waterShutdownService = {
 
             // "NotificationTitle"
             formData.append("NotificationTitle", data.notificationTitle);
+
+            // ... (omitted intermediate lines to keep context, but replace_file_content handles contiguous block. 
+            // Wait, I need contiguous block. I will include everything between the two changes or make two calls?
+            // UserID is further down at line 583. Multi_replace is better.
+
 
             // "RegionCode"
             formData.append("RegionCode", data.regionCode || data.regionId || "MCT");
@@ -512,7 +522,8 @@ export const waterShutdownService = {
             formData.append("LocationCode", data.locationDetails || "");
 
             // Dates
-            formData.append("FromDate", formatDateString(data.startDateTime));
+            // CRITICAL: FromDate in UAT uses 'T' separator and no seconds/ms
+            formData.append("FromDate", formatDateString(data.startDateTime, 'iso'));
             formData.append("ToDate", formatDateString(data.endDateTime));
 
             // Schedule/Reminder
@@ -523,7 +534,8 @@ export const waterShutdownService = {
             } else {
                 const scheduleVal = data.apologyNotificationDate || "";
                 const remainderVal = data.reminderNotificationDate || data.apologyNotificationDate || "";
-                formData.append("ScheduleNotificationDate", formatDateString(scheduleVal, '12h'));
+                // UAT uses 15:00 PM for schedule
+                formData.append("ScheduleNotificationDate", formatDateString(scheduleVal, 'uat-special'));
                 formData.append("RemainderNotificationDate", formatDateString(remainderVal));
             }
 
@@ -580,7 +592,7 @@ export const waterShutdownService = {
             formData.append("EventLocationDetails", JSON.stringify(locationPayload));
 
             // UserID
-            formData.append("UserID", "16");
+            formData.append("UserID", "undefined");
 
             formData.append("EventJsonData", data.eventJsonData);
 
@@ -588,7 +600,9 @@ export const waterShutdownService = {
             const dummyPdf = "JVBERi0xLjQKJcOkw7zDtsOfCjIgMCBvYmoKPDwvTGVuZ3RoIDMgMCBSL0ZpbHRlci9GbGF0ZURlY29kZT4+CnN0cmVhbQp4nCXCwQ0AIAgDwP8v7h84oK95wF4C50Wb2L2s6wu38Q4yCmVuZHN0cmVhbQplbmRvYmoKMyAwIG9iago0NAplbmRvYmoKNSAwIG9iago8PC9QYXJlbnQgNCAwIFIvTWVkaWFCb3hbMCAwIDU5NSA4NDJdL1R5cGUvUGFnZS9Db250ZW50cyAyIDAgUj4+CmVuZG9YmoKNCAwIG9iago8PC9UeXBlL1BhZ2VzL0NvdW50IDEvS2lkc1s1IDAgUl0+PgplbmRvYmoKMSAwIG9iago8PC9UeXBlL0NhdGFsb2cvUGFnZXMgNCAwIFI+PgplbmRvYmoKNiAwIG9iago8PC9Qcm9kdWNlcihpVGV4dCA1LjUuNiAqMjAwMC0yMDE1IGlUZXh0IEdyb3VwIE5WIFwoQUdHUEwpKS9Nb2REYXRlKEQ6MjAyMTAxMjgwOTM5MDBaKS9DcmVhdGlvbkRhdGUoRDoyMDIxMDEyODA5MzkwMFopPj4KZW5kb2JqCnhyZWYKMCA3CjAwMDAwMDAwMDAgNjU1MzUgZgwwMDAwMDAwMjE2IDAwMDAwIG4KMDAwMDAwMDAxNSAwMDAw0IG4KMDAwMDAwMDA5NSAwMDAw0IG4KMDAwMDAwMDE1NyAwMDAw0IG4KMDAwMDAwMDEwNCAwMDAw0IG4KMDAwMDAwMDI2NiAwMDAw0IG4B0cmFpbGVyCjw8L1NpemUgNy9JbmZvIDYgMCBSL1Jvb3QgMSAwIFIvSUQgWzwyNjQ5MzMyNTY2MzE2NjY1MzgzNTMwMzk2MTMyMzY2Mj4gPDI2NDkzMzI1NjYzMTY2NjUzODM1MzAzOTYxMzIzNjYyPl0+PgpzdGFydHhyZWYKNTAwCiUlRU9GCg==";
             formData.append("EventPdfTemplate", dummyPdf);
 
-            formData.append("EventHours", data.numberOfHours || "0");
+            // Ensure hours is a clean integer string (UAT doesn't use .00)
+            const hoursVal = Math.round(parseFloat(data.numberOfHours || "0")).toString();
+            formData.append("EventHours", hoursVal);
 
             console.log(`[Submit] Final Endpoint: ${endpoint}`);
             console.log('[Submit] FormData Contents:');

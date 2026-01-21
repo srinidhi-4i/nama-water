@@ -11,12 +11,15 @@ import { EXPANDABLE_MENUS, STATIC_LINKS } from "./Sidebar-menu"
 interface StaticSidebarProps {
   isOpen?: boolean
   onMobileClose?: () => void
+  language?: "EN" | "AR"
 }
 
-export function StaticSidebar({ isOpen, onMobileClose }: StaticSidebarProps) {
+export function StaticSidebar({ isOpen, onMobileClose, language = "EN" }: StaticSidebarProps) {
   const pathname = usePathname()
   const [isCollapsed, setIsCollapsed] = useState(false)
   const [openMenu, setOpenMenu] = useState<string | null>(null)
+
+  const isRTL = language === "AR"
 
   return (
     <>
@@ -29,17 +32,27 @@ export function StaticSidebar({ isOpen, onMobileClose }: StaticSidebarProps) {
 
       <aside
         className={cn(
-    "bg-teal-900 text-white fixed lg:relative inset-y-0 left-0 z-50 transition-all flex flex-col",
-    isCollapsed ? "w-14" : "w-64",
-    isOpen ? "translate-x-0" : "lg:translate-x-0 -translate-x-full"
-  )}
+          "bg-teal-900 text-white fixed lg:relative inset-y-0 z-50 transition-all flex flex-col",
+          isCollapsed ? "w-14" : "w-64",
+          // Mobile visibility
+          isOpen ? "translate-x-0" : (isRTL ? "translate-x-full lg:translate-x-0" : "-translate-x-full lg:translate-x-0"),
+          // RTL/LTR positioning
+          isRTL ? "right-0 border-l border-teal-800" : "left-0 border-r border-teal-800"
+        )}
       >
         {/* Collapse toggle */}
         <button
           onClick={() => setIsCollapsed(!isCollapsed)}
-          className="hidden lg:block absolute -right-3 top-3 bg-red-500 p-1 rounded-full"
+          className={cn(
+            "hidden lg:block absolute top-3 bg-red-500 p-1 rounded-full z-50",
+            isRTL ? "-left-3" : "-right-3"
+          )}
         >
-          {isCollapsed ? <ChevronRight /> : <ChevronLeft />}
+          {isCollapsed ? (
+            isRTL ? <ChevronLeft /> : <ChevronRight />
+          ) : (
+            isRTL ? <ChevronRight /> : <ChevronLeft />
+          )}
         </button>
 
         <nav  className="flex-shrink-0">
@@ -56,7 +69,7 @@ export function StaticSidebar({ isOpen, onMobileClose }: StaticSidebarProps) {
 
                 >
                   {renderSidebarIcon(link.icon)}
-                  {!isCollapsed && link.label}
+                  {!isCollapsed && (isRTL ? link.labelAr : link.label)}
                 </Link>
                 {index === 0 && (
           <div className="mx-4 my-2 h-px bg-white/20" />
@@ -74,20 +87,22 @@ export function StaticSidebar({ isOpen, onMobileClose }: StaticSidebarProps) {
                 >
                   <div className="flex items-center gap-3">
                     {renderSidebarIcon(menu.icon)}
-                    {!isCollapsed && menu.label}
+                    {!isCollapsed && (isRTL ? menu.labelAr : menu.label)}
                   </div>
                   {!isCollapsed && (
                     <ChevronRight
                       className={cn(
                         "w-3 h-3 transition-transform",
-                        openMenu === menu.label && "rotate-90"
+                        openMenu === menu.label && "rotate-90",
+                        isRTL && "rotate-180", // Initial state for RTL
+                        isRTL && openMenu === menu.label && "-rotate-90" // Expanded state for RTL
                       )}
                     />
                   )}
                 </button>
 
                 {openMenu === menu.label && !isCollapsed && (
-                <ul className="pl-12 mt-1 space-y-2">
+                <ul className={cn("mt-1 space-y-2", isRTL ? "pr-12" : "pl-12")}>
                     {menu.children.map(child => (
                       <li key={child.href}>
                         <Link
@@ -99,7 +114,7 @@ export function StaticSidebar({ isOpen, onMobileClose }: StaticSidebarProps) {
                         )}
 
                         >
-                          {child.label}
+                          {isRTL ? child.labelAr : child.label}
                         </Link>
                       </li>
                     ))}

@@ -114,3 +114,40 @@ export interface OTPLog {
     OTP_Triggered_Date_Time: string
     Message_Delivery_Status: string
 }
+
+// Customer Registration Types
+export interface CustomerClass {
+    Key: string
+    Value: string
+    Description?: string
+}
+
+export interface MasterLanguage {
+    Key: string
+    Value: string
+    Description?: string
+}
+
+export type RegistrationType = 'Individual' | 'Corporate'
+
+export interface IndividualRegistrationData {
+    NationalId: string
+    ExpiryDate: string
+    FullNameEn?: string
+    FullNameAr?: string
+    EmailId?: string
+    MobileNumber?: string
+    PreferredLanguage?: string
+}
+
+export interface CorporateRegistrationData {
+    OrganizationName: string
+    CRNumber: string
+    CRExpiryDate: string
+    EmailId: string
+    GSMNumber: string
+    PreferredLanguage: string
+    CommercialActivity: string
+}
+
+export type RegistrationFormData = IndividualRegistrationData | CorporateRegistrationData

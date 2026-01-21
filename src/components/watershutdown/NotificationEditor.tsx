@@ -110,6 +110,7 @@ export function NotificationEditor({ notificationId, onBack, onSaveSuccess }: No
     const [isCancelModalOpen, setIsCancelModalOpen] = useState(false);
     const [cancelComments, setCancelComments] = useState("");
     const [isCancelling, setIsCancelling] = useState(false);
+    const [mapLocations, setMapLocations] = useState<string[]>([]);
 
     useEffect(() => {
         const fetchUsers = async () => {
@@ -247,6 +248,9 @@ export function NotificationEditor({ notificationId, onBack, onSaveSuccess }: No
             
             // Set Location Details
             setLocationDetails(data.locationDetails || "");
+            
+            // Set Map Locations
+            setMapLocations(data.mapLocations || []);
 
             // Event Details
             setStartDateTime(data.startDateTime?.split('Z')[0] || "");
@@ -475,18 +479,17 @@ export function NotificationEditor({ notificationId, onBack, onSaveSuccess }: No
         const focalPointsPayload = focalPoints.map(fp => ({
             Name: fp.Name,
             Email: fp.Email,
-            "Contact Number": fp["Contact Number"] || "",
-            ContactNumber: fp["Contact Number"] || "" 
+            "Contact Number": fp["Contact Number"] || ""
         }));
 
-        const startTimeFormatted = isValid(new Date(startDateTime)) ? format(new Date(startDateTime), 'yyyy-MM-dd HH:mm:ss') + '.000' : startDateTime;
-        const endTimeFormatted = isValid(new Date(endDateTime)) ? format(new Date(endDateTime), 'yyyy-MM-dd HH:mm:ss') + '.000' : endDateTime;
+        const startTimeFormatted = isValid(new Date(startDateTime)) ? new Date(startDateTime).getTime() : startDateTime;
+        const endTimeFormatted = isValid(new Date(endDateTime)) ? new Date(endDateTime).getTime() : endDateTime;
 
         const eventJsonData = JSON.stringify({
             ActionsRequired: teamActions.filter(t => t.isActive).map(t => t.teamName),
             AffectedWillayats: selectedWillayatObjs.map(w => w.WillayathNameEn || w.WillayathName || w.WillayathCode),
             AffectedDMAs: selectedDMAObjs.map(d => d.DMANameEn || d.DMAName || d.DMACode),
-            MapLocations: [],
+            MapLocations: mapLocations,
             LocationDetails: locationDetails,
             ValveLock: valveLock,
             NotificationDetails: details,
@@ -509,9 +512,12 @@ export function NotificationEditor({ notificationId, onBack, onSaveSuccess }: No
                 );
                 
                 let tCode = "EVNT";
-                if (actionName.toLowerCase().includes("apology")) tCode = "APOL";
-                if (actionName.toLowerCase().includes("reminder")) tCode = "REMD";
-                if (actionName.toLowerCase().includes("cancellation")) tCode = "CANC";
+                const lowerAction = actionName.toLowerCase();
+                if (lowerAction.includes("apology") || lowerAction.includes("apol")) tCode = "APOL";
+                else if (lowerAction.includes("reminder") || lowerAction.includes("remd")) tCode = "REMD";
+                else if (lowerAction.includes("cancellation") || lowerAction.includes("canc")) tCode = "CANC";
+                else if (lowerAction.includes("intermediate") || lowerAction.includes("inmc")) tCode = "INMC";
+                else if (lowerAction.includes("completion") || lowerAction.includes("cmplt")) tCode = "CMPLT";
 
                 return {
                     TemplateCode: tCode,

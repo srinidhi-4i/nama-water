@@ -193,39 +193,29 @@ export const appointmentService = {
         }
     },
 
-    async getInternalSlots(month: number, year: number, branchID: string): Promise<{ slots: AppointmentSlot[] }> {
+    async getSlotsForRange(branchID: string, startDate: string, endDate: string): Promise<{ slots: AppointmentSlot[] }> {
         try {
             const formData = new FormData()
-            formData.append('Month', month.toString())
-            formData.append('Year', year.toString())
-            formData.append('BranchID', branchID)
-            formData.append('Lang', 'EN')
+            formData.append('branchID', branchID)
+            formData.append('fromDate', startDate)
+            formData.append('toDate', endDate)
 
-            // Probing various possible endpoints for internal slots
+            // Endpoint from AppointmentCreateSlot.jsx
             const endpoints = [
-                '/AppointmentReqest/GetAvailableSlots',
-                '/AppointmentRequest/GetAvailableSlots',
-                '/AppointmentReqest/GetAppointmentSlots',
-                '/AppointmentRequest/GetAppointmentSlots',
-                '/AppointmentReqest/GetSlotsInformation',
-                '/AppointmentRequest/GetSlotsInformation',
-                '/Appointment/GetSlots',
-                '/Appointment/GetAvailableSlots',
-                '/AppointmentReqest/CheckAvailableTimeSlotsByType',
-                '/WetLand/CheckAvailableTimeSlotsByType',
-                '/Wetland/CheckAvailableTimeSlotsByType',
-                '/WetLand/GetSlotsInformationCreateSlotScreen',
-                '/BranchOfficer/CheckAvailableTimeSlotsByType',
-                '/BranchOfficer/GetSlotsInformation',
-                '/AppointmentReqest/GetSlotsInformationCreateSlotScreen'
+                '/AppointmentReqest/GetTimeSlotsForSelectedDates',
+                '/AppointmentRequest/GetTimeSlotsForSelectedDates',
+                '/Appointment/GetTimeSlotsForSelectedDates',
+                '/AppointmentReqest/GetTimeSlots',
+                '/AppointmentRequest/GetTimeSlots',
+                '/BranchOfficer/GetTimeSlotsForSelectedDates'
             ]
 
-            const response = await this._probeApi(endpoints, formData, 'internal slots')
-            if (!response) throw new Error('No working endpoint found for GetSlots')
+            const response = await this._probeApi(endpoints, formData, 'slots for range')
+            if (!response) return { slots: [] }
 
-            const responseData = response?.data;
-            const data = responseData?.Data || responseData;
-            const result = data?.Table || data?.Table1 || (Array.isArray(data) ? data : [])
+            const rawData = response?.data?.Data || response?.data || {}
+            const result = Array.isArray(rawData) ? rawData : (rawData.Table1 || rawData.Table || [])
+            console.log(`getSlotsForRange found ${result.length} slots for ${startDate} to ${endDate}`)
 
             const slots: AppointmentSlot[] = Array.isArray(result) ? result.map((item: any) => ({
                 id: item.SlotID || item.BranchWiseSlotID || Math.random().toString(),
@@ -234,15 +224,98 @@ export const appointmentService = {
                 capacity: parseInt(item.MaximumVisitors || item.TotalAppointmentsForSlot || '0'),
                 bookedCount: parseInt(item.BookedCount || item.AppoitmentsBooked || '0'),
                 isActive: item.IsActive !== false && item.IsDeleted !== '1',
+                // Handle different date formats or fields
                 date: item.SlotDate ? item.SlotDate.split('T')[0] : (item.AppointmentDate ? item.AppointmentDate.split('T')[0] : ''),
-                duration: item.SlotDuration
-            })) : [];
+                duration: item.SlotDuration || item.TimeSlotDuration
+            })) : []
 
-            return { slots };
+            return { slots }
         } catch (error) {
-            console.error('Error fetching internal slots:', error)
+            console.error('Error fetching slots for range:', error)
             return { slots: [] }
         }
+    },
+
+    async getSlotsForEditor(branchID: string, date: string): Promise<{ slots: any[], calendarStatus: any[] }> {
+        try {
+            const formData = new FormData()
+            formData.append('branchID', branchID)
+            formData.append('fromDate', date)
+            formData.append('toDate', date)
+
+            // Endpoint from AppointmentEditSlot.jsx
+            const endpoints = [
+                '/AppointmentReqest/GetTimeSlotsForEdit',
+                '/AppointmentRequest/GetTimeSlotsForEdit'
+            ]
+
+            const response = await this._probeApi(endpoints, formData, 'slots for editor')
+            if (!response) return { slots: [], calendarStatus: [] }
+
+            const rawData = response?.data?.Data || response?.data || {}
+            // Table1 usually contains the slot details, Table contains calendar status
+            const slots = rawData.Table1 || []
+            const calendarStatus = rawData.Table || []
+
+            return { slots, calendarStatus }
+        } catch (error) {
+            console.error('Error fetching slots for editor:', error)
+            return { slots: [], calendarStatus: [] }
+        }
+    },
+
+    // Updated updateSlot to match AppointmentEditSlot.jsx
+    async updateSlot(payload: {
+        branchID: string,
+        fromDate: string,
+        toDate: string,
+        startTime?: string, // Comma separated
+        branchWiseTimeSlotID?: string, // Comma separated
+        slotDuration?: string,
+        noOfCounter?: string,
+        isDisable: '0' | '1',
+        isEnable?: '0' | '1' // Some logic uses this
+    }): Promise<any> {
+        try {
+            const formData = new FormData()
+            formData.append('Lang', 'EN')
+            formData.append('BranchID', payload.branchID)
+            formData.append('FromDate', payload.fromDate)
+            formData.append('ToDate', payload.toDate)
+            formData.append('IsDisable', payload.isDisable)
+
+            if (payload.isEnable) {
+                formData.append('IsEnable', payload.isEnable)
+            }
+
+            if (payload.startTime) formData.append('StartTime', payload.startTime)
+            if (payload.branchWiseTimeSlotID) formData.append('BranchWiseTimeSlotID', payload.branchWiseTimeSlotID)
+            if (payload.slotDuration) formData.append('SlotDuration', payload.slotDuration)
+            if (payload.noOfCounter) formData.append('NoOfCounter', payload.noOfCounter)
+
+            const endpoints = [
+                '/AppointmentReqest/UpdateAppointmentSlot',
+                '/AppointmentRequest/UpdateAppointmentSlot'
+            ]
+
+            const response = await this._probeApi(endpoints, formData, 'update slots')
+            if (!response) throw new Error('No working endpoint found for updateSlot')
+
+            return response?.data
+        } catch (error) {
+            console.error('Error updating slots:', error)
+            throw error
+        }
+    },
+
+    // Keeping getInternalSlots for backward compatibility if needed, but redirecting logic or implementing basics
+    // Deprecating in favor of getSlotsForRange
+    async getInternalSlots(month: number, year: number, branchID: string): Promise<{ slots: AppointmentSlot[] }> {
+        // Calculate start and end of month
+        const startDate = `${year}-${month.toString().padStart(2, '0')}-01`
+        const lastDay = new Date(year, month, 0).getDate()
+        const endDate = `${year}-${month.toString().padStart(2, '0')}-${lastDay}`
+        return this.getSlotsForRange(branchID, startDate, endDate)
     },
 
     async blockSlot(date: string, branchID: string, slotID: string, lang: string): Promise<any> {
@@ -384,34 +457,7 @@ export const appointmentService = {
         }
     },
 
-    async updateSlot(slotData: any[], params: { governorateID: string; wilayatID: string; branchID: string }): Promise<any> {
-        const formData = new FormData()
-        formData.append('Action', 'I')
-        formData.append('JsonSlotData', JSON.stringify(slotData))
-        formData.append('GovernorateID', params.governorateID)
-        formData.append('WilayatID', params.wilayatID)
-        formData.append('BranchID', params.branchID)
-        formData.append('InternalUserID', '1')
-        formData.append('Lang', 'EN')
 
-        // Probing various possible endpoints for update
-        const endpoints = [
-            '/AppointmentReqest/InsertAppointmentSlots',
-            '/AppointmentReqest/InsertAppointmentSlot',
-            '/AppointmentReqest/CreateAppointmentSlots',
-            '/Appointment/UpdateSlot',
-            '/Appointment/InsertSlots',
-            '/AppointmentReqest/SaveSlots',
-            '/WetLand/CreateWetlandSlots',
-            '/WetLand/EditWetlandSlots',
-            '/Wetland/CreateSlots',
-            '/BranchOfficer/InsertAppointmentSlots'
-        ]
-
-        const response = await this._probeApi(endpoints, formData, 'slot update')
-        if (!response) throw new Error('No working endpoint found for updateSlot')
-        return response?.data
-    },
 
     // Global probe helper
     async _probeApi(endpoints: string[], formData: FormData, context: string): Promise<any> {
@@ -607,6 +653,25 @@ export const appointmentService = {
         }
     },
 
+    async getPreBookWalkinDetails(branchID: string, date: string): Promise<any> {
+        try {
+            const formData = new FormData()
+            formData.append('Pi_BranchId', branchID)
+            formData.append('Pi_Date', date)
+            const endpoints = [
+                '/AppointmentReqest/GetPreBookWalkinDetails',
+                '/AppointmentRequest/GetPreBookWalkinDetails',
+                '/Appointment/GetPreBookWalkinDetails'
+            ]
+            const response = await this._probeApi(endpoints, formData, 'prebook walkin details')
+            if (!response) return null
+            return response?.data?.Data || response?.data
+        } catch (error) {
+            console.error('Error fetching prebook walkin details:', error)
+            return null
+        }
+    },
+
     async getAgentList(branchID: string): Promise<any[]> {
         try {
             const formData = new FormData()
@@ -742,6 +807,26 @@ export const appointmentService = {
         } catch (error) {
             console.error('Error creating slots by admin:', error)
             throw error
+        }
+    },
+
+    async checkAvailableTimeSlots(branchID: string, fromDate: string, toDate: string): Promise<any> {
+        try {
+            const formData = new FormData()
+            formData.append('branchID', branchID)
+            formData.append('fromDate', fromDate)
+            formData.append('toDate', toDate)
+
+            const endpoints = [
+                '/AppointmentReqest/CheckAvailableTimeSlots',
+                '/AppointmentRequest/CheckAvailableTimeSlots',
+                '/Appointment/CheckAvailableTimeSlots'
+            ]
+            const response = await this._probeApi(endpoints, formData, 'check available slots')
+            return response?.data?.Data || response?.data // Return raw data for Table/Table1 access
+        } catch (error) {
+            console.error('Error checking available time slots:', error)
+            return null
         }
     },
 

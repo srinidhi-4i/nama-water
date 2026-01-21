@@ -124,7 +124,7 @@ export default function CustomNotificationList() {
 
   if (showCreate) {
     return (
-      <div className="flex-1 bg-slate-100 overflow-x-hidden pb-8 min-h-[calc(100vh-200px)]">
+      <div className="flex-1 bg-slate-100 overflow-x-hidden ">
         <PageHeader
         language={language}
         titleEn="Custom Notification"
@@ -141,7 +141,7 @@ export default function CustomNotificationList() {
 
   if (showEdit && selectedNotification) {
     return (
-      <div className="flex-1 bg-slate-100 overflow-x-hidden pb-8 min-h-[calc(100vh-200px)]">
+      <div className="flex-1 bg-slate-100 overflow-x-hidden ">
        <PageHeader
         language={language}
         titleEn="Custom Notification"
@@ -157,7 +157,7 @@ export default function CustomNotificationList() {
   }
 
   return (
-    <div className="flex-1 bg-slate-100 overflow-x-hidden pb-8 min-h-[calc(100vh-200px)]">
+    <div className="flex-1 bg-slate-100 overflow-x-hidden ">
       
       <PageHeader
         language={language}

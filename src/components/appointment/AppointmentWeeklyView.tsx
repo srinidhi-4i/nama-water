@@ -10,7 +10,8 @@ import {
   ChevronRight, 
   Loader2,
   Clock,
-  Users
+  Users,
+  Edit
 } from "lucide-react"
 import { format, addWeeks, subWeeks, startOfWeek, addDays, isToday, isSameDay } from "date-fns"
 import { toast } from "sonner"
@@ -19,9 +20,10 @@ interface AppointmentWeeklyViewProps {
   branchID: string
   refreshTrigger?: number
   dateRange?: { from: string; to: string }
+  onDateSelect?: (date: string) => void
 }
 
-export default function AppointmentWeeklyView({ branchID, refreshTrigger, dateRange }: AppointmentWeeklyViewProps) {
+export default function AppointmentWeeklyView({ branchID, refreshTrigger, dateRange, onDateSelect }: AppointmentWeeklyViewProps) {
   const { language } = useLanguage()
   const [currentWeekStart, setCurrentWeekStart] = useState(startOfWeek(new Date(), { weekStartsOn: 0 })) // Start on Sunday
   const [isLoading, setIsLoading] = useState(false)
@@ -44,14 +46,13 @@ export default function AppointmentWeeklyView({ branchID, refreshTrigger, dateRa
   const fetchSlots = async () => {
     setIsLoading(true)
     try {
-      // We'll fetch slots for the current month/year of the week start
-      // Note: The API might return slots for the whole month, we filter here
-      const month = currentWeekStart.getMonth() + 1
-      const year = currentWeekStart.getFullYear()
-      const response = await appointmentService.getInternalSlots(month, year, branchID)
+      const from = format(currentWeekStart, "yyyy-MM-dd")
+      const to = format(addDays(currentWeekStart, 6), "yyyy-MM-dd")
+      // Fetch slots for the specific week range using the new endpoint
+      const response = await appointmentService.getSlotsForRange(branchID, from, to)
       setSlots(response.slots)
     } catch (error) {
-      // toast.error(language === "EN" ? "Failed to fetch slots" : "فشل في جلب الفترات")
+       console.error("Failed to fetch slots", error)
     } finally {
       setIsLoading(false)
     }
@@ -67,7 +68,7 @@ export default function AppointmentWeeklyView({ branchID, refreshTrigger, dateRa
   }
 
   return (
-    <div className="flex flex-col h-full bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden">
+    <div className="flex flex-col h-[600px] bg-white rounded-xl shadow-sm border border-slate-100 overflow-hidden">
       <div className="flex items-center justify-between p-4 border-b border-slate-50">
         <div className="flex items-center gap-2">
            <Button variant="ghost" size="icon" onClick={handlePrevWeek} className="h-8 w-8 text-slate-400">
@@ -89,12 +90,24 @@ export default function AppointmentWeeklyView({ branchID, refreshTrigger, dateRa
             const isTodayDay = isToday(day)
             
             return (
-              <div key={idx} className={`border-r border-slate-100 flex flex-col min-h-[400px] ${isTodayDay ? "bg-teal-50/20" : ""}`}>
-                <div className={`p-2 border-b border-slate-50 text-center ${isTodayDay ? "bg-teal-500 text-white" : ""}`}>
+              <div key={idx} className={`border-r border-slate-100 flex flex-col h-full ${isTodayDay ? "bg-teal-50/20" : ""}`}>
+                <div className={`p-2 border-b border-slate-50 text-center relative group ${isTodayDay ? "bg-teal-500 text-white" : ""}`}>
                   <div className="text-xl font-black">{format(day, "d")}</div>
                   <div className={`text-[10px] font-bold uppercase tracking-widest ${isTodayDay ? "text-white/80" : "text-slate-400"}`}>
                     {format(day, "EEEE")}
                   </div>
+                  
+                  {/* Edit button (visible on hover) */}
+                  {onDateSelect && branchID && (
+                    <Button 
+                        variant="ghost" 
+                        size="icon" 
+                        className={`absolute top-1 right-1 h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity ${isTodayDay ? "text-white hover:bg-white/20" : "text-slate-400 hover:text-teal-600 hover:bg-teal-50"}`}
+                        onClick={() => onDateSelect(format(day, "yyyy-MM-dd"))}
+                    >
+                        <Edit className="h-3 w-3" />
+                    </Button>
+                  )}
                 </div>
                 
                 <div className="flex-1 p-2 space-y-2 overflow-y-auto">

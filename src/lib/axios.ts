@@ -52,7 +52,15 @@ apiClient.interceptors.response.use(
             }
         };
 
-        console.error('Axios Error Details:', errorDetails);
+        // Don't log errors for optional registration endpoints that may not be implemented yet
+        const url = error.config?.url || '';
+        const isOptionalEndpoint = url.includes('CustomerRegistrationWeb/GetCustomerClass') ||
+            url.includes('CustomerRegistrationWeb/GetMasterLanguage') ||
+            url.includes('CustomerRegistrationWeb/RegisterCustomer');
+
+        if (!isOptionalEndpoint) {
+            console.error('Axios Error Details:', errorDetails);
+        }
 
         const apiError: ApiError = {
             message: 'An unexpected error occurred',

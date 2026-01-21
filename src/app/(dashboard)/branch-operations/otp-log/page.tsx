@@ -41,7 +41,7 @@ function OTPLogContent() {
     }
 
     return (
-        <div className="flex-1 bg-gray-50 min-h-screen">
+        <div className="flex-1 bg-slate-100 min-h-screen">
             <PageHeader 
                 language={language}
                 titleEn="OTP Log of Customer"

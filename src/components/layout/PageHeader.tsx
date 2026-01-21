@@ -12,7 +12,7 @@ export default function PageHeader({
 }: PageHeaderProps) {
   return (
     <div
-      className={`flex flex-col sm:flex-row items-center justify-between mb-6 gap-4 px-4  ${
+      className={`flex flex-col sm:flex-row items-center justify-between gap-4 px-4  ${
         showShadow ? "shadow-md" : ""
       }`}
     >

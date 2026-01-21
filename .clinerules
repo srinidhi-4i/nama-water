@@ -1,0 +1,317 @@
+# Project Rules and Guidelines
+
+## Critical Rules - MUST FOLLOW STRICTLY
+
+### 1. TypeScript
+- ALWAYS use TypeScript, never JavaScript
+- Define proper types and interfaces for all props, state, and function parameters
+- Avoid using `any` type - use `unknown` or proper types
+- Export types/interfaces from a types file when shared across components
+
+### 2. Component Library
+- ALWAYS use shadcn/ui components for UI elements
+- Create reusable components for repeated functionality
+- All modals MUST be responsive
+
+### 3. Responsiveness - MANDATORY
+- ALL pages and components MUST be responsive for:
+  - Small screens (mobile: < 640px)
+  - Medium screens (tablet: 640px - 1024px)  
+  - Large screens (desktop: > 1024px)
+- Use Tailwind responsive classes: `sm:`, `md:`, `lg:`, `xl:`
+- Test responsiveness for all components
+
+### 4. Folder Structure - STRICTLY FOLLOW
+
+#### Page Structure (Dashboard Pages)
+```
+src/app/dashboard/[feature]/[page-name]/
+  ├── page.tsx          # ONLY contains "use client" and function call
+  └── column.tsx        # Table column definitions (if table exists)
+```
+
+**page.tsx MUST ONLY:**
+```typescript
+"use client"
+
+import FeatureComponent from "@/components/pages/feature/FeatureComponent"
+
+export default function PageName() {
+  return <FeatureComponent />
+}
+```
+
+#### Component Structure
+```
+src/components/
+  ├── pages/
+  │   └── [feature]/
+  │       └── FeatureComponent.tsx    # Contains ALL page logic and functionality
+  └── [feature]/
+      └── SubComponent.tsx            # Reusable components used by page component
+```
+
+**Example Structure:**
+- `src/app/dashboard/appointment/appointment-booking/page.tsx` → Only calls component
+- `src/components/pages/appointment/AppointmentBooking.tsx` → Contains entire functionality
+- `src/components/appointment/CalendarSelector.tsx` → Reusable component used in AppointmentBooking
+- `src/app/dashboard/appointment/appointment-booking/column.tsx` → Table columns (if applicable)
+
+### 5. PageHeader Component
+- MUST use the `PageHeader` component on ALL dashboard pages
+- Import from `@/components/PageHeader` or wherever it's located
+- Include it at the top of every page component
+
+### 6. Button Interaction Pattern - MANDATORY
+All buttons MUST follow this pattern to prevent duplicate submissions:
+
+**Submit/Update/Delete/Action Buttons:**
+```typescript
+const [isLoading, setIsLoading] = useState(false)
+
+const handleSubmit = async () => {
+  setIsLoading(true)
+  try {
+    // perform action
+    await submitData()
+  } catch (error) {
+    // handle error
+  } finally {
+    setIsLoading(false)
+  }
+}
+
+<Button 
+  onClick={handleSubmit}
+  disabled={isLoading}
+>
+  {isLoading ? "Submitting..." : "Submit"}
+</Button>
+```
+
+**Rules for ALL action buttons:**
+- MUST have `disabled={isLoading}` state
+- MUST show loading text when processing:
+  - Submit → "Submitting..."
+  - Update → "Updating..."
+  - Delete → "Deleting..."
+  - Save → "Saving..."
+  - Add → "Adding..."
+  - Send → "Sending..."
+- MUST prevent multiple clicks
+- MUST use try-catch-finally pattern
+- MUST reset loading state in finally block
+
+### 7. Data Fetching - STRICTLY NO HARDCODED DATA
+- **NEVER use hardcoded values** for data that should come from API
+- ALL data (lists, options, content, configurations) MUST be fetched from API
+- No mock data, placeholder data, or static arrays in production code
+- Use proper loading states while fetching data
+- Handle empty states when API returns no data
+
+**Example - WRONG:**
+```typescript
+const appointments = [
+  { id: 1, name: "John" },  // ❌ NEVER DO THIS
+  { id: 2, name: "Jane" }
+]
+```
+
+**Example - CORRECT:**
+```typescript
+const [appointments, setAppointments] = useState([])
+const [isLoading, setIsLoading] = useState(true)
+
+useEffect(() => {
+  const fetchAppointments = async () => {
+    setIsLoading(true)
+    try {
+      const response = await fetch('/api/appointments')
+      const data = await response.json()
+      setAppointments(data)
+    } catch (error) {
+      console.error(error)
+    } finally {
+      setIsLoading(false)
+    }
+  }
+  fetchAppointments()
+}, [])
+```
+
+### 8. Code Quality
+- Write minimal, optimized code
+- Follow latest Next.js and TypeScript coding standards
+- Remove unused imports and variables
+- Use modern ES6+ syntax
+- Prefer functional components over class components
+
+## Next.js Specific Rules
+
+### 7. App Router
+- Use Next.js App Router structure (app directory)
+- Server Components by default unless client interactivity needed
+- Use `"use client"` directive ONLY when necessary:
+  - useState, useEffect, event handlers
+  - Browser APIs
+  - Client-side libraries
+
+### 8. Data Fetching
+- Server Components: Use async/await directly in component
+- Client Components: Use hooks (useState, useEffect) or libraries like SWR/React Query
+- Implement proper loading and error states
+
+### 9. File Naming Conventions
+- Pages: `page.tsx`, `layout.tsx`, `loading.tsx`, `error.tsx`
+- Components: PascalCase (e.g., `AppointmentBooking.tsx`)
+- Utilities: camelCase (e.g., `formatDate.ts`)
+- Types: PascalCase with `.types.ts` suffix (e.g., `Appointment.types.ts`)
+
+### 10. Import Organization
+```typescript
+// 1. React/Next imports
+import { useState } from "react"
+import Image from "next/image"
+
+// 2. Third-party libraries
+import { format } from "date-fns"
+
+// 3. Components (shadcn, custom)
+import { Button } from "@/components/ui/button"
+import PageHeader from "@/components/PageHeader"
+
+// 4. Utilities and types
+import { formatDate } from "@/lib/utils"
+import type { Appointment } from "@/types/appointment.types"
+```
+
+### 11. Next.js Components
+- Use `next/image` for images (with proper width, height, alt)
+- Use `next/link` for navigation
+- Use `next/font` for custom fonts
+- Implement proper metadata for SEO
+
+### 12. Performance Optimization
+- Use dynamic imports for heavy components: `const Component = dynamic(() => import('./Component'))`
+- Implement proper caching strategies
+- Minimize client-side JavaScript
+- Use Server Components where possible
+
+## TypeScript Specific Rules
+
+### 13. Type Definitions
+- Define interfaces for component props:
+```typescript
+interface ComponentProps {
+  title: string
+  onSubmit: (data: FormData) => void
+  isLoading?: boolean
+}
+```
+
+- Use type for unions and primitives:
+```typescript
+type Status = "pending" | "approved" | "rejected"
+```
+
+### 14. Props Typing
+- Always type component props
+- Use React.FC sparingly; prefer explicit prop typing
+```typescript
+export default function Component({ title, onSubmit }: ComponentProps) {
+  // ...
+}
+```
+
+### 15. Event Handlers
+```typescript
+const handleClick = (event: React.MouseEvent<HTMLButtonElement>) => {
+  // ...
+}
+
+const handleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+  // ...
+}
+```
+
+## Styling Rules
+
+### 16. Tailwind CSS
+- Use Tailwind utility classes for styling
+- Follow mobile-first approach
+- Group related classes logically
+- Use custom classes in globals.css for repeated patterns
+
+### 17. Responsive Design Pattern
+```typescript
+<div className="
+  flex flex-col gap-4           // mobile default
+  sm:flex-row sm:gap-6          // tablet
+  lg:gap-8                      // desktop
+">
+```
+
+## Code Organization
+
+### 18. Component Structure
+```typescript
+"use client" // if needed
+
+// Imports
+import ...
+
+// Types
+interface ComponentProps { ... }
+
+// Component
+export default function Component({ ...props }: ComponentProps) {
+  // State
+  const [state, setState] = useState()
+  
+  // Effects
+  useEffect(() => { ... }, [])
+  
+  // Handlers
+  const handleAction = () => { ... }
+  
+  // Render
+  return (...)
+}
+```
+
+### 19. Comments
+- Add comments for complex logic
+- Document function purposes with JSDoc when necessary
+- Keep comments concise and meaningful
+
+## Migration Tracking
+
+### 20. Consistency
+- Follow existing patterns in the codebase
+- When migrating: maintain same functionality, just improved structure
+- Keep component behavior identical to React version unless improving
+
+## Error Handling
+
+### 21. Error Boundaries
+- Implement error.tsx for route segments
+- Add try-catch for async operations
+- Provide user-friendly error messages
+
+### 22. Loading States
+- Implement loading.tsx for route segments
+- Show loading indicators for async operations
+- Use Suspense boundaries where appropriate
+
+---
+
+## SUMMARY - Quick Checklist
+- ✅ TypeScript with proper types
+- ✅ shadcn/ui components
+- ✅ Responsive design (sm, md, lg)
+- ✅ Correct folder structure (page.tsx minimal, logic in components/pages/)
+- ✅ PageHeader on all pages
+- ✅ Minimal, optimized code
+- ✅ "use client" only when needed
+- ✅ Proper imports organization
+- ✅ Next.js best practices

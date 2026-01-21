@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { appointmentService } from "@/services/appointment.service"
+import { authService } from "@/services/auth.service"
 import AppointmentWeeklyView from "@/components/appointment/AppointmentWeeklyView"
 import { 
   Calendar, 
@@ -19,10 +20,21 @@ import {
   Plus, 
   Minus,
   Loader2,
-  CheckCircle2
+  CheckCircle2,
+  AlertTriangle
 } from "lucide-react"
 import { toast } from "sonner"
-import { format, addDays } from "date-fns"
+import { format, addDays, getYear, eachYearOfInterval } from "date-fns"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
+
+import AppointmentSlotEditor from "@/components/appointment/AppointmentSlotEditor"
 
 export default function AppointmentSlotCreation() {
   const { language } = useLanguage()
@@ -30,10 +42,15 @@ export default function AppointmentSlotCreation() {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [refreshTrigger, setRefreshTrigger] = useState(0)
 
+  // View state
+  const [viewMode, setViewMode] = useState<"creation" | "edit">("creation")
+  const [editingDate, setEditingDate] = useState<string>("")
+
   // Master data
   const [governorates, setGovernorates] = useState<any[]>([])
   const [wilayats, setWilayats] = useState<any[]>([])
   const [branches, setBranches] = useState<any[]>([])
+  const [timeSlotDurations, setTimeSlotDurations] = useState<any[]>([])
 
   // Form state
   const [selectedGovernorate, setSelectedGovernorate] = useState<string>("")
@@ -42,85 +59,210 @@ export default function AppointmentSlotCreation() {
   const [fromDate, setFromDate] = useState<string>("")
   const [toDate, setToDate] = useState<string>("")
   const [counter, setCounter] = useState(1)
-  const [duration, setDuration] = useState(15)
+  const [duration, setDuration] = useState(15) // Default to 15 mins
   const [startTime, setStartTime] = useState("08:00")
   const [endTime, setEndTime] = useState("14:00")
+  
+  // Validation state
+  const [dateError, setDateError] = useState<string>("")
+  const [timeError, setTimeError] = useState<string>("")
 
+  // Modals state
+  const [showConfirmModal, setShowConfirmModal] = useState(false)
+  const [showHolidayModal, setShowHolidayModal] = useState(false)
+  
   useEffect(() => {
     loadMasterData()
   }, [])
 
   const loadMasterData = async () => {
     try {
-      console.log('AppointmentSlotCreation: Loading master data...');
       setIsLoading(true)
       const data = await appointmentService.getMasterData()
-      console.log('AppointmentSlotCreation: Master data received:', data);
       
       const govs = data.Governorates || data.Governorate || [];
       const wils = data.Wilayats || data.Wilayat || [];
       const brs = data.Table || data.Branch || [];
-
-      console.log(`AppointmentSlotCreation: Counts -> Govs: ${govs.length}, Wils: ${wils.length}, Brs: ${brs.length}`);
       
       setGovernorates(govs)
       setWilayats(wils)
       setBranches(brs)
+
+      if (data.TimeSlotDuration || data['Time Slot Duration']) {
+         setTimeSlotDurations(data.TimeSlotDuration || data['Time Slot Duration']);
+      }
+      
     } catch (error) {
-      console.error('AppointmentSlotCreation: Error loading master data:', error);
+      console.error('Error loading master data:', error);
       toast.error("Failed to load reference data")
     } finally {
       setIsLoading(false)
     }
   }
 
-  const handleCreate = async () => {
+  const convertTo12Hour = (time: string) => {
+    const [hours, minutes] = time.split(':')
+    const h = parseInt(hours, 10)
+    const suffix = h >= 12 ? 'PM' : 'AM'
+    const adjustedH = h % 12 || 12
+    return `${adjustedH}:${minutes} ${suffix}`
+  }
+
+  const getDurationID = (mins: number) => {
+    const found = timeSlotDurations.find((d: any) => (d.Duration == mins || d.Name == mins.toString()));
+    return found ? found.ID?.toString() : mins.toString();
+  }
+
+  const isHolidaysDefined = async () => {
+    if (!fromDate || !toDate) return false;
+    const startYear = getYear(new Date(fromDate));
+    const endYear = getYear(new Date(toDate));
+    const yearRange = eachYearOfInterval({ start: new Date(startYear, 0, 1), end: new Date(endYear, 0, 1) });
+    
+    try {
+        const results = await Promise.all(yearRange.map(async (date) => {
+            const y = getYear(date);
+            const holidays = await appointmentService.getHolidayDates(`${y}-01-01`, `${y}-12-31`);
+            return holidays.length > 0;
+        }));
+        return results.every(r => r);
+    } catch (e) {
+        return false;
+    }
+  }
+
+  const checkAvailability = async () => {
+      const holidayDefined = await isHolidaysDefined();
+      if (!holidayDefined) {
+          setShowHolidayModal(true);
+          return false;
+      }
+
+      const availabilityResponse = await appointmentService.checkAvailableTimeSlots(selectedBranch, fromDate, toDate);
+      
+      const holidayTable = availabilityResponse?.Table1 || [];
+      const slotsTable = availabilityResponse?.Table || [];
+
+      const holidays = holidayTable.filter((item: any) => item.HolidayReason === "WO" || item.HolidayReason === "SH");
+      if (holidays.length > 0 && holidays.length === holidayTable.length) {
+          toast.error(language === "EN" ? "Selected range contains only holidays/weekends" : "النطاق المحدد يحتوي فقط على عطلات / عطلات نهاية الأسبوع");
+          return false;
+      }
+
+      if (slotsTable.length > 0) {
+          setShowConfirmModal(true);
+          return false;
+      }
+
+      return true;
+  }
+
+  const handleCreateClick = async () => {
     if (!fromDate || !toDate || !selectedBranch || !startTime || !endTime) {
       toast.error(language === "EN" ? "Please fill all required fields" : "يرجى ملء جميع الحقول المطلوبة")
       return
     }
 
+    // 1. Date Validation
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const startD = new Date(fromDate);
+    const endD = new Date(toDate);
+
+    if (startD < today) {
+        toast.error(language === "EN" ? "From Date cannot be in the past" : "لا يمكن أن يكون تاريخ البدء في الماضي");
+        return;
+    }
+
+    if (endD < startD) {
+        toast.error(language === "EN" ? "To Date cannot be before From Date" : "لا يمكن أن يكون تاريخ الانتهاء قبل تاريخ البدء");
+        return;
+    }
+
+    // 2. Time Validation
+    const [startH, startM] = startTime.split(':').map(Number);
+    const [endH, endM] = endTime.split(':').map(Number);
+    const startMinutes = startH * 60 + startM;
+    const endMinutes = endH * 60 + endM;
+
+    if (endMinutes <= startMinutes) {
+        toast.error(language === "EN" ? "End Time must be after Start Time" : "يجب أن يكون وقت الانتهاء بعد وقت البدء");
+        return;
+    }
+
+    const canProceed = await checkAvailability();
+    if (canProceed) {
+        performCreate();
+    }
+  }
+
+  const performCreate = async () => {
     setIsSubmitting(true)
     try {
-      // Use the specialized admin creation endpoint discovered in research
+      const currentUser = authService.getCurrentUser();
+      const internalUserID = currentUser?.BranchUserDetails?.[0]?.UserADId || "1";
+
       const payload = {
         governorateID: selectedGovernorate,
         wilayatID: selectedWilayat,
         branchID: selectedBranch,
-        timeSlotDurationID: "1", // This would normally be a selective from master data, using 1 as mapped to ID
-        timeSlotStart: startTime, 
-        timeSlotEnd: endTime,
+        timeSlotDurationID: getDurationID(duration), 
+        timeSlotStart: convertTo12Hour(startTime), 
+        timeSlotEnd: convertTo12Hour(endTime),
         startDate: fromDate,
         endDate: toDate,
-        internalUserID: "1", // Default for now
+        internalUserID: internalUserID, 
         noOfAppointmentPerSlot: counter.toString(),
         lang: language
       }
 
-      console.log('AppointmentSlotCreation: Creating slots via admin endpoint...', payload);
-
       const response = await appointmentService.createSlotsByAdmin(payload)
       
-      // Legacy API returns IsBlock: 0 on success for this endpoint
+      // Strict check on response
       if (response && (response.IsBlock === 0 || response.StatusCode === 605 || response.IsSuccess === 1)) {
         toast.success(language === "EN" ? "Slots created successfully" : "تم إنشاء الفترات بنجاح")
         setRefreshTrigger(prev => prev + 1)
-        // Reset range fields after success
-        // setFromDate("")
-        // setToDate("")
+        setShowConfirmModal(false);
       } else {
-        toast.error(response?.ErrorMessage || response?.Message || "Failed to create slots")
+        toast.error(response?.ErrorMessage || response?.Message || (language === "EN" ? "Failed to create slots" : "فشل في إنشاء الفترات"))
       }
     } catch (error) {
-      console.error('AppointmentSlotCreation: Error during slot creation:', error);
-      toast.error("An error occurred while creating slots")
+      console.error('Error creating slots:', error);
+      toast.error(language === "EN" ? "An error occurred while creating slots" : "حدث خطأ أثناء إنشاء الفترات")
     } finally {
       setIsSubmitting(false)
     }
   }
 
+  const handleDateSelect = (date: string) => {
+    setEditingDate(date)
+    setViewMode("edit")
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }
+
+  // Render Editor View
+  if (viewMode === "edit" && editingDate) {
+    return (
+      <div className="flex-1 bg-slate-100 overflow-x-hidden min-h-screen">
+         <div className="max-w-[1600px] mx-auto p-4 md:p-6">
+            <AppointmentSlotEditor 
+              selectedDate={editingDate}
+              branchID={selectedBranch}
+              timeSlotDurations={timeSlotDurations}
+              onBack={() => {
+                setViewMode("creation")
+                setEditingDate("")
+                setRefreshTrigger(prev => prev + 1) // Refresh calendar when returning
+              }}
+            />
+         </div>
+      </div>
+    )
+  }
+
+  // Render Creation View
   return (
-    <div className="flex-1 bg-[#F8FAFC] overflow-x-hidden min-h-screen">
+    <div className="flex-1 bg-slate-100 overflow-x-hidden ">
       <PageHeader
         language={language}
         titleEn="Appointment Booking"
@@ -235,8 +377,19 @@ export default function AppointmentSlotCreation() {
                     <Input 
                       type="date" 
                       value={fromDate}
-                      onChange={(e) => setFromDate(e.target.value)}
-                      className="h-8 bg-slate-50 border-slate-200 text-xs px-2 shadow-none" 
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        setFromDate(val);
+                        // Validate immediately
+                        if (val && new Date(val) < new Date(new Date().setHours(0,0,0,0))) {
+                             setDateError(language === "EN" ? "Date cannot be in the past" : "لا يمكن أن يكون التاريخ في الماضي");
+                        } else if (toDate && val > toDate) {
+                             setDateError(language === "EN" ? "From Date cannot be after To Date" : "تاريخ البدء لا يمكن أن يكون بعد تاريخ الانتهاء");
+                        } else {
+                             setDateError("");
+                        }
+                      }}
+                      className={`h-8 bg-slate-50 border-slate-200 text-xs px-2 shadow-none ${dateError ? "border-red-500" : ""}`} 
                     />
                   </div>
                   <div className="space-y-0.5">
@@ -244,10 +397,24 @@ export default function AppointmentSlotCreation() {
                     <Input 
                       type="date" 
                       value={toDate}
-                      onChange={(e) => setToDate(e.target.value)}
-                      className="h-8 bg-slate-50 border-slate-200 text-xs px-2 shadow-none" 
+                      onChange={(e) => {
+                          const val = e.target.value;
+                          setToDate(val);
+                          if (fromDate && val < fromDate) {
+                              setDateError(language === "EN" ? "To Date cannot be before From Date" : "تاريخ الانتهاء لا يمكن أن يكون قبل تاريخ البدء");
+                          } else {
+                              setDateError("");
+                          }
+                      }}
+                      className={`h-8 bg-slate-50 border-slate-200 text-xs px-2 shadow-none ${dateError ? "border-red-500" : ""}`} 
                     />
                   </div>
+                  {dateError && (
+                      <div className="col-span-2 text-[10px] text-red-500 font-medium flex items-center gap-1">
+                          <AlertTriangle className="h-3 w-3" />
+                          {dateError}
+                      </div>
+                  )}
                 </div>
               </div>
 
@@ -292,8 +459,17 @@ export default function AppointmentSlotCreation() {
                     <Input 
                       type="time" 
                       value={startTime}
-                      onChange={(e) => setStartTime(e.target.value)}
-                      className="h-8 bg-slate-50 border-slate-200 text-xs px-2" 
+                      onChange={(e) => {
+                          const val = e.target.value;
+                          setStartTime(val);
+                          // Time check
+                          if (val && endTime && val >= endTime) {
+                               setTimeError(language === "EN" ? "Start time must be before end time" : "يجب أن يكون وقت البدء قبل وقت الانتهاء");
+                          } else {
+                               setTimeError("");
+                          }
+                      }}
+                      className={`h-8 bg-slate-50 border-slate-200 text-xs px-2 ${timeError ? "border-red-500" : ""}`} 
                     />
                   </div>
                   
@@ -302,15 +478,29 @@ export default function AppointmentSlotCreation() {
                      <Input 
                       type="time" 
                       value={endTime}
-                      onChange={(e) => setEndTime(e.target.value)}
-                      className="h-8 bg-slate-50 border-slate-200 text-xs px-2" 
+                      onChange={(e) => {
+                          const val = e.target.value;
+                          setEndTime(val);
+                          if (startTime && val <= startTime) {
+                              setTimeError(language === "EN" ? "End time must be after start time" : "يجب أن يكون وقت الانتهاء بعد وقت البدء");
+                          } else {
+                              setTimeError("");
+                          }
+                      }}
+                      className={`h-8 bg-slate-50 border-slate-200 text-xs px-2 ${timeError ? "border-red-500" : ""}`} 
                     />
                   </div>
+                  {timeError && (
+                      <div className="col-span-2 text-[10px] text-red-500 font-medium flex items-center gap-1">
+                          <AlertTriangle className="h-3 w-3" />
+                          {timeError}
+                      </div>
+                  )}
                 </div>
               </div>
 
               <Button 
-                onClick={handleCreate} 
+                onClick={handleCreateClick} 
                 className="w-full bg-teal-600 hover:bg-teal-700 text-white shadow-lg shadow-teal-900/20 h-10 text-xs font-bold tracking-wide uppercase"
                 disabled={isSubmitting || !selectedBranch || !fromDate || !toDate}
               >
@@ -326,9 +516,54 @@ export default function AppointmentSlotCreation() {
               branchID={selectedBranch} 
               refreshTrigger={refreshTrigger}
               dateRange={{ from: fromDate, to: toDate }}
+              onDateSelect={handleDateSelect}
            />
         </div>
       </div>
+      
+      {/* Confirm existing slots modal */}
+      <Dialog open={showConfirmModal} onOpenChange={setShowConfirmModal}>
+          <DialogContent>
+              <DialogHeader>
+                  <DialogTitle>{language === "EN" ? "Existing Slots Found" : "تم العثور على فترات موجودة"}</DialogTitle>
+                  <DialogDescription>
+                      {language === "EN" 
+                       ? "Are you sure you want to overwrite existing slots for the selected date range?" 
+                       : "هل أنت متأكد أنك تريد استبدال الفترات الزمنية الموجودة للنطاق الزمني المحدد؟"}
+                  </DialogDescription>
+              </DialogHeader>
+              <DialogFooter>
+                  <Button variant="outline" onClick={() => setShowConfirmModal(false)}>
+                      {language === "EN" ? "Cancel" : "إلغاء"}
+                  </Button>
+                  <Button onClick={performCreate}>
+                      {language === "EN" ? "Yes, Overwrite" : "نعم، استبدل"}
+                  </Button>
+              </DialogFooter>
+          </DialogContent>
+      </Dialog>
+      
+      {/* Holidays not defined modal */}
+      <Dialog open={showHolidayModal} onOpenChange={setShowHolidayModal}>
+          <DialogContent>
+              <DialogHeader>
+                  <DialogTitle className="flex items-center gap-2 text-amber-600">
+                      <AlertTriangle className="h-5 w-5" />
+                      {language === "EN" ? "Configuration Required" : "مطلوب تكوين"}
+                  </DialogTitle>
+                  <DialogDescription>
+                      {language === "EN" 
+                       ? "Holidays are not defined for the selected year(s). Please configure the holiday calendar first." 
+                       : "العطلات غير محددة للسنة (السنوات) المحددة. يرجى تكوين تقويم العطلات أولاً."}
+                  </DialogDescription>
+              </DialogHeader>
+              <DialogFooter>
+                  <Button onClick={() => setShowHolidayModal(false)}>
+                      {language === "EN" ? "Close" : "إغلاق"}
+                  </Button>
+              </DialogFooter>
+          </DialogContent>
+      </Dialog>
     </div>
   )
 }

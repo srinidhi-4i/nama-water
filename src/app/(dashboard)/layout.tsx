@@ -32,6 +32,7 @@ export default function DashboardLayout({
         <StaticSidebar 
           isOpen={isSidebarOpen} 
           onMobileClose={() => setIsSidebarOpen(false)} 
+          language={language}
         />
 
         <main className="flex-1 bg-slate-100 overflow-x-hidden">

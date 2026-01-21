@@ -6,12 +6,12 @@ export async function POST(
 ) {
     try {
         const path = (await params).path.join('/');
-        const uatUrl = `https://eservicesuat.nws.nama.om:444/api/CustomerRegistrationWeb/${path}`;
+        const uatUrl = `https://eservicesuat.nws.nama.om:444/api/CommonService/${path}`;
 
-        console.log(`CustomerRegistrationWeb Proxy [POST]: ${uatUrl}`);
+        console.log(`CommonService Proxy [POST]: ${uatUrl}`);
 
         const incomingCookies = request.headers.get('cookie') || '';
-        console.log(`CustomerRegistrationWeb Proxy: Incoming Cookies string length: ${incomingCookies.length}`);
+        console.log(`CommonService Proxy: Incoming Cookies string length: ${incomingCookies.length}`);
 
         // Forward FormData
         const formData = await request.formData();
@@ -31,10 +31,10 @@ export async function POST(
             }
         });
 
-        console.log(`CustomerRegistrationWeb Proxy: UAT status: ${response.status}`);
+        console.log(`CommonService Proxy: UAT status: ${response.status}`);
 
         const data = await response.json();
-        console.log(`CustomerRegistrationWeb Proxy: Response StatusCode: ${data.StatusCode}`);
+        console.log(`CommonService Proxy: Response StatusCode: ${data.StatusCode}`);
 
         // Create response and forward cookies with Path=/
         const nextResponse = NextResponse.json(data, { status: response.status });
@@ -59,7 +59,7 @@ export async function POST(
 
         return nextResponse;
     } catch (error: any) {
-        console.error('CustomerRegistrationWeb Proxy Error:', error);
+        console.error('CommonService Proxy Error:', error);
         return NextResponse.json(
             { Status: 'fail', StatusCode: 500, Data: error.message },
             { status: 500 }

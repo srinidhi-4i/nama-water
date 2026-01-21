@@ -207,7 +207,6 @@ export default function ValidateCustomerPage() {
     }
 
     const result = await branchOpsService.validateUser(selectedType, inputValue.trim())
-    console.log('DEBUG: handleUserValidation Result:', result)
     
     if (!result.success) {
       if (result.message === "User not found") {
@@ -290,20 +289,20 @@ export default function ValidateCustomerPage() {
         return (
           <div className="space-y-4">
             <div>
-              <Label htmlFor="accountNumber">Account Number Search</Label>
+              <Label htmlFor="accountNumber" className="text-gray-500 text-sm font-medium">Account Number Search</Label>
               <Input
                 id="accountNumber"
                 type="text"
                 value={accountNumber}
                 onChange={(e) => setAccountNumber(e.target.value)}
                 placeholder="Please enter account number"
-                className="mt-2"
+                className="mt-1 h-10 border-gray-200"
               />
             </div>
             <Button 
               onClick={handleSearch} 
               disabled={isLoading}
-              className="bg-teal-900 hover:bg-teal-800"
+              className="bg-teal-900 hover:bg-teal-800 h-10 px-6 rounded-sm text-sm"
             >
               {isLoading ? "Searching..." : "Search"}
             </Button>
@@ -314,20 +313,20 @@ export default function ValidateCustomerPage() {
         return (
           <div className="space-y-4">
             <div>
-              <Label htmlFor="civilId">Civil ID</Label>
+              <Label htmlFor="civilId" className="text-gray-500 text-sm font-medium">Civil ID</Label>
               <Input
                 id="civilId"
                 type="text"
                 value={inputValue}
                 onChange={(e) => setInputValue(e.target.value)}
                 placeholder="Please enter Civil Id"
-                className="mt-2"
+                className="mt-1 h-10 border-gray-200"
               />
             </div>
             <Button 
               onClick={handleSearch} 
               disabled={isLoading}
-              className="bg-teal-900 hover:bg-teal-800"
+              className="bg-teal-900 hover:bg-teal-800 h-10 px-6 rounded-sm text-sm"
             >
               {isLoading ? "Searching..." : "Search"}
             </Button>
@@ -338,7 +337,7 @@ export default function ValidateCustomerPage() {
         return (
           <div className="space-y-4">
             <div>
-              <Label htmlFor="gsmNumber">GSM Number</Label>
+              <Label htmlFor="gsmNumber" className="text-gray-500 text-sm font-medium">GSM Number</Label>
               <Input
                 id="gsmNumber"
                 type="text"
@@ -351,14 +350,14 @@ export default function ValidateCustomerPage() {
                 }}
                 placeholder="Please enter GSM number"
                 maxLength={8}
-                className="mt-2"
+                className="mt-1 h-10 border-gray-200"
               />
-              <p className="text-xs text-gray-500 mt-1">Must start with 7 or 9 (8 digits)</p>
+              <p className="text-[10px] text-gray-400 mt-1">Must start with 7 or 9 (8 digits)</p>
             </div>
             <Button 
               onClick={handleSearch} 
               disabled={isLoading}
-              className="bg-teal-900 hover:bg-teal-800"
+              className="bg-teal-900 hover:bg-teal-800 h-10 px-6 rounded-sm text-sm"
             >
               {isLoading ? "Searching..." : "Search"}
             </Button>
@@ -522,7 +521,7 @@ export default function ValidateCustomerPage() {
   }
 
   return (
-    <div className="flex-1 bg-gray-50 min-h-[calc(100vh-200px)] relative">
+    <div className="flex-1 bg-gray-100 overflow-x-hidden ">
      <PageHeader
         language={language}
         titleEn="Validate/Search a customer"
@@ -551,9 +550,9 @@ export default function ValidateCustomerPage() {
           {/* Main Validation Card */}
           <div className="bg-white rounded-lg shadow-md border p-6 space-y-6">
             <div>
-              <Label htmlFor="validateType">{language === "EN" ? "Validate Type" : "نوع التحقق"}</Label>
+              <Label htmlFor="validateType" className="text-gray-500 text-sm font-medium">{language === "EN" ? "Validate Type" : "نوع التحقق"}</Label>
               <Select value={selectedType} onValueChange={handleValidationTypeChange}>
-                <SelectTrigger id="validateType" className="mt-2">
+                <SelectTrigger id="validateType" className="mt-1 h-10 border-gray-200">
                   <SelectValue placeholder={language === "EN" ? "Select Validate Type" : "اختر نوع التحقق"} />
                 </SelectTrigger>
                 <SelectContent>
@@ -667,7 +666,10 @@ export default function ValidateCustomerPage() {
                       <Button 
                         onClick={() => {
                           setShowUserNotFound(false)
-                          router.push('/branch-operations/registration')
+                          const params = new URLSearchParams()
+                          if (selectedType) params.append('type', selectedType)
+                          if (inputValue) params.append('value', inputValue)
+                          router.push(`/branch-operations/registration?${params.toString()}`)
                         }}
                         className="bg-teal-900 hover:bg-teal-800 text-white font-bold h-12 uppercase tracking-wide"
                       >

@@ -43,7 +43,10 @@ export const branchOpsService = {
 
             switch (type) {
                 case 'GSM_NUMBER':
-                    paramName = 'GSMNumber' // Keep as is if getOtpLog works
+                    paramName = 'gsmNumber' // UAT uses camelCase and 968 prefix
+                    if (!paramValue.startsWith('968')) {
+                        paramValue = '968' + paramValue
+                    }
                     break
                 case 'CIVIL_ID':
                     paramName = 'civilId' // Match UAT camelCase exactly
@@ -71,7 +74,6 @@ export const branchOpsService = {
             )
 
             const data = response.data
-            console.log('DEBUG: validateUser RAW Response:', JSON.stringify(data))
 
             if (data.StatusCode === 612) {
                 console.warn('Backend returned 612 - Session or Token Invalid');
@@ -82,7 +84,6 @@ export const branchOpsService = {
             }
 
             if (data === 'Failed' || !data || data.StatusCode === 606 || (typeof data.Data === 'string' && data.Data.includes('User not found'))) {
-                console.log('DEBUG: validateUser identified as "Not Found"', { StatusCode: data.StatusCode, Data: data.Data })
                 return {
                     success: false,
                     message: 'User not found'
@@ -91,17 +92,14 @@ export const branchOpsService = {
 
             // Handle both unwrapped (apiClient style) and wrapped (api style) data
             const UserID = data.Data?.UserID || data.UserID
-            console.log('DEBUG: UserID found:', UserID)
 
             if (UserID) {
                 const userDetails = await branchOpsService.getUserDetails(UserID)
-                console.log('DEBUG: userDetails result:', userDetails ? 'FOUND' : 'NULL')
 
-                // If we have a CivilID, sync with ROP/MOC as per UAT flow
-                const civilIdForSync = userDetails?.CivilID || userDetails?.NationalID
-                if (civilIdForSync) {
-                    console.log('Syncing ROP/MOC data for CivilID:', civilIdForSync)
-                    await branchOpsService.getROPMOCSyncData(civilIdForSync)
+                // Sync with ROP/MOC as per UAT flow (Uses UserId and CustomerType)
+                if (userDetails) {
+                    console.log('Syncing ROP/MOC data for UserID:', UserID)
+                    await branchOpsService.getROPMOCSyncData(UserID, userDetails.CustomerType || 'IND')
                 }
 
                 return {
@@ -128,7 +126,7 @@ export const branchOpsService = {
     getUserDetails: async (userId: string): Promise<any> => {
         try {
             const formData = new FormData()
-            formData.append('UserID', userId)
+            formData.append('userID', userId) // UAT uses camelCase userID
             formData.append('sourceType', 'Web')
             formData.append('langCode', 'EN')
             formData.append('islegacy', '0')
@@ -145,10 +143,11 @@ export const branchOpsService = {
                     ...data,
                     FullNameEn: data.FullNameEn ? decodeURIComponent(decryptString(data.FullNameEn)) : '',
                     FullNameAr: data.FullNameAr ? decodeURIComponent(decryptString(data.FullNameAr)) : '',
-                    MobileNumber: data.MobileNumber ? decodeURIComponent(decryptString(data.MobileNumber)) : '',
-                    EmailID: data.EmailID ? decodeURIComponent(decryptString(data.EmailID)) : '',
-                    ExpiryDate: data.ExpiryDate ? decodeURIComponent(decryptString(data.ExpiryDate)) : '',
-                    CustomerType: data.CustomerType ? decodeURIComponent(decryptString(data.CustomerType)) : ''
+                    // Contact details and IDs are plaintext in this API response
+                    MobileNumber: data.MobileNumber || '',
+                    EmailID: data.EmailID || '',
+                    ExpiryDate: data.ExpiryDate || '',
+                    CustomerType: data.CustomerTypeName || data.PersonType || ''
                 }
             }
             return data
@@ -159,10 +158,11 @@ export const branchOpsService = {
     },
 
     // Get ROP/MOC sync data
-    getROPMOCSyncData: async (civilId: string): Promise<any> => {
+    getROPMOCSyncData: async (userId: string, customerType: string): Promise<any> => {
         try {
             const formData = new FormData()
-            formData.append('CivilID', civilId)
+            formData.append('UserId', userId) // UAT uses PascalCase UserId
+            formData.append('CustomerType', customerType) // UAT uses PascalCase CustomerType
             formData.append('sourceType', 'Web')
             formData.append('langCode', 'EN')
             formData.append('islegacy', '0')
@@ -788,6 +788,149 @@ export const branchOpsService = {
     submitCompanyVehicleComplaint: (data: any) =>
         branchOpsService.submitGuestService('CommonService/VehicleComplaintSubmitNewDetails', 'VEHICLECOMP', data),
 
+    getCustomerClass: async (): Promise<any[]> => {
+        try {
+            const formData = new FormData()
+            formData.append('sourceType', 'Web')
+            formData.append('langCode', 'EN')
+            const response = await api.post<any>('/api/CustomerRegistrationWeb/GetCustomerClass', formData)
+            const data = response.data.Data || response.data
+            return Array.isArray(data) ? data : []
+        } catch (error) {
+            // Silently return empty array if endpoint not available - component has fallback
+            return []
+        }
+    },
+
+    getMasterLanguage: async (): Promise<any[]> => {
+        try {
+            const formData = new FormData()
+            formData.append('sourceType', 'Web')
+            formData.append('langCode', 'EN')
+            const response = await api.post<any>('/api/CustomerRegistrationWeb/GetMasterLanguage', formData)
+            const data = response.data.Data || response.data
+            return Array.isArray(data) ? data : []
+        } catch (error) {
+            // Silently return empty array if endpoint not available - component has fallback
+            return []
+        }
+    },
+
+    // Validate National ID before registration (UAT flow step 1)
+    validateNationalID: async (nationalId: string): Promise<ValidationResponse> => {
+        try {
+            const formData = new FormData()
+            formData.append('NationalID', nationalId)
+            formData.append('UserGuid', '') // Empty as per UAT
+
+            const response = await api.post<any>(
+                '/api/UserActionWeb/ValidateNationalID',
+                formData
+            )
+
+            const data = response.data
+
+            if (data.StatusCode === 605 && data.Status === 'success') {
+                return {
+                    success: true,
+                    message: 'National ID validated',
+                    data: data.Data
+                }
+            }
+
+            return {
+                success: false,
+                message: data.Message || 'National ID validation failed'
+            }
+        } catch (error: any) {
+            return {
+                success: false,
+                message: error.message || 'National ID validation failed'
+            }
+        }
+    },
+
+    // Get ROP GSM Number (UAT flow step 2)
+    getROPGSMNumber: async (nationalId: string, expiryDate: string): Promise<ValidationResponse> => {
+        try {
+            const formData = new FormData()
+            // Encrypt the data as per UAT
+            formData.append('NationalId', encryptString(nationalId))
+            formData.append('ExpiryDate', encryptString(expiryDate))
+
+            const response = await api.post<any>(
+                '/api/CommonService/GetROPGSMNumber',
+                formData
+            )
+
+            const data = response.data
+
+            if (data.StatusCode === 605 && data.Status === 'success') {
+                return {
+                    success: true,
+                    message: 'ROP data retrieved',
+                    data: data.Data
+                }
+            }
+
+            return {
+                success: false,
+                message: data.Data?.ResponseMessageEn || 'Failed to retrieve ROP data'
+            }
+        } catch (error: any) {
+            return {
+                success: false,
+                message: error.message || 'Failed to retrieve ROP data'
+            }
+        }
+    },
+
+    submitIndividualRegistration: async (registrationData: any): Promise<ValidationResponse> => {
+        try {
+            const formData = new FormData()
+            Object.keys(registrationData).forEach(key => {
+                if (registrationData[key] !== null && registrationData[key] !== undefined) {
+                    formData.append(key, String(registrationData[key]))
+                }
+            })
+            formData.append('sourceType', 'Web')
+            formData.append('langCode', 'EN')
+            formData.append('CustomerType', 'IND')
+            const response = await api.post<any>('/api/CustomerRegistrationWeb/RegisterCustomer', formData)
+            const data = response.data
+            if (data.StatusCode === 605 || data === 'Success') {
+                return { success: true, message: 'Registration successful', data: data.Data || data }
+            }
+            return { success: false, message: data.Message || 'Registration failed' }
+        } catch (error: any) {
+            // Silently handle - error message will be shown to user via toast
+            return { success: false, message: error.message || 'Registration failed' }
+        }
+    },
+
+    submitCorporateRegistration: async (registrationData: any): Promise<ValidationResponse> => {
+        try {
+            const formData = new FormData()
+            Object.keys(registrationData).forEach(key => {
+                if (registrationData[key] !== null && registrationData[key] !== undefined) {
+                    formData.append(key, String(registrationData[key]))
+                }
+            })
+            formData.append('sourceType', 'Web')
+            formData.append('langCode', 'EN')
+            formData.append('CustomerType', 'CORP')
+            const response = await api.post<any>('/api/CustomerRegistrationWeb/RegisterCustomer', formData)
+            const data = response.data
+            if (data.StatusCode === 605 || data === 'Success') {
+                return { success: true, message: 'Registration successful', data: data.Data || data }
+            }
+            return { success: false, message: data.Message || 'Registration failed' }
+        } catch (error: any) {
+            // Silently handle - error message will be shown to user via toast
+            return { success: false, message: error.message || 'Registration failed' }
+        }
+    },
+
     logout: async (): Promise<boolean> => {
         try {
             const formData = new FormData()
@@ -835,3 +978,4 @@ function decryptCustomerInfo(obj: any): any {
     })
     return result
 }
+

@@ -57,7 +57,7 @@ export default function AppointmentSupervisorActions() {
   }
 
   return (
-    <div className="flex-1 bg-[#F8FAFC] overflow-x-hidden pb-8 min-h-screen">
+    <div className="flex-1 bg-slate-100 overflow-x-hidden ">
       <PageHeader
         language={language}
         titleEn="Supervisor Dashboard"

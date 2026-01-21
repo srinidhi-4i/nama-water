@@ -24,7 +24,7 @@ function WetlandSlotManager() {
   }
 
   return (
-    <div className="flex-1 bg-[#F8FAFC] overflow-x-hidden pb-8 min-h-screen">
+    <div className="flex-1 bg-slate-100 overflow-x-hidden pb-8">
       <PageHeader
         language={language}
         titleEn={dateParam ? "Edit Slot" : "Created Slots"}
