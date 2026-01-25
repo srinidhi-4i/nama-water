@@ -22,6 +22,7 @@ export interface ValidationResponse {
     data?: any
     message?: string
     error?: string
+    statusCode?: number
 }
 
 export interface ROPUserDetails {
@@ -102,9 +103,14 @@ export interface AccountPaymentDetails {
     LastPaymentDate: string
     TotalOutstandingAmount: string
     CurrentBalance: string
+    CurrentBalanceM3?: string
     WasteWaterFixedCharge: string
     VAT: string
     NetTopUpAmount: string
+    NetTopUpAmountM3?: string
+    InitialCredit?: string
+    InstallmentActiveFlag?: boolean
+    CCBStatus?: string
     OutstandingFetchError?: boolean
 }
 

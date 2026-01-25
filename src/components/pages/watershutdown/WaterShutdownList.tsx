@@ -21,7 +21,7 @@ import {
 } from "@/types/watershutdown.types"
 import { format } from "date-fns"
 import Link from "next/link"
-import { getWaterShutdownColumns } from "@/app/(dashboard)/watershutdown/list/columns"
+import { getWaterShutdownColumns } from "@/app/(dashboard)/water-shutdown/list/columns"
 import { NotificationView } from "@/components/watershutdown/notification-view-edit"
 import { NotificationEditor } from "@/components/watershutdown/NotificationEditor"
 import { useLanguage } from "@/components/providers/LanguageProvider"
@@ -53,12 +53,8 @@ export default function WaterShutdownList() {
   const [toDate, setToDate] = useState<Date | undefined>()
   const [searchQuery, setSearchQuery] = useState("")
 
-  // View/Edit State
-  const [showViewEdit, setShowViewEdit] = useState(false)
-  const [viewMode, setViewMode] = useState<"view" | "edit" | "create">("view")
-  const [selectedNotificationId, setSelectedNotificationId] = useState<string | null>(null)
-
   // Action Modals State
+  const [selectedNotificationId, setSelectedNotificationId] = useState<string | null>(null)
   const [showSMSModal, setShowSMSModal] = useState(false)
   const [showCompletionModal, setShowCompletionModal] = useState(false)
   const [templates, setTemplates] = useState<WaterShutdownTemplate[]>([])
@@ -107,6 +103,7 @@ export default function WaterShutdownList() {
   }
 
   const handleResendSMS = async () => {
+      if (!selectedNotificationId) return
       setIsLoading(true)
       try {
         await waterShutdownService.resendIntermediateNotifications(selectedNotificationId)
@@ -177,15 +174,11 @@ export default function WaterShutdownList() {
   }
 
   const handleView = (id: string) => {
-    setSelectedNotificationId(id)
-    setViewMode("view")
-    setShowViewEdit(true)
+    router.push(`/water-shutdown/view/${id}`)
   }
 
   const handleCreate = () => {
-    setSelectedNotificationId(null)
-    setViewMode("create")
-    setShowViewEdit(true)
+    router.push('/water-shutdown/create')
   }
 
   const handleDownload = async (id: string) => {
@@ -367,14 +360,40 @@ export default function WaterShutdownList() {
       pdf.setTextColor(accentColor[0], accentColor[1], accentColor[2])
       pdf.setFontSize(8)
       pdf.text("Oman Regional Map", 154, startYForGrid + 10, { align: "center" })
-      // Draw a simple Oman outline in the map box
-      pdf.setLineWidth(0.4)
-      pdf.moveTo(145, startYForGrid + (hWillayat * 0.4))
-      pdf.lineTo(165, startYForGrid + (hWillayat * 0.2))
-      pdf.lineTo(175, startYForGrid + (hWillayat * 0.3))
-      pdf.lineTo(170, startYForGrid + (hWillayat * 0.6))
-      pdf.lineTo(145, startYForGrid + (hWillayat * 0.4))
-      pdf.stroke()
+      // Draw a more detailed Oman outline
+      pdf.setLineWidth(0.3)
+      pdf.setDrawColor(accentColor[0], accentColor[1], accentColor[2])
+      
+      const mapX = 154; // Center X within the map box
+      const mapY = startYForGrid + (hWillayat * 0.55);
+      const scale = Math.min(hWillayat * 0.6, 35) / 100;
+
+      // Main Oman Body coordinates (relative to mapX, mapY)
+      const mainOman: [number, number][] = [
+        [30, -40], [50, -60], [80, -50], [100, -20], [110, 20], 
+        [90, 60], [40, 80], [-20, 60], [-60, 20], [-80, -20], [-50, -50]
+      ];
+      
+      let prevX = mapX + (mainOman[0][0] * scale);
+      let prevY = mapY + (mainOman[0][1] * scale);
+      
+      mainOman.slice(1).forEach(p => {
+        const currX = mapX + (p[0] * scale);
+        const currY = mapY + (p[1] * scale);
+        pdf.line(prevX, prevY, currX, currY);
+        prevX = currX;
+        prevY = currY;
+      });
+      // Close main body
+      pdf.line(prevX, prevY, mapX + (mainOman[0][0] * scale), mapY + (mainOman[0][1] * scale));
+      
+      // Musandam Exclave
+      const m1 = [mapX + (20 * scale), mapY - (85 * scale)];
+      const m2 = [mapX + (45 * scale), mapY - (75 * scale)];
+      const m3 = [mapX + (35 * scale), mapY - (65 * scale)];
+      pdf.line(m1[0], m1[1], m2[0], m2[1]);
+      pdf.line(m2[0], m2[1], m3[0], m3[1]);
+      pdf.line(m3[0], m3[1], m1[0], m1[1]);
       pdf.setFontSize(6)
       pdf.text("Affected regions highlighted", 154, startYForGrid + hWillayat - 5, { align: "center" })
 
@@ -510,14 +529,10 @@ export default function WaterShutdownList() {
 
 
   const handleEdit = (id: string) => {
-      setSelectedNotificationId(id)
-      setViewMode("edit")
-      setShowViewEdit(true)
+      router.push(`/water-shutdown/edit/${id}`)
   }
 
   const handleBack = () => {
-    setShowViewEdit(false)
-    setSelectedNotificationId(null)
     loadNotifications() // Refresh list
   }
 
@@ -569,23 +584,7 @@ export default function WaterShutdownList() {
         breadcrumbAr="إشعارات إغلاق المياه"
       />
 
-      <div className="px-6">
-        {showViewEdit ? (
-          viewMode === "view" ? (
-            <NotificationView
-              notificationId={selectedNotificationId!}
-              onBack={handleBack}
-              language={language}
-            />
-          ) : (
-            <NotificationEditor
-              notificationId={selectedNotificationId || undefined}
-              onBack={handleBack}
-              onSaveSuccess={handleBack}
-            />
-          )
-        ) : (
-          <>
+      <div className="p-6 ">
             <div className="bg-white p-4 rounded-lg shadow-sm border mb-6">
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
                 <div className="relative">
@@ -671,14 +670,7 @@ export default function WaterShutdownList() {
                     {language === "EN" ? `Export Excel` : `تصدير إلى Excel`}
                   </Button>
                   <Button 
-                    onClick={async () => {
-                      setIsDetailLoading(true);
-                      await loadMasterData();
-                      setIsDetailLoading(false);
-                      setViewMode("create");
-                      setSelectedNotificationId(null);
-                      setShowViewEdit(true);
-                    }} 
+                    onClick={() => router.push('/water-shutdown/create')} 
                     className="bg-[#E54B4B] hover:bg-[#d03b3b] text-white"
                   >
                     {language === "EN" ? `Create New Notification` : `إنشاء إشعار جديد`}
@@ -695,9 +687,6 @@ export default function WaterShutdownList() {
                 emptyMessage={language === "EN" ? `No water shutdown notifications found` : `لا يوجد إشعارات إغلاق المياه`}
               />
             </div>
-          </>
-        )}
-
         
         <IntermediateSMSModal 
             open={showSMSModal}

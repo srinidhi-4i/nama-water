@@ -316,8 +316,7 @@ export function WetlandSlotEditor({ date, onBack }: WetlandSlotEditorProps) {
       await loadMonthData(selectedDate) 
       
     } catch (error: any) {
-      console.error('Error saving slots:', error)
-      toast.error(error.response?.data?.ResponseMessage || error.message || 'Failed to update slots')
+      toast.error(error.message || 'Failed to update slots')
     } finally {
       setLoading(false)
     }

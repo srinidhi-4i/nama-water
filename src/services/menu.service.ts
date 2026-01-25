@@ -27,12 +27,12 @@ const DEFAULT_MENU_ITEMS: MenuItem[] = [
     { MenuId: 4, Parent_Id: null, Menu_Name_EN: "Custom Notification", Menu_Name_AR: "إشعار مخصص", Target_Url: "/notification-center/custom", Icon_Class: "", order: 4, IsActive: true, ApplicationNameEn: "Notification Center" },
 
     // Water Shutdown
-    { MenuId: 5, Parent_Id: null, Menu_Name_EN: "Water Shutdown Notification List", Menu_Name_AR: "قائمة إشعارات إيقاف المياه", Target_Url: "/watershutdown/list", Icon_Class: "", order: 5, IsActive: true, ApplicationNameEn: "Water Shutdown" },
-    { MenuId: 6, Parent_Id: null, Menu_Name_EN: "Water Shutdown Templates", Menu_Name_AR: "قوالب إيقاف المياه", Target_Url: "/watershutdown/templates", Icon_Class: "", order: 6, IsActive: true, ApplicationNameEn: "Water Shutdown" },
+    { MenuId: 5, Parent_Id: null, Menu_Name_EN: "Water Shutdown Notification List", Menu_Name_AR: "قائمة إشعارات إيقاف المياه", Target_Url: "/water-shutdown/list", Icon_Class: "", order: 5, IsActive: true, ApplicationNameEn: "Water Shutdown" },
+    { MenuId: 6, Parent_Id: null, Menu_Name_EN: "Water Shutdown Templates", Menu_Name_AR: "قوالب إيقاف المياه", Target_Url: "/water-shutdown/templates", Icon_Class: "", order: 6, IsActive: true, ApplicationNameEn: "Water Shutdown" },
 
     // Wetland
-    { MenuId: 7, Parent_Id: null, Menu_Name_EN: "Wetland Slot Creation", Menu_Name_AR: "إنشاء فتحة الأراضي الرطبة", Target_Url: "/wetland/slot-creation", Icon_Class: "", order: 7, IsActive: true, ApplicationNameEn: "Wetland" },
-    { MenuId: 8, Parent_Id: null, Menu_Name_EN: "Holiday Calendar", Menu_Name_AR: "تقويم العطلات", Target_Url: "/wetland/holiday-calendar", Icon_Class: "", order: 8, IsActive: true, ApplicationNameEn: "Wetland" },
+    { MenuId: 7, Parent_Id: null, Menu_Name_EN: "Wetland Slot Creation", Menu_Name_AR: "إنشاء فتحة الأراضي الرطبة", Target_Url: "/wetland-visit/slot-creation", Icon_Class: "", order: 7, IsActive: true, ApplicationNameEn: "Wetland" },
+    { MenuId: 8, Parent_Id: null, Menu_Name_EN: "Holiday Calendar", Menu_Name_AR: "تقويم العطلات", Target_Url: "/wetland-visit/holiday-calendar", Icon_Class: "", order: 8, IsActive: true, ApplicationNameEn: "Wetland" },
 
     // Appointment
     { MenuId: 9, Parent_Id: null, Menu_Name_EN: "Appointment Booking", Menu_Name_AR: "حجز موعد", Target_Url: "/appointment-booking/appointments", Icon_Class: "", order: 9, IsActive: true, ApplicationNameEn: "Appointment" },
@@ -45,9 +45,9 @@ export const menuService = {
         const urlMap: Record<string, string> = {
             '/notificationtemplate': '/notification-center/templates',
             '/customnotification': '/notification-center/custom',
-            '/watershutdown': '/watershutdown/list',
-            '/wetland/slots': '/wetland/slot-creation',
-            '/wetland/holidays': '/wetland/holiday-calendar',
+            '/water-shutdown': '/water-shutdown/list',
+            '/wetland-visit/slots': '/wetland-visit/slot-creation',
+            '/wetland-visit/holidays': '/wetland-visit/holiday-calendar',
             '/appointmentbooking': '/appointment-booking/appointments',
             '/branchoperations/validate': '/branch-operations/validate',
             '/branchoperations/guest': '/branch-operations/guest',
@@ -100,11 +100,8 @@ export const menuService = {
                 return this.transformMenuItems(response)
             }
 
-            // Otherwise return default menu items
-            console.log('Using default menu items as fallback (API returned empty or unparseable)')
             return DEFAULT_MENU_ITEMS
         } catch (error) {
-            console.warn('Using default menu items due to API error:', error)
             return DEFAULT_MENU_ITEMS
         }
     },
@@ -151,7 +148,6 @@ export const menuService = {
 
             return []
         } catch (error) {
-            console.warn('Error fetching menu data:', error)
             return []
         }
     },
@@ -165,7 +161,6 @@ export const menuService = {
             const response = await apiClient.simplePost<Announcement[]>('/Menu/GetAnnouncementData')
             return response || []
         } catch (error) {
-            console.warn('Error fetching announcements (using empty fallback):', error)
             return []
         }
     },
@@ -179,7 +174,6 @@ export const menuService = {
             const response = await apiClient.simplePost<CommonDetails>('/Common/GetCommonDetails')
             return response
         } catch (error) {
-            console.error('Error fetching common details:', error)
             throw error
         }
     },
@@ -193,7 +187,6 @@ export const menuService = {
             const response = await apiClient.simplePost<any[]>('/Menu/GetCommonData')
             return response || []
         } catch (error) {
-            console.warn('Error fetching common data:', error)
             return []
         }
     }

@@ -175,7 +175,7 @@ export function CreateTemplate({ onBack }: CreateTemplateProps) {
   return (
     <div className="bg-white rounded-lg shadow-md overflow-hidden">
       {/* Configuration Header */}
-      <div className="p-6 border-b bg-gray-50/50">
+      <div className=" border-b bg-slate-100">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
           <div className="space-y-2">
             <Label className="text-sm font-semibold text-gray-700">Event Type</Label>

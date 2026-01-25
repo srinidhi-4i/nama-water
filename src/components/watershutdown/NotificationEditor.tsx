@@ -632,7 +632,7 @@ export function NotificationEditor({ notificationId, onBack, onSaveSuccess }: No
     };
 
     return (
-        <div className="bg-[#f8fafc] min-h-screen pb-12">
+        <div className="bg-slate-100">
             <div className="max-w-[1200px] mx-auto pt-6 px-4">
                 {/* Header */}
                 <div className="flex items-center justify-between mb-6">

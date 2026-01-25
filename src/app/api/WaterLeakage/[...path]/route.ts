@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { cookies } from 'next/headers'
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://eserviceuat.nws.nama.om'
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'https://eservicesuat.nws.nama.om'
 
 export async function POST(
     request: NextRequest,
@@ -10,7 +10,7 @@ export async function POST(
     try {
         const params = await context.params
         const path = params.path?.join('/') || ''
-        const url = `${API_BASE_URL}/WaterLeakage/${path}`
+        const url = `${API_BASE_URL}/api/WaterLeakage/${path}`
 
         // Get request body
         const body = await request.formData()

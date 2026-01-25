@@ -15,12 +15,12 @@ function WetlandSlotManager() {
 
   const handleDateSelect = (date: string) => {
     // Navigate to same page with date param
-    router.push(`/wetland/slot-creation?date=${date}`)
+    router.push(`/wetland-visit/slot-creation?date=${date}`)
   }
 
   const handleBack = () => {
     // Remove date param
-    router.push('/wetland/slot-creation')
+    router.push('/wetland-visit/slot-creation')
   }
 
   return (

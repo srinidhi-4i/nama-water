@@ -1,7 +1,14 @@
 "use client"
 
-import AppointmentList from "@/components/pages/appointment/AppointmentList"
+import { useEffect } from "react"
+import { useRouter } from "next/navigation"
 
-export default function AppointmentBookingPage() {
-  return <AppointmentList />
+export default function Page() {
+  const router = useRouter()
+
+  useEffect(() => {
+    router.replace('/appointment-booking/appointments/1')
+  }, [router])
+
+  return null
 }

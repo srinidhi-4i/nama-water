@@ -354,8 +354,8 @@ export default function VerificationDetails({
                         ))
                       ) : (
                         <>
-                          <SelectItem value="EN">English</SelectItem>
-                          <SelectItem value="AR">Arabic</SelectItem>
+                          <SelectItem key="EN" value="EN">English</SelectItem>
+                          <SelectItem key="AR" value="AR">Arabic</SelectItem>
                         </>
                       )}
                     </SelectContent>

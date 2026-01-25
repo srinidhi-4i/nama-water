@@ -55,8 +55,8 @@ export const EXPANDABLE_MENUS: SidebarMenu[] = [
     labelAr: "انقطاع المياه",
     icon: "water",
     children: [
-      { label: "Water shutdown Notification List", labelAr: "قائمة إشعارات انقطاع المياه", href: "/watershutdown/list" },
-      { label: "Water shutdown Templates", labelAr: "قوالب انقطاع المياه", href: "/watershutdown/templates" },
+      { label: "Water shutdown Notification List", labelAr: "قائمة إشعارات انقطاع المياه", href: "/water-shutdown/list" },
+      { label: "Water shutdown Templates", labelAr: "قوالب انقطاع المياه", href: "/water-shutdown/templates" },
     ],
   },
   {
@@ -64,9 +64,9 @@ export const EXPANDABLE_MENUS: SidebarMenu[] = [
     labelAr: "الأراضي الرطبة",
     icon: "wetland",
     children: [
-      { label: "Slot Creation", labelAr: "إنشاء فترة", href: "/wetland/slot-creation" },
-      { label: "Holiday Calendar", labelAr: "تقويم العطلات", href: "/wetland/holiday-calendar" },
-      { label: "Supervisor Actions", labelAr: "إجراءات المشرف", href: "/wetland/supervisor-actions" },
+      { label: "Slot Creation", labelAr: "إنشاء فترة", href: "/wetland-visit/slot-creation" },
+      { label: "Holiday Calendar", labelAr: "تقويم العطلات", href: "/wetland-visit/holiday-calendar" },
+      { label: "Supervisor Actions", labelAr: "إجراءات المشرف", href: "/wetland-visit/supervisor-actions" },
     ],
   },
 ]

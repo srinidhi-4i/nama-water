@@ -1,8 +1,7 @@
 "use client"
 
-import AppointmentSlotCreation from "@/components/pages/appointment/AppointmentSlotCreation"
+import AppointmentSlotCalendarPage from "@/components/pages/appointment/AppointmentSlotCalendarPage"
 
-export default function AppointmentSlotCreationPage() {
-  return <AppointmentSlotCreation />
+export default function Page() {
+  return <AppointmentSlotCalendarPage />
 }
-

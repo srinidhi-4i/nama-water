@@ -23,8 +23,6 @@ export const appointmentService = {
             if (keyType) formData.append('keyType', keyType)
             formData.append('Lang', 'EN') // Common requirement for master data
 
-            console.log(`Fetching appointment master data (keyType: ${keyType || 'all'})...`);
-
             const endpoints = [
                 '/AppointmentReqest/GetMasterData',
                 '/AppointmentRequest/GetMasterData',
@@ -48,7 +46,6 @@ export const appointmentService = {
             }
 
             const rawData = response?.data?.Data || response?.data || {};
-            console.log('GetMasterData Keys found:', Object.keys(rawData));
 
             // If keyType is provided, return the specific table
             if (keyType && rawData.Table) {
@@ -59,10 +56,6 @@ export const appointmentService = {
             const rawGovernorates = rawData.Governorates || rawData.Governorate || rawData.Governarates || rawData.Governarate || [];
             const rawWilayats = rawData.Wilayats || rawData.Wilayat || rawData.Villayat || rawData.Villayats || rawData.Willayats || rawData.Willayath || [];
             const rawBranches = rawData.Table || rawData.Branch || rawData.Branches || [];
-
-            console.log('Sample Raw Governorate:', rawGovernorates[0]);
-            console.log('Sample Raw Wilayat:', rawWilayats[0]);
-            console.log('Sample Raw Branch:', rawBranches[0]);
 
             // 1. Normalize Governorates first
             const normalizedGovs = (Array.isArray(rawGovernorates) ? rawGovernorates : []).map((g: any) => ({
@@ -76,8 +69,8 @@ export const appointmentService = {
             // 2. Normalize Wilayats and link to Govs via Code if ID is missing
             const normalizedWilayats = (Array.isArray(rawWilayats) ? rawWilayats : []).map((w: any) => {
                 const WilayatID = w.WilayatID || w.WillayathID || w.ID;
-                const WilayatNameEN = w.WilayatNameEN || w.VillayatEn || w.WilayatEn || w.WillayatNameEN || w.NameEn || w.NameEN || '';
-                const WilayatNameAR = w.WilayatNameAR || w.VillayatAr || w.WilayatAr || w.WillayatNameAR || w.NameAr || w.NameAR || '';
+                const WilayatNameEN = w.WilayatNameEN || w.VillayatEn || w.WilayatEn || w.WillayathNameEN || w.NameEn || w.NameEN || '';
+                const WilayatNameAR = w.WilayatNameAR || w.VillayatAr || w.WilayatAr || w.WillayathNameAR || w.NameAr || w.NameAR || '';
 
                 let GovernorateID = w.GovernorateID || w.GovernarateID || w.GovernateID || w.GovID;
                 const GovCode = w.GovernarateCode || w.GovCode;
@@ -117,12 +110,6 @@ export const appointmentService = {
 
             return normalizedData;
         } catch (error: any) {
-            console.error('Error fetching appointment master data:', {
-                message: error.message,
-                status: error.response?.status,
-                data: error.response?.data,
-                config: error.config
-            });
             return {
                 Governorates: [],
                 Wilayats: [],
@@ -157,7 +144,6 @@ export const appointmentService = {
             const result = response?.data?.Data || response?.data || []
             return Array.isArray(result) ? result : (result?.Table || [])
         } catch (error) {
-            console.error('Error fetching appointment dates:', error)
             return []
         }
     },
@@ -188,7 +174,6 @@ export const appointmentService = {
             const result = response?.data?.Data || response?.data || []
             return Array.isArray(result) ? result : (result?.Table || [])
         } catch (error) {
-            console.error('Error fetching appointment slots:', error)
             return []
         }
     },
@@ -215,7 +200,6 @@ export const appointmentService = {
 
             const rawData = response?.data?.Data || response?.data || {}
             const result = Array.isArray(rawData) ? rawData : (rawData.Table1 || rawData.Table || [])
-            console.log(`getSlotsForRange found ${result.length} slots for ${startDate} to ${endDate}`)
 
             const slots: AppointmentSlot[] = Array.isArray(result) ? result.map((item: any) => ({
                 id: item.SlotID || item.BranchWiseSlotID || Math.random().toString(),
@@ -231,7 +215,6 @@ export const appointmentService = {
 
             return { slots }
         } catch (error) {
-            console.error('Error fetching slots for range:', error)
             return { slots: [] }
         }
     },
@@ -259,7 +242,6 @@ export const appointmentService = {
 
             return { slots, calendarStatus }
         } catch (error) {
-            console.error('Error fetching slots for editor:', error)
             return { slots: [], calendarStatus: [] }
         }
     },
@@ -299,11 +281,10 @@ export const appointmentService = {
             ]
 
             const response = await this._probeApi(endpoints, formData, 'update slots')
-            if (!response) throw new Error('No working endpoint found for updateSlot')
+            if (!response) throw { message: 'No working endpoint found for updateSlot' }
 
             return response?.data
         } catch (error) {
-            console.error('Error updating slots:', error)
             throw error
         }
     },
@@ -337,10 +318,9 @@ export const appointmentService = {
             ]
 
             const response = await this._probeApi(endpoints, formData, 'block slot')
-            if (!response) throw new Error('No working endpoint found for blockSlot')
+            if (!response) throw { message: 'No working endpoint found for blockSlot' }
             return response?.data?.Data || response?.data
         } catch (error) {
-            console.error('Error blocking slot:', error)
             throw error
         }
     },
@@ -360,9 +340,7 @@ export const appointmentService = {
 
             const response = await this._probeApi(endpoints, formData, 'unblock slot')
             return response?.data
-        } catch (error) {
-            console.error('Error unblocking slot:', error)
-        }
+        } catch (error) { }
     },
 
     async checkAppointmentBooked(payload: any): Promise<any> {
@@ -381,10 +359,9 @@ export const appointmentService = {
             ]
 
             const response = await this._probeApi(endpoints, formData, 'check booking')
-            if (!response) throw new Error('No working endpoint found for checkAppointmentBooked')
+            if (!response) throw { message: 'No working endpoint found for checkAppointmentBooked' }
             return response?.data?.Data || response?.data
         } catch (error) {
-            console.error('Error checking appointment booked:', error)
             throw error
         }
     },
@@ -402,10 +379,9 @@ export const appointmentService = {
             ]
 
             const response = await this._probeApi(endpoints, formData, 'otp requirement')
-            if (!response) throw new Error('No working endpoint found for checkOTPValidationRequired')
+            if (!response) throw { message: 'No working endpoint found for checkOTPValidationRequired' }
             return response?.data?.Data || response?.data
         } catch (error) {
-            console.error('Error checking OTP requirement:', error)
             throw error
         }
     },
@@ -424,10 +400,9 @@ export const appointmentService = {
             ]
 
             const response = await this._probeApi(endpoints, formData, 'generate otp')
-            if (!response) throw new Error('No working endpoint found for generateOTP')
+            if (!response) throw { message: 'No working endpoint found for generateOTP' }
             return response?.data
         } catch (error) {
-            console.error('Error generating OTP:', error)
             throw error
         }
     },
@@ -449,32 +424,24 @@ export const appointmentService = {
             ]
 
             const response = await this._probeApi(endpoints, formData, 'create appointment')
-            if (!response) throw new Error('No working endpoint found for createAppointment')
+            if (!response) throw { message: 'No working endpoint found for createAppointment' }
             return response?.data?.Data || response?.data
         } catch (error) {
-            console.error('Error creating appointment:', error)
             throw error
         }
     },
-
-
 
     // Global probe helper
     async _probeApi(endpoints: string[], formData: FormData, context: string): Promise<any> {
         for (const url of endpoints) {
             try {
-                console.log(`Probing ${context}: ${url}`)
                 const res = await api.post<any>(url, formData)
                 // StatusCode 605 is the "Success" code for these legacy APIs
                 if (res.status === 200 || (res.data && res.data.StatusCode === 605)) {
-                    console.log(`[FOUND] Successfully reached ${context}: ${url}`)
                     return res
                 }
             } catch (e: any) {
-                if (e.response?.status !== 404) {
-                    console.error(`Error during probing ${url}:`, e.message)
-                }
-                console.warn(`${url} returned ${e.response?.status || 'error'}`)
+                // Silence errors
             }
         }
         return null
@@ -494,8 +461,6 @@ export const appointmentService = {
             formData.append('toDate', formatDate(toDate));
             formData.append('Lang', 'EN');
 
-            console.log('GetHolidayDates Payload:', { fromDate: formatDate(fromDate), toDate: formatDate(toDate) });
-
             const endpoints = [
                 '/AppointmentReqest/GetHolidayDates',
                 '/AppointmentRequest/GetHolidayDates',
@@ -511,7 +476,7 @@ export const appointmentService = {
             ]
 
             const response = await this._probeApi(endpoints, formData, 'holiday dates')
-            if (!response) throw new Error('No working endpoint found for GetHolidayDates')
+            if (!response) throw { message: 'No working endpoint found for GetHolidayDates' }
 
             const responseData = response?.data;
             if (responseData?.StatusCode === 605) {
@@ -519,13 +484,8 @@ export const appointmentService = {
                 return Array.isArray(result) ? result : [];
             }
 
-            throw new Error(responseData?.Status || 'Failed to fetch holiday dates');
+            throw { message: responseData?.Status || 'Failed to fetch holiday dates' };
         } catch (error: any) {
-            console.error('Error fetching holiday dates:', {
-                message: error.message,
-                status: error.response?.status,
-                data: error.response?.data
-            });
             return []
         }
     },
@@ -559,12 +519,6 @@ export const appointmentService = {
                 formData.append('Year', String(data.Year));
             }
 
-            const entries: Record<string, string> = {};
-            formData.forEach((value, key) => {
-                entries[key] = value as string;
-            });
-            console.log('InsertAppointmentHoliday Payload:', JSON.stringify(entries, null, 2));
-
             const endpoints = [
                 '/AppointmentReqest/InsertAppointmentHoliday',
                 '/AppointmentRequest/InsertAppointmentHoliday',
@@ -580,10 +534,9 @@ export const appointmentService = {
             ]
 
             const response = await this._probeApi(endpoints, formData, 'holiday insertion')
-            if (!response) throw new Error('No working endpoint found for holiday insertion')
+            if (!response) throw { message: 'No working endpoint found for holiday insertion' }
 
             const responseData = response?.data;
-            console.log('Holiday Response Data:', JSON.stringify(responseData, null, 2));
 
             // Legacy success: StatusCode 605. 
             // IsBlock check: WO must be 0, SH can be non-zero per user request.
@@ -605,11 +558,6 @@ export const appointmentService = {
                 statusCode: responseData?.StatusCode,
             };
         } catch (error: any) {
-            console.error('Error processing holiday:', {
-                message: error.message,
-                status: error.response?.status,
-                data: error.response?.data
-            });
             throw error;
         }
     },
@@ -631,7 +579,6 @@ export const appointmentService = {
             const response = await this._probeApi(endpoints, formData, 'generate token')
             return response?.data;
         } catch (error) {
-            console.error('Error generating token:', error);
             throw error;
         }
     },
@@ -648,7 +595,6 @@ export const appointmentService = {
             const response = await this._probeApi(endpoints, formData, 'emp details')
             return response?.data?.Data || response?.data
         } catch (error) {
-            console.error('Error fetching emp details:', error)
             return null
         }
     },
@@ -667,7 +613,6 @@ export const appointmentService = {
             if (!response) return null
             return response?.data?.Data || response?.data
         } catch (error) {
-            console.error('Error fetching prebook walkin details:', error)
             return null
         }
     },
@@ -686,7 +631,6 @@ export const appointmentService = {
             const data = response?.data?.Data || response?.data || []
             return Array.isArray(data) ? data : (data.Table || [])
         } catch (error) {
-            console.error('Error fetching agent list:', error)
             return []
         }
     },
@@ -709,7 +653,6 @@ export const appointmentService = {
             const data = response?.data?.Data || response?.data || []
             return Array.isArray(data) ? data : (data.Table || [])
         } catch (error) {
-            console.error('Error fetching booking data:', error)
             return []
         }
     },
@@ -743,7 +686,6 @@ export const appointmentService = {
             const response = await this._probeApi(endpoints, formData, 'modify appointment')
             return response?.data
         } catch (error) {
-            console.error('Error modifying appointment:', error)
             throw error
         }
     },
@@ -771,7 +713,6 @@ export const appointmentService = {
             const response = await this._probeApi(endpoints, formData, 'bulk cancel')
             return response?.data
         } catch (error) {
-            console.error('Error in bulk cancel:', error)
             throw error
         }
     },
@@ -798,14 +739,13 @@ export const appointmentService = {
             if (!payload.lang) formData.append('Lang', 'EN')
 
             const endpoints = [
-                '/AppointmentReqest/CreateSlotsByAdmin',
-                '/AppointmentRequest/CreateSlotsByAdmin',
-                '/Appointment/CreateSlotsByAdmin'
+                '/AppointmentReqest/InsertAppointmentSlot',
+                '/AppointmentRequest/InsertAppointmentSlot',
+                '/Appointment/InsertAppointmentSlot'
             ]
-            const response = await this._probeApi(endpoints, formData, 'create slots admin')
+            const response = await this._probeApi(endpoints, formData, 'admin slot creation')
             return response?.data
         } catch (error) {
-            console.error('Error creating slots by admin:', error)
             throw error
         }
     },
@@ -816,6 +756,7 @@ export const appointmentService = {
             formData.append('branchID', branchID)
             formData.append('fromDate', fromDate)
             formData.append('toDate', toDate)
+            formData.append('Lang', 'EN')
 
             const endpoints = [
                 '/AppointmentReqest/CheckAvailableTimeSlots',
@@ -823,100 +764,9 @@ export const appointmentService = {
                 '/Appointment/CheckAvailableTimeSlots'
             ]
             const response = await this._probeApi(endpoints, formData, 'check available slots')
-            return response?.data?.Data || response?.data // Return raw data for Table/Table1 access
+            return response?.data?.Data || response?.data
         } catch (error) {
-            console.error('Error checking available time slots:', error)
             return null
         }
-    },
-
-    async getTimeSlotsForEdit(branchID: string, fromDate: string, toDate: string): Promise<any[]> {
-        try {
-            const formData = new FormData()
-            formData.append('branchID', branchID)
-            formData.append('fromDate', fromDate)
-            formData.append('toDate', toDate)
-
-            const endpoints = [
-                '/AppointmentReqest/GetTimeSlotsForEdit',
-                '/AppointmentRequest/GetTimeSlotsForEdit',
-                '/Appointment/GetTimeSlotsForEdit'
-            ]
-            const response = await this._probeApi(endpoints, formData, 'slots for edit')
-            if (!response) return []
-            const data = response?.data?.Data || response?.data || []
-            return Array.isArray(data) ? data : (data.Table || [])
-        } catch (error) {
-            console.error('Error fetching slots for edit:', error)
-            return []
-        }
-    },
-
-    async updateAppointmentSlot(payload: {
-        branchID: string;
-        isDisable: number;
-        isEnable?: number;
-        fromDate: string;
-        toDate: string;
-        startTime?: string;
-        branchWiseTimeSlotID?: string;
-        slotDuration?: string;
-        noOfCounter?: string;
-        lang?: string;
-    }): Promise<any> {
-        try {
-            const formData = new FormData()
-            Object.entries(payload).forEach(([key, value]) => {
-                const capitalizedKey = key.charAt(0).toUpperCase() + key.slice(1);
-                formData.append(capitalizedKey, value !== undefined ? String(value) : '')
-            })
-            if (!payload.lang) formData.append('Lang', 'EN')
-
-            const endpoints = [
-                '/AppointmentReqest/UpdateAppointmentSlot',
-                '/AppointmentRequest/UpdateAppointmentSlot',
-                '/Appointment/UpdateAppointmentSlot'
-            ]
-            const response = await this._probeApi(endpoints, formData, 'update slot')
-            return response?.data
-        } catch (error) {
-            console.error('Error updating appointment slot:', error)
-            throw error
-        }
-    },
-
-    // Helper functions
-    buildMonthCalendar(slots: AppointmentSlot[], month: number, year: number): AppointmentMonthCalendar {
-        const firstDayOfMonth = new Date(year, month - 1, 1);
-        const lastDayOfMonth = new Date(year, month, 0);
-
-        let firstDayOfWeek = firstDayOfMonth.getDay();
-        firstDayOfWeek = firstDayOfWeek === 0 ? 6 : firstDayOfWeek - 1;
-
-        const days: AppointmentDaySlots[] = [];
-
-        // Add days from previous month to fill the first row
-        const prevMonthLastDay = new Date(year, month - 1, 0);
-        for (let i = firstDayOfWeek - 1; i >= 0; i--) {
-            const date = new Date(year, month - 2, prevMonthLastDay.getDate() - i);
-            const dateStr = date.toISOString().split('T')[0];
-            days.push({ date: dateStr, slots: slots.filter(slot => slot.date === dateStr) });
-        }
-
-        // Add days of current month
-        for (let day = 1; day <= lastDayOfMonth.getDate(); day++) {
-            const dateStr = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-            days.push({ date: dateStr, slots: slots.filter(slot => slot.date === dateStr) });
-        }
-
-        // Add days from next month to fill the grid
-        const remainingDays = 42 - days.length;
-        for (let day = 1; day <= remainingDays; day++) {
-            const date = new Date(year, month, day);
-            const dateStr = date.toISOString().split('T')[0];
-            days.push({ date: dateStr, slots: slots.filter(slot => slot.date === dateStr) });
-        }
-
-        return { month, year, days };
     }
 }

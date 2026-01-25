@@ -78,16 +78,8 @@ const form = useForm<FormValues>({
         })
       }
     } catch (error: any) {
-      console.error("Login failed", error)
-      
       // Provide specific error messages based on error type
-      let errorMessage = "An error occurred during login. Please try again."
-      
-      if (error.statusCode === 'Failure') {
-        errorMessage = error.message || "Invalid username or password."
-      } else if (error.statusCode === 605) {
-        errorMessage = error.message || "User account error. Please contact support."
-      }
+      const errorMessage = error.message || "An error occurred during login. Please try again."
       
       toast.error("Login Error", {
         description: errorMessage

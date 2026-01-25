@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { useRouter } from "next/navigation"
+import { useRouter, useSearchParams } from "next/navigation"
 import { toast } from "sonner"
 import { Calendar, ChevronLeft } from "lucide-react"
 import { format } from "date-fns"
@@ -16,7 +16,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Tabs } from "@/components/ui/tabs"
 import { Calendar as CalendarComponent } from "@/components/ui/calendar"
 import {
   Popover,
@@ -31,10 +31,8 @@ import Link from "next/link"
 import PageHeader from "@/components/layout/PageHeader"
 import { ValidationType, AccountPaymentDetails, DEFAULT_VALIDATION_TYPES, ROPUserDetails, CustomerInfo } from "@/types/branchops.types"
 import { AccountPaymentResult } from "@/components/branchoperations/AccountPaymentResult"
-import { ProfileData } from "@/components/branchoperations/ProfileData"
-import { ProfileDataROP } from "@/components/branchoperations/ProfileDataROP"
 import { Alert, AlertDescription } from "@/components/ui/alert"
-import { Loader2, Search, AlertCircle, LogOut } from "lucide-react"
+import { Loader2, AlertCircle, LogOut } from "lucide-react"
 import {
   AlertDialog,
   AlertDialogAction,
@@ -47,6 +45,7 @@ import {
 
 export default function ValidateCustomerPage() {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const { language } = useLanguage()
   const [validationTypes, setValidationTypes] = useState<ValidationType[]>([])
   const [selectedType, setSelectedType] = useState<string>("")
@@ -57,16 +56,25 @@ export default function ValidateCustomerPage() {
   const [expiryDate, setExpiryDate] = useState<Date>()
   const [isLoading, setIsLoading] = useState(false)
   const [activeTab, setActiveTab] = useState("validate")
-  const [profileData, setProfileData] = useState<any>(null)
   const [commonData, setCommonData] = useState<any>(null)
-  const [paymentResult, setPaymentResult] = useState<AccountPaymentDetails | null>(null)
   const [showSessionExpired, setShowSessionExpired] = useState<boolean>(false)
   const [showUserNotFound, setShowUserNotFound] = useState<boolean>(false)
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
     loadValidationTypes()
-  }, [])
+    
+    // Check if we should show the "User Not Found" modal
+    const showNotFound = searchParams.get('showNotFound')
+    const type = searchParams.get('type')
+    const value = searchParams.get('value')
+    
+    if (showNotFound === 'true') {
+      setShowUserNotFound(true)
+      if (type) setSelectedType(type)
+      if (value) setInputValue(value)
+    }
+  }, [searchParams])
 
   const loadValidationTypes = async () => {
     try {
@@ -89,7 +97,6 @@ export default function ValidateCustomerPage() {
     setAccountNumber("")
     setRequestNumber("")
     setCivilId("")
-    setProfileData(null)
     setActiveTab("validate")
     setExpiryDate(undefined)
     setError(null)
@@ -169,12 +176,8 @@ export default function ValidateCustomerPage() {
         CCBAccountNumber: serviceType?.CCBAccountNumber
     }
 
-    // Reference app redirects even if getCustomerInfo fails (e.g. 606 error)
-    // We strictly match this behavior to ensure flow parity
-    // Store result in session storage for the dashboard to pick up
-    sessionStorage.setItem("branchAccountData", JSON.stringify(result))
     // Redirect to Account Dashboard
-    router.push("/branch-operations/account-dashboard")
+    router.push(`/branch-operations/account-dashboard/${accountNumber.trim()}`)
   }
 
   const handleAccountPayment = async () => {
@@ -184,12 +187,7 @@ export default function ValidateCustomerPage() {
           return
       }
 
-      const result = await branchOpsService.getAccountPaymentDetails(val)
-      if (result) {
-          setPaymentResult(result)
-      } else {
-          toast.error("Account not found or invalid account number")
-      }
+      router.push(`/branch-operations/account-payment/${val}`)
   }
 
   const handleUserValidation = async () => {
@@ -206,23 +204,7 @@ export default function ValidateCustomerPage() {
       }
     }
 
-    const result = await branchOpsService.validateUser(selectedType, inputValue.trim())
-    
-    if (!result.success) {
-      if (result.message === "User not found") {
-        setShowUserNotFound(true)
-      } else {
-        toast.error(result.message || "User not found")
-      }
-      return
-    }
-
-    toast.success("User validated successfully!")
-    setProfileData({
-      type: "USER",
-      data: result.data
-    })
-    setActiveTab("profile")
+    router.push(`/branch-operations/validate/user/${selectedType}/${inputValue.trim()}`)
   }
 
   const handleRequestNumberSearch = async () => {
@@ -253,7 +235,7 @@ export default function ValidateCustomerPage() {
       return
     }
 
-    router.push(`/branch-operations/otp-log?mobile=${val}`)
+    router.push(`/branch-operations/otp-log/${val}`)
   }
 
   const handleROPValidation = async () => {
@@ -268,19 +250,7 @@ export default function ValidateCustomerPage() {
     }
 
     const formattedDate = format(expiryDate, "yyyy-MM-dd")
-    const result = await branchOpsService.getROPUserDetails(civilId, formattedDate)
-
-    if (!result.success) {
-      toast.error(result.message || "ROP user details not found")
-      return
-    }
-
-    toast.success("Details retrieved successfully")
-    setProfileData({
-      type: "ROP",
-      data: result.data
-    })
-    setActiveTab("profile")
+    router.push(`/branch-operations/validate/rop/${civilId}/${formattedDate}`)
   }
 
   const renderInputField = () => {
@@ -530,23 +500,10 @@ export default function ValidateCustomerPage() {
         breadcrumbAr="التحقق من صحة / البحث عن عميل"
       />
      
-      {paymentResult ? (
-          <div className="px-6 py-6 animate-in fade-in zoom-in-95 duration-300">
-             <AccountPaymentResult 
-                data={paymentResult} 
-                onBack={() => setPaymentResult(null)} 
-             />
-          </div>
-      ) : (
       <>
       {/* Tabs */}
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full px-6">
-        <TabsList className="grid w-full grid-cols-2 mb-6">
-          <TabsTrigger value="validate">{language === "EN" ? "Validate" : "التحقق"}</TabsTrigger>
-          <TabsTrigger value="profile" disabled={!profileData}>{language === "EN" ? "Profile Data" : "بيانات الملف الشخصي"}</TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="validate" className="space-y-6">
+      <div className="w-full px-6 py-6">
+        <div className="space-y-6">
           {/* Main Validation Card */}
           <div className="bg-white rounded-lg shadow-md border p-6 space-y-6">
             <div>
@@ -574,49 +531,9 @@ export default function ValidateCustomerPage() {
               </div>
             )}
           </div>
-        </TabsContent>
-
-         <TabsContent value="profile" className="space-y-6">
-          <div className="bg-white rounded-lg shadow-sm border p-6">
-            {!profileData ? (
-               <p className="text-gray-500 text-center py-8">
-               {language === "EN" ? "Profile data will be displayed here after validation" : "سيتم عرض بيانات الملف الشخصي هنا بعد التحقق"}
-             </p>
-            ) : (
-              <>
-                {profileData.type === "USER" && (
-                  <ProfileData 
-                    data={profileData.data} 
-                    onBack={() => {
-                      setProfileData(null)
-                      setActiveTab("validate")
-                    }}
-                    onProceed={() => {
-                      // Handle proceed action
-                      toast.success("Proceeding with customer...")
-                    }}
-                  />
-                )}
-                {profileData.type === "ROP" && (
-                  <ProfileDataROP
-                    data={profileData.data}
-                    onBack={() => {
-                      setProfileData(null)
-                      setActiveTab("validate")
-                    }}
-                    onProceed={() => {
-                      // Handle proceed action
-                      toast.success("Proceeding with ROP customer...")
-                    }}
-                  />
-                )}
-              </>
-            )}
-          </div>
-        </TabsContent>
-      </Tabs>
+        </div>
+      </div>
       </>
-      )}
 
       {/* Session Expired Alert Dialog */}
       <AlertDialog open={showSessionExpired} onOpenChange={setShowSessionExpired}>

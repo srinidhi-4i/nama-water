@@ -11,6 +11,8 @@ import { useToast } from "@/hooks/use-toast"
 import { waterLeakageService } from "@/services/waterleakage.service"
 import { GoogleMapPicker } from "@/components/branchoperations/GoogleMapPicker"
 import { api } from "@/lib/axios"
+import PageHeader from "@/components/layout/PageHeader"
+import { useLanguage } from "@/components/providers/LanguageProvider"
 
 interface WaterLeakageFormProps {
   titleEn: string
@@ -40,6 +42,7 @@ type TabId = "contact" | "premise" | "attachment" | "otp"
 
 export function WaterLeakageForm({ titleEn, titleAr, serviceId }: WaterLeakageFormProps) {
   const { toast } = useToast()
+  const { language } = useLanguage()
   const [activeTab, setActiveTab] = useState<TabId>("contact")
   const [formData, setFormData] = useState<FormData>({
     personName: "",
@@ -311,19 +314,18 @@ export function WaterLeakageForm({ titleEn, titleAr, serviceId }: WaterLeakageFo
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 p-4">
-      <div className="max-w-4xl mx-auto">
-        {/* Header */}
-        <div className="mb-6">
-          <button 
-            onClick={() => window.history.back()}
-            className="flex items-center text-gray-600 hover:text-gray-900 mb-4"
-          >
-            <ChevronLeft className="w-5 h-5 mr-1" />
-            Back
-          </button>
-          <h1 className="text-2xl font-bold text-gray-900">{titleEn}</h1>
-        </div>
+    <div className="min-h-screen bg-slate-50">
+      <PageHeader
+        language={language}
+        titleEn={titleEn}
+        titleAr={titleAr}
+        breadcrumbItems={[
+          { labelEn: "Home", labelAr: "الرئيسية", href: "/branchhome" },
+          { labelEn: "Guest User Services", labelAr: "خدمات المستخدم الضيف", href: "/branch-operations/guest" },
+          { labelEn: titleEn, labelAr: titleAr }
+        ]}
+      />
+      <div className="max-w-4xl mx-auto p-4">
 
         {/* Tabs */}
         <div className="bg-white border-b mb-6">

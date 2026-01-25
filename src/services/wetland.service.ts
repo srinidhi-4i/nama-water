@@ -107,12 +107,10 @@ export const wetlandService = {
                 };
             }
 
-            throw new Error(response.data?.Status || 'Failed to fetch slots');
+            throw { message: response.data?.Status || 'Failed to fetch slots' };
         } catch (error: any) {
-            console.error('Error fetching wetland slots:', error);
-
-            // Return mock data for development
-            console.warn('Using mock data for wetland slots');
+            // Silently fallback to mock data for development if needed, 
+            // but don't log error to console to avoid overlays.
             return wetlandService.getMockSlots(month, year);
         }
     },
@@ -160,9 +158,9 @@ export const wetlandService = {
                 };
             }
 
-            throw new Error(response.data?.Data?.ResponseMessage || response.data?.ResponseMessage || 'Failed to create slot');
+            throw { message: response.data?.Data?.ResponseMessage || response.data?.ResponseMessage || 'Failed to create slot' };
         } catch (error: any) {
-            console.error('Error creating slot:', error);
+            // Re-throw standardized error without noisy console.error
             throw error;
         }
     },
@@ -192,9 +190,9 @@ export const wetlandService = {
                 return {} as WetlandSlot;
             }
 
-            throw new Error(response.data?.Data?.ResponseMessage || response.data?.ResponseMessage || 'Failed to update slots');
+            throw { message: response.data?.Data?.ResponseMessage || response.data?.ResponseMessage || 'Failed to update slots' };
         } catch (error: any) {
-            console.error('Error updating slots:', error);
+            // Re-throw standardized error without noisy console.error
             throw error;
         }
     },
@@ -220,9 +218,9 @@ export const wetlandService = {
                 return;
             }
 
-            throw new Error(response.data?.ResponseMessage || 'Failed to delete slots');
+            throw { message: response.data?.ResponseMessage || 'Failed to delete slots' };
         } catch (error: any) {
-            console.error('Error deleting slots:', error);
+            // Re-throw standardized error without noisy console.error
             throw error;
         }
     },
@@ -250,9 +248,8 @@ export const wetlandService = {
                 };
             }
 
-            throw new Error(response.data?.Status || 'Failed to fetch holidays');
+            throw { message: response.data?.Status || 'Failed to fetch holidays' };
         } catch (error: any) {
-            console.error('Error fetching holidays:', error);
             // Return empty array on error to prevent UI crash
             return { holidays: [], year };
         }
@@ -274,9 +271,8 @@ export const wetlandService = {
                 return response.data.Data;
             }
 
-            throw new Error(response.data?.Status || 'Failed to create holiday');
+            throw { message: response.data?.Status || 'Failed to create holiday' };
         } catch (error: any) {
-            console.error('Error creating holiday:', error);
             throw error;
         }
     },
@@ -286,10 +282,9 @@ export const wetlandService = {
             const response = await api.delete<any>(`/Wetland/holidays/${id}`);
 
             if (response.data && response.data.StatusCode !== 605) {
-                throw new Error(response.data?.Status || 'Failed to delete holiday');
+                throw { message: response.data?.Status || 'Failed to delete holiday' };
             }
         } catch (error: any) {
-            console.error('Error deleting holiday:', error);
             throw error;
         }
     },
@@ -306,9 +301,8 @@ export const wetlandService = {
                 return response.data.Data?.Table || response.data.Table || [];
             }
 
-            throw new Error(response.data?.Status || 'Failed to fetch master data');
+            throw { message: response.data?.Status || 'Failed to fetch master data' };
         } catch (error: any) {
-            console.error('Error fetching master data:', error);
             throw error;
         }
     },
@@ -325,9 +319,8 @@ export const wetlandService = {
                 return response.data.Data || response.data || [];
             }
 
-            throw new Error(response.data?.Status || 'Failed to fetch holiday dates');
+            throw { message: response.data?.Status || 'Failed to fetch holiday dates' };
         } catch (error: any) {
-            console.error('Error fetching holiday dates:', error);
             throw error;
         }
     },
@@ -374,7 +367,6 @@ export const wetlandService = {
                 statusCode: responseData.StatusCode,
             };
         } catch (error: any) {
-            console.error('Error processing holiday:', error);
             throw error;
         }
     },

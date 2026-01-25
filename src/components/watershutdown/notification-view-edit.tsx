@@ -56,7 +56,7 @@ export function NotificationView({ notificationId, onBack, language }: Notificat
   }
 
   return (
-    <div className="bg-white min-h-screen pb-12 px-2 sm:px-4">
+    <div className="bg-white min-h-screen px-2 sm:px-4">
       <div className="max-w-[900px] mx-auto shadow-xl border rounded-lg overflow-hidden font-sans bg-white">
         {/* Header */}
         <div className="bg-[#123756] text-white p-4 flex items-center justify-between relative">

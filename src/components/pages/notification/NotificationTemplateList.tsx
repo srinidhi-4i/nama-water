@@ -38,78 +38,13 @@ export default function NotificationTemplateList() {
   }
 
   const handleView = async (template: NotificationTemplate) => {
-    setIsLoading(true)
-    try {
-      const response = await notificationService.getTemplates()
-      const freshTemplates = response.Notifications || []
-      
-      setTemplates(freshTemplates)
-
-      const freshTemplate = freshTemplates.find(t => t.NotificationCategory === template.NotificationCategory) || template
-      
-      setSelectedTemplate(freshTemplate)
-      setViewMode("view")
-      setShowViewEdit(true)
-    } catch (error) {
-      console.error('Error refreshing data:', error)
-      setSelectedTemplate(template)
-      setViewMode("view")
-      setShowViewEdit(true)
-    } finally {
-      setIsLoading(false)
-    }
+    router.push(`/notification-center/templates/${template.NotificationCategory}?mode=view`)
   }
 
   const handleEdit = async (template: NotificationTemplate) => {
-    setIsLoading(true)
-    try {
-      const response = await notificationService.getTemplates()
-      const freshTemplates = response.Notifications || []
-      
-      setTemplates(freshTemplates)
-
-      const freshTemplate = freshTemplates.find(t => t.NotificationCategory === template.NotificationCategory) || template
-
-      setSelectedTemplate(freshTemplate)
-      setViewMode("edit")
-      setShowViewEdit(true)
-    } catch (error) {
-       console.error('Error refreshing data:', error)
-       setSelectedTemplate(template)
-       setViewMode("edit")
-       setShowViewEdit(true)
-    } finally {
-      setIsLoading(false)
-    }
+    router.push(`/notification-center/templates/${template.NotificationCategory}?mode=edit`)
   }
 
-  const handleBack = () => {
-    setShowViewEdit(false)
-    setSelectedTemplate(null)
-    loadTemplates()
-  }
-  
-  if (showViewEdit && selectedTemplate) {
-    return (
-      <div className="flex-1 bg-slate-100 overflow-x-hidden ">
-        <PageHeader
-          language={language}
-          titleEn="Notification Template"
-          titleAr="قالب الإشعار"
-          breadcrumbEn="Notification Template List"
-          breadcrumbAr="قائمة قوالب الإشعارات"
-        />
-        <div className="px-6">
-          <TemplateViewEdit
-            template={selectedTemplate}
-            mode={viewMode}
-            onBack={handleBack}
-            language={language}
-          />
-        </div>
-      </div>
-    )
-  }
 
   const columns = getNotificationTemplateColumns(handleEdit, handleView);
 

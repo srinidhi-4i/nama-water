@@ -112,11 +112,10 @@ export const authService = {
                 statusCode: branchResponse.data?.StatusCode,
             };
         } catch (error: any) {
-            console.error('Login error:', error);
+            // Re-throw standardized error without noisy console.error
             throw {
                 message: error.message || 'Login failed',
                 statusCode: error.statusCode,
-                originalError: error
             };
         }
     },

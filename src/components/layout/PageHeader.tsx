@@ -8,6 +8,7 @@ export default function PageHeader({
   titleAr,
   breadcrumbEn,
   breadcrumbAr,
+  breadcrumbItems,
   showShadow = true,
 }: PageHeaderProps) {
   return (
@@ -25,16 +26,42 @@ export default function PageHeader({
 
       {/* Breadcrumb */}
       <div className="text-sm text-gray-500">
-        <Link
-          href="/branchhome"
-          className="font-semibold text-[#006A72] hover:underline cursor-pointer"
-        >
-          {language === "EN" ? "Home" : "الرئيسية"}
-        </Link>
-        <span>
-          {" "}
-          &gt; {language === "EN" ? breadcrumbEn : breadcrumbAr}
-        </span>
+        {breadcrumbItems ? (
+          // New dynamic breadcrumb trail
+          <div className="flex items-center gap-2">
+            {breadcrumbItems.map((item, index) => (
+              <span key={index} className="flex items-center gap-2">
+                {item.href ? (
+                  <Link
+                    href={item.href}
+                    className="font-semibold text-[#006A72] hover:underline cursor-pointer"
+                  >
+                    {language === "EN" ? item.labelEn : item.labelAr}
+                  </Link>
+                ) : (
+                  <span className="text-gray-500">
+                    {language === "EN" ? item.labelEn : item.labelAr}
+                  </span>
+                )}
+                {index < breadcrumbItems.length - 1 && <span>&gt;</span>}
+              </span>
+            ))}
+          </div>
+        ) : (
+          // Legacy breadcrumb (backward compatible)
+          <>
+            <Link
+              href="/branchhome"
+              className="font-semibold text-[#006A72] hover:underline cursor-pointer"
+            >
+              {language === "EN" ? "Home" : "الرئيسية"}
+            </Link>
+            <span>
+              {" "}
+              &gt; {language === "EN" ? breadcrumbEn : breadcrumbAr}
+            </span>
+          </>
+        )}
       </div>
     </div>
   );

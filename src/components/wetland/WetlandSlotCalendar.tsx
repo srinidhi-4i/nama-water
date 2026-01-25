@@ -54,7 +54,6 @@ export function WetlandSlotCalendar({ onDateSelect }: WetlandSlotCalendarProps) 
       const calendar = wetlandService.buildMonthCalendar(response.slots, month, year)
       setMonthCalendar(calendar)
     } catch (error: any) {
-      console.error('Error loading slots:', error)
       toast.error(language === "EN" 
         ? `Failed to load slots: ${error.message || 'Unknown error'}` 
         : `فشل في تحميل الفترات: ${error.message || 'خطأ غير معروف'}`)
@@ -87,7 +86,6 @@ export function WetlandSlotCalendar({ onDateSelect }: WetlandSlotCalendarProps) 
       // Navigate to edit for that day after creation?
       // onDateSelect(newSlotDate)
     } catch (error: any) {
-      console.error('Error creating slot:', error)
       // Show the actual error message from the API
       const errorMessage = error.message || (language === "EN" ? "Failed to create slot" : "فشل في إنشاء الفترة")
       toast.error(errorMessage)

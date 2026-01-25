@@ -1,7 +1,16 @@
 "use client"
 
-import CustomerRegistration from "@/components/pages/branchoperation/registration/CustomerRegistration"
+"use client"
 
-export default function RegistrationPage() {
-  return <CustomerRegistration />
+import { useEffect } from "react"
+import { useRouter } from "next/navigation"
+
+export default function Page() {
+  const router = useRouter()
+
+  useEffect(() => {
+    router.replace('/branch-operations/registration/type-selection')
+  }, [router])
+
+  return null
 }

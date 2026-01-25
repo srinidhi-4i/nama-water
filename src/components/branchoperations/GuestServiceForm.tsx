@@ -288,21 +288,6 @@ export function GuestServiceForm({ titleEn, titleAr, tabs, layout = "simple", se
 
   return (
     <div className="w-full max-w-4xl mx-auto p-2 sm:p-4 animate-in fade-in slide-in-from-bottom-3 duration-700">
-      {/* Breadcrumb-style Header */}
-      <div className="flex items-center gap-2 mb-4 text-gray-500 text-[10px]">
-        <button 
-          onClick={() => router.back()}
-          className="hover:text-red-600 transition-colors flex items-center gap-1"
-        >
-          <ArrowLeft className="w-3 h-3" />
-          {language === "AR" ? "رجوع" : "BACK"}
-        </button>
-        <span className="text-gray-300">|</span>
-        <h1 className="text-sm font-semibold text-[#1F4E58] tracking-tight uppercase">
-          {title}
-        </h1>
-      </div>
-
       <Card className="overflow-hidden border-none shadow-[0_15px_35px_rgba(0,0,0,0.07)] rounded-xl relative bg-white">
         {/* Modern Tabs - More compact */}
         <div className="flex overflow-x-auto no-scrollbar border-b bg-slate-50/30">

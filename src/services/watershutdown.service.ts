@@ -148,7 +148,6 @@ export const waterShutdownService = {
                 templateTypes
             };
         } catch (error) {
-            console.error('Error fetching master data:', error);
             return { regions: [], eventTypes: [], templateTypes: [] };
         }
     },
@@ -164,7 +163,6 @@ export const waterShutdownService = {
             if (data?.Table && Array.isArray(data.Table)) return data.Table;
             return [];
         } catch (error) {
-            console.error('Error fetching user list:', error);
             return [];
         }
     },
@@ -194,8 +192,7 @@ export const waterShutdownService = {
                 const mainTable = dataRoot.Table ? dataRoot.Table[0] : null;
 
                 if (!mainTable) {
-                    console.error('No notification data found in Table array. Full response:', response.data);
-                    throw new Error('No notification data found');
+                    throw { message: 'No notification data found' };
                 }
 
                 console.log('mainTable (Table[0]):', mainTable);
@@ -259,7 +256,6 @@ export const waterShutdownService = {
                                     })
                                     .filter((a: string) => a !== '');
                             } catch (e) {
-                                console.error('Error parsing TemplateTypes:', e);
                                 actions = [];
                             }
 
@@ -271,7 +267,7 @@ export const waterShutdownService = {
                             };
                         });
                         console.log('Parsed teamActions:', result.teamActions);
-                    } catch (e) { console.error('Error parsing Table1 actions', e); }
+                    } catch (e) { }
                 }
 
                 // Parse Locations (Table 2) if available
@@ -322,9 +318,8 @@ export const waterShutdownService = {
                         }
 
                         result.mapLocations = eventJson.MapLocations || [];
-                    } catch (e) {
-                        console.error('Error parsing EventJsonData:', e);
-                    }
+                    } catch (e) { }
+
                 }
 
                 // Contractor fallback
@@ -338,9 +333,8 @@ export const waterShutdownService = {
                             typeof c === 'string' ? { contractorName: c } : c
                         );
                         console.log('contractors from mainTable.ContractorName (parsed):', result.contractors);
-                    } catch (e) {
-                        console.error('Error parsing mainTable.ContractorName:', e);
-                    }
+                    } catch (e) { }
+
                 }
 
                 console.log('=== FINAL RESULT ===');
@@ -350,7 +344,6 @@ export const waterShutdownService = {
             }
             throw new Error('Failed to fetch notification details');
         } catch (error) {
-            console.error('Error fetching notification by ID:', error);
             throw error;
         }
     },
@@ -409,7 +402,6 @@ export const waterShutdownService = {
             }
             throw new Error(response.data?.Status || 'Failed to fetch notifications');
         } catch (error: any) {
-            console.error('Error fetching water shutdown notifications:', error);
             throw error;
         }
     },
@@ -464,7 +456,6 @@ export const waterShutdownService = {
                     // Restore .000 as it was part of the working legacy create format
                     return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}.000`;
                 } catch (e) {
-                    console.error("Error formatting date:", e);
                     return "";
                 }
             };
@@ -585,9 +576,8 @@ export const waterShutdownService = {
                     }));
                     locationPayload = { RegionData: [{ RegionID: regionID, RegionCode: regionCode, Regions: regions }] };
                 }
-            } catch (e) {
-                console.error("Error constructing location details", e);
-            }
+            } catch (e) { }
+
 
             formData.append("EventLocationDetails", JSON.stringify(locationPayload));
 
@@ -658,13 +648,8 @@ export const waterShutdownService = {
                 return resData;
             }
 
-            throw new Error(resData?.Status || nestedData?.Status || `Failed to submit notification (Code: ${getCode(resData)})`);
+            throw { message: resData?.Status || nestedData?.Status || `Failed to submit notification (Code: ${getCode(resData)})` };
         } catch (error: any) {
-            console.error('Error submitting notification:', error);
-            if (error.response) {
-                console.error('API Error Response Data:', error.response.data);
-                console.error('API Error Status:', error.response.status);
-            }
             throw error;
         }
     },
@@ -682,7 +667,6 @@ export const waterShutdownService = {
                 throw new Error(response.data?.Status || 'Failed to delete notification');
             }
         } catch (error: any) {
-            console.error('Error deleting notification:', error);
             throw error;
         }
     },
@@ -704,7 +688,6 @@ export const waterShutdownService = {
 
             return response.data;
         } catch (error: any) {
-            console.error('Error exporting to Excel:', error);
             throw error;
         }
     },
@@ -731,7 +714,6 @@ export const waterShutdownService = {
                 ...item
             }));
         } catch (error: any) {
-            console.error('Error fetching templates:', error);
             return [];
         }
     },
@@ -766,7 +748,6 @@ export const waterShutdownService = {
                 ...item
             };
         } catch (error: any) {
-            console.error('Error fetching template details:', error);
             throw error;
         }
     },
@@ -790,9 +771,8 @@ export const waterShutdownService = {
                 return response.data.Data || response.data;
             }
 
-            throw new Error(response.data?.Status || 'Failed to create template');
+            throw { message: response.data?.Status || 'Failed to create template' };
         } catch (error: any) {
-            console.error('Error creating template:', error);
             throw error;
         }
     },

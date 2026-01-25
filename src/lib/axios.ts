@@ -2,8 +2,6 @@ import axios, { AxiosError, AxiosInstance, AxiosRequestConfig, AxiosResponse } f
 import { ApiError } from '@/types/auth.types';
 
 // Create axios instance with base configuration
-// No baseURL needed - we're using Next.js API routes which are relative
-// No default headers - let each request set its own (especially important for FormData)
 const apiClient: AxiosInstance = axios.create({
     timeout: 30000, // 30 seconds
     withCredentials: true,
@@ -18,11 +16,7 @@ apiClient.interceptors.request.use(
             : null;
 
         if (token && token !== 'branch-authenticated' && config.headers) {
-            console.log(`axios: Sending Authorization header (Bearer ${token.substring(0, 10)}...)`);
             config.headers.Authorization = `Bearer ${token}`;
-        } else {
-            const reason = !token ? 'No token found' : 'Placeholder token detected';
-            console.log(`axios: ${reason}, NOT sending Authorization header`);
         }
 
         return config;
@@ -35,33 +29,10 @@ apiClient.interceptors.request.use(
 // Response interceptor - Handle errors globally
 apiClient.interceptors.response.use(
     (response: AxiosResponse) => {
-        console.log('API Response received:', response.status, response.statusText);
         return response;
     },
     (error: AxiosError) => {
-        const errorDetails = {
-            message: error.message,
-            code: error.code,
-            status: error.response?.status,
-            statusText: error.response?.statusText,
-            data: error.response?.data,
-            config: {
-                url: error.config?.url,
-                method: error.config?.method,
-                baseURL: error.config?.baseURL,
-            }
-        };
-
-        // Don't log errors for optional registration endpoints that may not be implemented yet
-        const url = error.config?.url || '';
-        const isOptionalEndpoint = url.includes('CustomerRegistrationWeb/GetCustomerClass') ||
-            url.includes('CustomerRegistrationWeb/GetMasterLanguage') ||
-            url.includes('CustomerRegistrationWeb/RegisterCustomer');
-
-        if (!isOptionalEndpoint) {
-            console.error('Axios Error Details:', errorDetails);
-        }
-
+        // Create a user-friendly error object
         const apiError: ApiError = {
             message: 'An unexpected error occurred',
             statusCode: error.response?.status,
@@ -71,7 +42,13 @@ apiClient.interceptors.response.use(
             // Server responded with error status
             const data = error.response.data as any;
 
-            apiError.message = data?.message || data?.error || error.message;
+            // Extract the most relevant error message
+            apiError.message = data?.message ||
+                data?.error ||
+                data?.ResponseMessage ||
+                data?.Data?.ResponseMessage ||
+                error.message;
+
             apiError.errors = data?.errors;
 
             // Handle specific status codes
@@ -91,20 +68,13 @@ apiClient.interceptors.response.use(
                 case 403:
                     apiError.message = 'You do not have permission to perform this action.';
                     break;
-                case 404:
-                    apiError.message = 'The requested resource was not found.';
-                    break;
-                case 500:
-                    apiError.message = 'Server error. Please try again later.';
-                    break;
             }
         } else if (error.request) {
-            // Request made but no response received - likely CORS or network issue
-            console.error('No response received. Possible CORS issue or network error.');
-            console.error('Request details:', error.request);
-            apiError.message = 'Network error. This might be a CORS issue. Please check if the UAT server allows requests from localhost:3000';
+            // Request made but no response received
+            apiError.message = 'Network error. Please check your connection.';
         }
 
+        // Return a Promise REJECTION that is handled by the caller without triggering dev overlays
         return Promise.reject(apiError);
     }
 );
