@@ -29,7 +29,7 @@ import PageHeader from "@/components/layout/PageHeader"
 import { IntermediateSMSModal } from "@/components/watershutdown/IntermediateSMSModal"
 import { CompletionModal } from "@/components/watershutdown/CompletionModal"
 import { WaterShutdownTemplate } from "@/types/watershutdown.types"
-import jsPDF from "jspdf"
+// import jsPDF from "jspdf" // Dynamically imported in handleDownload
 import { toast } from "sonner"
 
 export default function WaterShutdownList() {
@@ -185,6 +185,9 @@ export default function WaterShutdownList() {
     setIsDetailLoading(true)
     try {
       const data = await waterShutdownService.getNotificationById(id)
+      
+      // Dynamic import for jsPDF to keep main bundle light
+      const { default: jsPDF } = await import("jspdf")
       const pdf = new jsPDF("p", "mm", "a4")
       const pageHeight = pdf.internal.pageSize.height
       const pageWidth = pdf.internal.pageSize.width

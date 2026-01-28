@@ -12,22 +12,38 @@ import {
 } from '@/types/branchops.types'
 import { encryptString, decryptString } from '@/lib/crypto'
 
+// In-memory cache for static/infrequently changing data
+const cache: {
+    validationTypes: ValidationType[] | null;
+} = {
+    validationTypes: null
+}
+
 export const branchOpsService = {
     // Get all validation types
     getValidationTypes: async (): Promise<ValidationType[]> => {
+        // Return cached data if available
+        if (cache.validationTypes) {
+            return cache.validationTypes
+        }
+
         try {
             // Use empty FormData to trigger multipart/form-data
             const formData = new FormData()
             const response = await api.post<any>('/BranchOfficer/GetAllList', formData)
             const data = response.data.Data || response.data
 
+            let types: ValidationType[] = DEFAULT_VALIDATION_TYPES
+
             if (data && Array.isArray(data) && data.length > 0) {
-                return data
+                types = data
             } else if (data && data.ValidateTypes && Array.isArray(data.ValidateTypes) && data.ValidateTypes.length > 0) {
-                return data.ValidateTypes
+                types = data.ValidateTypes
             }
 
-            return DEFAULT_VALIDATION_TYPES
+            // Update cache
+            cache.validationTypes = types
+            return types
         } catch (error) {
             // Silently fallback to default types
             return DEFAULT_VALIDATION_TYPES

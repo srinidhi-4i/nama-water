@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState, useEffect } from "react"
+import React, { useState, useEffect, useMemo } from "react"
 import { useLanguage } from "@/components/providers/LanguageProvider"
 import { Button } from "@/components/ui/button"
 import { appointmentService } from "@/services/appointment.service"
@@ -63,8 +63,20 @@ export default function AppointmentWeeklyView({ branchID, refreshTrigger, dateRa
 
   const weekDays = Array.from({ length: 7 }, (_, i) => addDays(currentWeekStart, i))
 
+  // Group slots by date for efficient access
+  const slotsByDay = useMemo(() => {
+    const grouped: Record<string, AppointmentSlot[]> = {}
+    slots.forEach(slot => {
+        const dateKey = format(new Date(slot.date), "yyyy-MM-dd")
+        if (!grouped[dateKey]) grouped[dateKey] = []
+        grouped[dateKey].push(slot)
+    })
+    return grouped
+  }, [slots])
+
   const getSlotsForDay = (date: Date) => {
-    return slots.filter(slot => isSameDay(new Date(slot.date), date))
+    const dateKey = format(date, "yyyy-MM-dd")
+    return slotsByDay[dateKey] || []
   }
 
   return (

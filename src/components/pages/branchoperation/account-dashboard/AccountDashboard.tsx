@@ -1,6 +1,7 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useState, useMemo } from "react"
+import dynamic from "next/dynamic"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
@@ -21,9 +22,12 @@ import {
 import PageHeader from "@/components/layout/PageHeader"
 import { useLanguage } from "@/components/providers/LanguageProvider"
 
-// Import New Components
 import DashboardSidebar from "./DashboardSidebar"
-import DashboardOverview from "./DashboardOverview"
+
+const DashboardOverview = dynamic(() => import("./DashboardOverview"), {
+  loading: () => <div className="p-20 text-center font-bold text-slate-400">Loading Overview Charts...</div>,
+  ssr: false
+})
 
 interface AccountDashboardProps {
   accountNumber: string

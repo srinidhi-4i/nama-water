@@ -1,8 +1,9 @@
+import React from "react";
 import { PageHeaderProps } from "@/types/page.header";
 import Link from "next/link";
 
 
-export default function PageHeader({
+export default React.memo(function PageHeader({
   language,
   titleEn,
   titleAr,
@@ -65,4 +66,4 @@ export default function PageHeader({
       </div>
     </div>
   );
-}
+})

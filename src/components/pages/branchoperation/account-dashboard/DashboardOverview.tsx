@@ -1,4 +1,5 @@
 "use client"
+import React, { useMemo } from "react"
 
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -32,7 +33,7 @@ interface DashboardOverviewProps {
     changeServiceDetails: any[]
 }
 
-export default function DashboardOverview({ 
+export default React.memo(function DashboardOverview({ 
     metrics, 
     outstandingByGroup, 
     consumptionData,
@@ -42,21 +43,27 @@ export default function DashboardOverview({
 }: DashboardOverviewProps) {
 
     // Process data for charts
-    const dueAmountData = outstandingByGroup.length > 0 ? outstandingByGroup.map(item => ({
-        name: item.GroupName,
-        value: parseFloat(item.Amount || "0")
-    })) : []
+    const dueAmountData = useMemo(() => {
+        return outstandingByGroup.length > 0 ? outstandingByGroup.map(item => ({
+            name: item.GroupName,
+            value: parseFloat(item.Amount || "0")
+        })) : []
+    }, [outstandingByGroup])
 
-    const requestStatusData = [
-        { name: 'Completed', value: myRequests.filter(r => (r.RequestStatus || r.Status) === 'Completed').length, color: '#10B981' },
-        { name: 'Pending', value: myRequests.filter(r => (r.RequestStatus || r.Status) === 'Pending' || (r.RequestStatus || r.Status) === 'In Progress' || (r.RequestStatus || r.Status) === 'Assigned to Contractor').length, color: '#3B82F6' },
-        { name: 'Cancelled', value: myRequests.filter(r => (r.RequestStatus || r.Status) === 'Cancelled').length, color: '#9CA3AF' },
-    ].filter(d => d.value > 0);
+    const requestStatusData = useMemo(() => {
+        return [
+            { name: 'Completed', value: myRequests.filter(r => (r.RequestStatus || r.Status) === 'Completed').length, color: '#10B981' },
+            { name: 'Pending', value: myRequests.filter(r => (r.RequestStatus || r.Status) === 'Pending' || (r.RequestStatus || r.Status) === 'In Progress' || (r.RequestStatus || r.Status) === 'Assigned to Contractor').length, color: '#3B82F6' },
+            { name: 'Cancelled', value: myRequests.filter(r => (r.RequestStatus || r.Status) === 'Cancelled').length, color: '#9CA3AF' },
+        ].filter(d => d.value > 0)
+    }, [myRequests])
 
-    const consumptionChartData = consumptionData.map(item => ({
-        name: item.Date ? new Date(item.Date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short' }) : '',
-        value: parseFloat(item.Value || "0")
-    }))
+    const consumptionChartData = useMemo(() => {
+        return consumptionData.map(item => ({
+            name: item.Date ? new Date(item.Date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short' }) : '',
+            value: parseFloat(item.Value || "0")
+        }))
+    }, [consumptionData])
 
     return (
         <div className="space-y-8 pb-10">
@@ -375,4 +382,4 @@ export default function DashboardOverview({
 
         </div>
     )
-}
+})

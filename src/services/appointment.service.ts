@@ -1,3 +1,4 @@
+import { format, startOfMonth, endOfMonth } from 'date-fns'
 import { api } from '@/lib/axios'
 import {
     AppointmentMasterData,
@@ -774,5 +775,32 @@ export const appointmentService = {
         } catch (error) {
             return null
         }
+    },
+
+    /**
+     * Build Month Calendar structure from slots
+     */
+    buildMonthCalendar(slots: AppointmentSlot[], month: number, year: number): AppointmentMonthCalendar {
+        const startDate = startOfMonth(new Date(year, month - 1))
+        const endDate = endOfMonth(startDate)
+        const days: AppointmentDaySlots[] = []
+
+        // Fill days for the month
+        let current = new Date(startDate)
+        // Adjust to previous Monday if month doesn't start on Monday (Next.js/date-fns style)
+        // But for our UI, we might just want the month's days. 
+        // Let's stick to what AppointmentSlotCalendar expects (days array).
+
+        while (current <= endDate) {
+            const dateStr = format(current, "yyyy-MM-dd")
+            const daySlots = slots.filter(s => s.date === dateStr)
+            days.push({
+                date: dateStr,
+                slots: daySlots
+            })
+            current = new Date(current.setDate(current.getDate() + 1))
+        }
+
+        return { month, year, days }
     }
 }
