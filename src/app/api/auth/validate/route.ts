@@ -18,40 +18,45 @@ export async function POST(request: NextRequest) {
             );
         }
 
-        // Create FormData for UAT
-        const uatFormData = new FormData();
-        uatFormData.append('UserName', userName as string);
-        uatFormData.append('Password', password as string);
+        // Create URLSearchParams for UAT (application/x-www-form-urlencoded)
+        const params = new URLSearchParams();
+        params.append('UserName', userName as string);
+        params.append('Password', password as string);
 
         // Forward to GetLDAPLoginValidation endpoint
         const uatUrl = 'https://eservicesuat.nws.nama.om:444/api/InternalPortal/GetLDAPLoginValidation';
 
-        console.log('LDAP Validation: Forwarding to UAT');
+        console.log('LDAP Validation: Forwarding to UAT with URLSearchParams');
 
         const response = await fetch(uatUrl, {
             method: 'POST',
-            body: uatFormData,
+            body: params,
             headers: {
-                // Do not forward cookies to avoid WAF blocking
-                'Host': 'eservicesuat.nws.nama.om:444',
-                'Origin': 'https://eservicesuat.nws.nama.om',
-                'Referer': 'https://eservicesuat.nws.nama.om/Validateuser',
-                'User-Agent': request.headers.get('user-agent') || 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36',
+                'Content-Type': 'application/x-www-form-urlencoded',
+                'Accept': 'application/json',
             }
         });
 
         console.log('LDAP Validation: UAT response status:', response.status);
 
         let data;
-        const contentType = response.headers.get('content-type');
+        const contentType = response.headers.get('content-type') || '';
+        const rawBody = await response.text();
 
-        if (contentType && contentType.includes('application/json')) {
-            data = await response.json();
-        } else {
-            console.error('LDAP Validation: Received non-JSON response with status:', response.status);
-            // Fail gracefully if upstream returns HTML (e.g., WAF block or 500 error)
+        console.log('LDAP Validation: Content-Type:', contentType);
+
+        try {
+            // Attempt to parse as JSON regardless of reported Content-Type
+            // since UAT server sometimes returns text/plain for JSON
+            data = JSON.parse(rawBody);
+            console.log('LDAP Validation: Successfully parsed JSON from response');
+        } catch (e) {
+            console.error('LDAP Validation: Failed to parse JSON response');
+            console.error('LDAP Validation: Raw Body:', rawBody.substring(0, 1000));
+
+            // Fail gracefully if upstream returns non-JSON (e.g., HTML WAF block)
             return NextResponse.json(
-                { StatusCode: 'Failure', ErrMessage: 'Upstream service returned invalid response.' },
+                { StatusCode: 'Failure', ErrMessage: 'Upstream service returned invalid response format.' },
                 { status: 502 }
             );
         }

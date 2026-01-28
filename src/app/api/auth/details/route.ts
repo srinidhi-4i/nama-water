@@ -18,9 +18,9 @@ export async function POST(request: NextRequest) {
             );
         }
 
-        // Create FormData for UAT with plain UserADId
-        const uatFormData = new FormData();
-        uatFormData.append('UserADId', userADId as string);
+        // Create URLSearchParams for UAT (application/x-www-form-urlencoded)
+        const params = new URLSearchParams();
+        params.append('UserADId', userADId as string);
 
         // Forward to GetBranchDetails endpoint
         const uatUrl = 'https://eservicesuat.nws.nama.om:444/api/InternalPortal/GetBranchDetails';
@@ -29,21 +29,28 @@ export async function POST(request: NextRequest) {
 
         const response = await fetch(uatUrl, {
             method: 'POST',
-            body: uatFormData,
+            body: params,
             headers: {
-                // Forward incoming cookies if any (IMPORTANT for session maintenance between Step 1 and 2)
+                'Accept': 'application/json',
+                // Keep cookie forwarding as it might be needed for session affinity
                 'Cookie': request.headers.get('cookie') || '',
-                'Host': 'eservicesuat.nws.nama.om:444',
-                'Origin': 'https://eservicesuat.nws.nama.om',
-                'Referer': 'https://eservicesuat.nws.nama.om/Validateuser',
-                'User-Agent': request.headers.get('user-agent') || 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36',
             }
         });
 
-        console.log('Branch Details: UAT response status:', response.status);
+        let data;
+        const rawBody = await response.text();
 
-        const data = await response.json();
-        console.log('Branch Details: UAT response:', data);
+        try {
+            data = JSON.parse(rawBody);
+            console.log('Branch Details: Successfully parsed JSON from response');
+        } catch (e) {
+            console.error('Branch Details: Failed to parse JSON response');
+            console.error('Branch Details: Raw Body:', rawBody.substring(0, 1000));
+            return NextResponse.json(
+                { Status: 'fail', StatusCode: 502, Data: 'Upstream service returned invalid response format.' },
+                { status: 502 }
+            );
+        }
 
         // Create response with headers
         const nextResponse = NextResponse.json(data, { status: response.status });

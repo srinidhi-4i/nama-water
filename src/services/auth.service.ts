@@ -15,12 +15,9 @@ export const authService = {
             // STEP 1: LDAP Validation with encrypted credentials
             const encryptedUsername = encryptString(loginData.username);
             const encryptedPassword = encryptString(loginData.password);
-            const encodedUsername = encodeURIComponent(encryptedUsername);
-            const encodedPassword = encodeURIComponent(encryptedPassword);
-
             const ldapFormData = new FormData();
-            ldapFormData.append('UserName', encodedUsername);
-            ldapFormData.append('Password', encodedPassword);
+            ldapFormData.append('UserName', encryptedUsername);
+            ldapFormData.append('Password', encryptedPassword);
 
             // Don't set Content-Type - let browser set it for FormData
             const ldapResponse = await api.post<any>('/api/auth/validate', ldapFormData);
