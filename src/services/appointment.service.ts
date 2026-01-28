@@ -181,9 +181,9 @@ export const appointmentService = {
     async getSlotsForRange(branchID: string, startDate: string, endDate: string): Promise<{ slots: AppointmentSlot[] }> {
         try {
             const formData = new FormData()
-            formData.append('branchID', branchID)
-            formData.append('fromDate', startDate)
-            formData.append('toDate', endDate)
+            formData.append('BranchID', branchID)
+            formData.append('FromDate', startDate)
+            formData.append('ToDate', endDate)
 
             // Endpoint from AppointmentCreateSlot.jsx
             const endpoints = [
@@ -192,24 +192,29 @@ export const appointmentService = {
                 '/Appointment/GetTimeSlotsForSelectedDates',
                 '/AppointmentReqest/GetTimeSlots',
                 '/AppointmentRequest/GetTimeSlots',
-                '/BranchOfficer/GetTimeSlotsForSelectedDates'
+                '/BranchOfficer/GetTimeSlotsForSelectedDates',
+                // Fallback to Edit endpoint as it might return disabled slots too
+                '/AppointmentReqest/GetTimeSlotsForEdit',
+                '/AppointmentRequest/GetTimeSlotsForEdit'
             ]
 
             const response = await this._probeApi(endpoints, formData, 'slots for range')
             if (!response) return { slots: [] }
 
             const rawData = response?.data?.Data || response?.data || {}
+            console.log('getSlotsForRange rawData:', rawData)
             const result = Array.isArray(rawData) ? rawData : (rawData.Table1 || rawData.Table || [])
+            console.log('getSlotsForRange result array:', result)
 
             const slots: AppointmentSlot[] = Array.isArray(result) ? result.map((item: any) => ({
-                id: item.SlotID || item.BranchWiseSlotID || Math.random().toString(),
-                startTime: item.StartTime || item.TimeSlotStart || '',
-                endTime: item.EndTime || item.TimeSlotEnd || '',
-                capacity: parseInt(item.MaximumVisitors || item.TotalAppointmentsForSlot || '0'),
-                bookedCount: parseInt(item.BookedCount || item.AppoitmentsBooked || '0'),
-                isActive: item.IsActive !== false && item.IsDeleted !== '1',
+                id: item.SlotID || item.BranchWiseSlotID || item.slotID || Math.random().toString(),
+                startTime: item.StartTime || item.TimeSlotStart || item.startTime || '',
+                endTime: item.EndTime || item.TimeSlotEnd || item.endTime || '',
+                capacity: parseInt(item.MaximumVisitors || item.TotalAppointmentsForSlot || item.capacity || '0'),
+                bookedCount: parseInt(item.BookedCount || item.AppoitmentsBooked || item.bookedCount || '0'),
+                isActive: (item.IsActive === true || item.IsActive === 'true' || item.IsActive === 1 || item.IsActive === '1') && item.IsDeleted != '1',
                 // Handle different date formats or fields
-                date: item.SlotDate ? item.SlotDate.split('T')[0] : (item.AppointmentDate ? item.AppointmentDate.split('T')[0] : ''),
+                date: (item.SlotDate || item.AppointmentDate || item.date || item.StartDate || item.FromDate || '').split('T')[0],
                 duration: item.SlotDuration || item.TimeSlotDuration
             })) : []
 
@@ -739,6 +744,7 @@ export const appointmentService = {
             if (!payload.lang) formData.append('Lang', 'EN')
 
             const endpoints = [
+                '/AppointmentReqest/CreateSlotsByAdmin',
                 '/AppointmentReqest/InsertAppointmentSlot',
                 '/AppointmentRequest/InsertAppointmentSlot',
                 '/Appointment/InsertAppointmentSlot'

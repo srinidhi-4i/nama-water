@@ -10,8 +10,6 @@ export async function POST(request: NextRequest) {
         const password = formData.get('Password');
 
         console.log('LDAP Validation: Received request');
-        console.log('LDAP Validation: UserName present:', !!userName);
-        console.log('LDAP Validation: Password present:', !!password);
 
         if (!userName || !password) {
             return NextResponse.json(
@@ -34,8 +32,7 @@ export async function POST(request: NextRequest) {
             method: 'POST',
             body: uatFormData,
             headers: {
-                // Forward incoming cookies if any
-                'Cookie': request.headers.get('cookie') || '',
+                // Do not forward cookies to avoid WAF blocking
                 'Host': 'eservicesuat.nws.nama.om:444',
                 'Origin': 'https://eservicesuat.nws.nama.om',
                 'Referer': 'https://eservicesuat.nws.nama.om/Validateuser',
@@ -45,7 +42,20 @@ export async function POST(request: NextRequest) {
 
         console.log('LDAP Validation: UAT response status:', response.status);
 
-        const data = await response.json();
+        let data;
+        const contentType = response.headers.get('content-type');
+
+        if (contentType && contentType.includes('application/json')) {
+            data = await response.json();
+        } else {
+            console.error('LDAP Validation: Received non-JSON response with status:', response.status);
+            // Fail gracefully if upstream returns HTML (e.g., WAF block or 500 error)
+            return NextResponse.json(
+                { StatusCode: 'Failure', ErrMessage: 'Upstream service returned invalid response.' },
+                { status: 502 }
+            );
+        }
+
         console.log('LDAP Validation: UAT response:', data);
 
         // Create response with headers
@@ -65,8 +75,6 @@ export async function POST(request: NextRequest) {
                     .replace(/SameSite=[^;]+;?/gi, 'SameSite=Lax;');
 
                 modifiedCookie = modifiedCookie + '; Path=/';
-
-                console.log('LDAP Validation: Forwarding cookie:', modifiedCookie);
                 nextResponse.headers.append('set-cookie', modifiedCookie);
             });
         }

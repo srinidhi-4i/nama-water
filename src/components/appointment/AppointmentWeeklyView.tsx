@@ -79,6 +79,7 @@ export default function AppointmentWeeklyView({ branchID, refreshTrigger, dateRa
            </Button>
            <h3 className="ml-4 font-bold text-slate-700">
              {format(currentWeekStart, "MMMM yyyy")}
+             <span className="ml-2 text-[10px] text-slate-400 font-normal">(Fetched: {slots.length})</span>
            </h3>
         </div>
       </div>
@@ -97,8 +98,8 @@ export default function AppointmentWeeklyView({ branchID, refreshTrigger, dateRa
                     {format(day, "EEEE")}
                   </div>
                   
-                  {/* Edit button (visible on hover) */}
-                  {onDateSelect && branchID && (
+                  {/* Edit button (visible on hover) - Only if slots exist */}
+                  {onDateSelect && branchID && daySlots.length > 0 && (
                     <Button 
                         variant="ghost" 
                         size="icon" 
@@ -118,25 +119,32 @@ export default function AppointmentWeeklyView({ branchID, refreshTrigger, dateRa
                       </div>
                     )
                   ) : daySlots.length > 0 ? (
-                    daySlots.map((slot, sIdx) => (
-                      <div 
-                        key={sIdx}
-                        className={`p-3 rounded-lg border text-xs shadow-sm transition-all hover:scale-[1.02] ${
-                          slot.bookedCount >= slot.capacity 
-                            ? "bg-amber-50 border-amber-100 text-amber-700" 
-                            : "bg-teal-50 border-teal-100 text-teal-700"
-                        }`}
-                      >
-                        <div className="flex items-center gap-1.5 font-bold mb-1">
-                          <Clock className="h-3 w-3" />
-                          {slot.startTime} - {slot.endTime}
+                    daySlots.map((slot, sIdx) => {
+                      const isDisabled = !slot.isActive
+                      
+                      return (
+                        <div 
+                          key={sIdx}
+                          className={`p-3 rounded-lg border text-xs shadow-sm transition-all hover:scale-[1.02] ${
+                            isDisabled 
+                              ? "bg-slate-100 border-slate-200 text-slate-400 opacity-60" 
+                              : slot.bookedCount >= slot.capacity 
+                                ? "bg-amber-50 border-amber-100 text-amber-700" 
+                                : "bg-teal-50 border-teal-100 text-teal-700"
+                          }`}
+                        >
+                          <div className="flex items-center gap-1.5 font-bold mb-1">
+                            <Clock className="h-3 w-3" />
+                            {slot.startTime} - {slot.endTime}
+                          </div>
+                          <div className="flex items-center gap-1.5 opacity-80">
+                            <Users className="h-3 w-3" />
+                            {slot.bookedCount} / {slot.capacity}
+                            {isDisabled && <span className="ml-auto text-[9px] uppercase tracking-wider font-extrabold border bg-white/50 px-1 rounded">Off</span>}
+                          </div>
                         </div>
-                        <div className="flex items-center gap-1.5 opacity-80">
-                          <Users className="h-3 w-3" />
-                          {slot.bookedCount} / {slot.capacity}
-                        </div>
-                      </div>
-                    ))
+                      )
+                    })
                   ) : (
                     <div className="h-full flex items-center justify-center">
                        <p className="text-[10px] font-bold text-slate-300 uppercase tracking-widest">No Slots</p>

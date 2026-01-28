@@ -317,8 +317,12 @@ export const branchOpsService = {
             formData.append('langCode', 'EN')
 
             const response = await api.post<any>('/AccountDetails/GetTotalOutstandingAccSearch', formData)
-            const data = response.data.Data || response.data
-            return data || "0.000"
+            const data = response.data.Data
+            // STRICT SAFETY: Only return data if it's a string/number. If object/missing, return "0.000"
+            if (typeof data === 'string' || typeof data === 'number') {
+                return String(data)
+            }
+            return "0.000"
         } catch (error) {
             return "0.000"
         }
@@ -334,7 +338,14 @@ export const branchOpsService = {
             formData.append('langCode', 'EN')
 
             const response = await api.post<any>('/MyRequest/GetDashboradMyRequestAccSearch', formData)
-            return response.data.Data || response.data
+            // STRICT SAFETY: Ensure we return an array or object, but handle the case where Data is missing
+            const data = response.data.Data
+            if (data && Array.isArray(data) && data.length > 0) {
+                return data
+            }
+            // If it's a single object (not array), wrap or return null depending on usage
+            // The usage in dashboard checks requests[0], so we should return an array if possible
+            return []
         } catch (error) {
             return null
         }
@@ -351,7 +362,9 @@ export const branchOpsService = {
             formData.append('langCode', 'EN')
 
             const response = await api.post<any>('/AccountDetails/GetPaymentDashboardHistoryAccSearch', formData)
-            return response.data.Data || response.data || []
+            const data = response.data.Data
+            if (Array.isArray(data)) return data
+            return []
         } catch (error) {
             return []
         }
@@ -384,7 +397,9 @@ export const branchOpsService = {
 
 
             const response = await api.post<any>('/WaterLeakAlarm/GetAMRAlertHistoryAccSearch', formData)
-            return response.data.Data || response.data || []
+            const data = response.data.Data
+            if (Array.isArray(data)) return data
+            return []
         } catch (error) {
             return []
         }
@@ -402,7 +417,9 @@ export const branchOpsService = {
             formData.append("ToDate", "null")
 
             const response = await api.post<any>('/MyRequest/GetMyRequestAccSearch', formData)
-            return response.data.Data || response.data || []
+            const data = response.data.Data
+            if (Array.isArray(data)) return data
+            return []
         } catch (error) {
             return []
         }
@@ -415,8 +432,11 @@ export const branchOpsService = {
             formData.append('accountNum', accountNumber)
             // Reference doesn't show params clearly in view_file but typically accountNum
             const response = await api.post<any>('/BranchOfficer/GetAppointmentDetailsForAccount', formData)
-            const data = response.data.Data || response.data
-            return data?.Table || []
+            const data = response.data.Data
+            if (data && Array.isArray(data.Table)) {
+                return data.Table
+            }
+            return []
         } catch (error) {
             return []
         }
@@ -453,7 +473,9 @@ export const branchOpsService = {
             const formData = new FormData()
             formData.append('accountNum', accountNumber)
             const response = await api.post<any>('/AccountDetails/GetOutstandingByGroupAccSearch', formData)
-            return response.data.Data || response.data
+            const data = response.data.Data
+            if (Array.isArray(data)) return data
+            return []
         } catch (error) {
             return null
         }
@@ -465,7 +487,9 @@ export const branchOpsService = {
             const formData = new FormData()
             formData.append('AccountNumber', accountNumber)
             const response = await api.post<any>('/AccountDetails/GetActConsumptionDataMonthlyAccSearch', formData)
-            return response.data.Data || response.data
+            const data = response.data.Data
+            if (Array.isArray(data)) return data
+            return []
         } catch (error) {
             return null
         }

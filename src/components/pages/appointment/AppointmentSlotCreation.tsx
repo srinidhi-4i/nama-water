@@ -219,10 +219,15 @@ export default function AppointmentSlotCreation() {
       const response = await appointmentService.createSlotsByAdmin(payload)
       
       // Strict check on response
-      if (response && (response.IsBlock === 0 || response.StatusCode === 605 || response.IsSuccess === 1)) {
-        toast.success(language === "EN" ? "Slots created successfully" : "تم إنشاء الفترات بنجاح")
-        setRefreshTrigger(prev => prev + 1)
-        setShowConfirmModal(false);
+      if (response && (response.StatusCode === 605 || response.IsSuccess === 1)) {
+        // Double check IsBlock if present
+        if (response.IsBlock === 1 || response.Data?.IsBlock === 1) {
+             toast.error(response.ErrorMessage || response.Data?.ErrorMessage || (language === "EN" ? "Failed to create slots: Slots are blocked" : "فشل إنشاء الفترات: الفترات محظورة"))
+        } else {
+             toast.success(language === "EN" ? "Slots created successfully" : "تم إنشاء الفترات بنجاح")
+             setRefreshTrigger(prev => prev + 1)
+             setShowConfirmModal(false);
+        }
       } else {
         toast.error(response?.ErrorMessage || response?.Message || (language === "EN" ? "Failed to create slots" : "فشل في إنشاء الفترات"))
       }
