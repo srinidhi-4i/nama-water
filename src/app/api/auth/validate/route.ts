@@ -1,4 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
+import axios from 'axios';
+import https from 'https';
+
+// Create an HTTPS agent that ignores SSL certificate errors
+const httpsAgent = new https.Agent({
+    rejectUnauthorized: false
+});
 
 // LDAP Validation endpoint - Step 1
 export async function POST(request: NextRequest) {
@@ -24,54 +31,38 @@ export async function POST(request: NextRequest) {
         params.append('Password', password as string);
 
         // Forward to GetLDAPLoginValidation endpoint
-        const uatUrl = 'https://eservicesuat.nws.nama.om:444/api/InternalPortal/GetLDAPLoginValidation';
+        const baseUrl = process.env.NEXT_PUBLIC_UAT_BASE_URL;
+        const uatUrl = `${baseUrl}/api/InternalPortal/GetLDAPLoginValidation`;
 
         console.log('LDAP Validation: Forwarding to UAT with URLSearchParams');
 
-        const response = await fetch(uatUrl, {
-            method: 'POST',
-            body: params,
+        const response = await axios.post(uatUrl, params, {
             headers: {
                 'Content-Type': 'application/x-www-form-urlencoded',
                 'Accept': 'application/json',
-            }
+            },
+            httpsAgent: httpsAgent,
+            validateStatus: () => true, // Resolve promise for all status codes
         });
 
         console.log('LDAP Validation: UAT response status:', response.status);
+        console.log('LDAP Validation: Content-Type:', response.headers['content-type']);
 
-        let data;
-        const contentType = response.headers.get('content-type') || '';
-        const rawBody = await response.text();
+        const data = response.data;
+        // Check if data is already an object or needs parsing (Axios usually parses JSON automatically)
+        const responseData = typeof data === 'string' ? JSON.parse(data) : data;
 
-        console.log('LDAP Validation: Content-Type:', contentType);
-
-        try {
-            // Attempt to parse as JSON regardless of reported Content-Type
-            // since UAT server sometimes returns text/plain for JSON
-            data = JSON.parse(rawBody);
-            console.log('LDAP Validation: Successfully parsed JSON from response');
-        } catch (e) {
-            console.error('LDAP Validation: Failed to parse JSON response');
-            console.error('LDAP Validation: Raw Body:', rawBody.substring(0, 1000));
-
-            // Fail gracefully if upstream returns non-JSON (e.g., HTML WAF block)
-            return NextResponse.json(
-                { StatusCode: 'Failure', ErrMessage: 'Upstream service returned invalid response format.' },
-                { status: 502 }
-            );
-        }
-
-        console.log('LDAP Validation: UAT response:', data);
+        console.log('LDAP Validation: UAT response:', responseData);
 
         // Create response with headers
-        const nextResponse = NextResponse.json(data, { status: response.status });
+        const nextResponse = NextResponse.json(responseData, { status: response.status });
 
         // Forward Set-Cookie header if present
-        const rawCookies = (response.headers as any).getSetCookie
-            ? (response.headers as any).getSetCookie()
-            : [response.headers.get('set-cookie')].filter((c: string | null) => !!c);
+        const setCookieHeader = response.headers['set-cookie'];
 
-        if (rawCookies.length > 0) {
+        if (setCookieHeader) {
+            const rawCookies = Array.isArray(setCookieHeader) ? setCookieHeader : [setCookieHeader];
+
             rawCookies.forEach((cookie: string) => {
                 let modifiedCookie = cookie
                     .replace(/Domain=[^;]+;?/gi, '')
@@ -83,6 +74,23 @@ export async function POST(request: NextRequest) {
                 nextResponse.headers.append('set-cookie', modifiedCookie);
             });
         }
+
+        // --- NEW: Set HttpOnly Cookie for Next.js Middleware ---
+        const token = responseData?.Data?.Token;
+        if (responseData?.StatusCode === 605 && responseData?.Data?.StatusCode === 'Success' && token) {
+            // Set a secure, httpOnly cookie for the session
+            nextResponse.cookies.set({
+                name: 'auth_token',
+                value: token,
+                httpOnly: true,
+                secure: process.env.NODE_ENV === 'production',
+                path: '/',
+                sameSite: 'lax',
+                maxAge: 60 * 60 * 24 // 1 day
+            });
+            console.log('LDAP Validation: Session cookie set');
+        }
+        // -------------------------------------------------------
 
         return nextResponse;
     } catch (error: any) {

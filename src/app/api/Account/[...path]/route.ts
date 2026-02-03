@@ -6,9 +6,9 @@ export async function POST(
 ) {
     try {
         const path = (await params).path.join('/');
-        const uatUrl = `https://eservicesuat.nws.nama.om:444/api/Menu/${path}`;
+        const uatUrl = `https://eservicesuat.nws.nama.om:444/api/Account/${path}`;
 
-        console.log(`Menu Proxy [POST]: ${uatUrl}`);
+        console.log(`Account Proxy [POST]: ${uatUrl}`);
 
         const incomingCookies = request.headers.get('cookie') || '';
 
@@ -52,7 +52,7 @@ export async function POST(
 
         return nextResponse;
     } catch (error: any) {
-        console.error('Menu Proxy Error:', error);
+        console.error('Account Proxy Error:', error);
         return NextResponse.json(
             { Status: 'fail', StatusCode: 500, Data: error.message },
             { status: 500 }

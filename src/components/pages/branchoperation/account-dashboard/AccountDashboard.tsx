@@ -6,26 +6,27 @@ import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { AlertTriangle, User, FileText, Calendar, AlertCircle, CreditCard, LogOut, ChevronRight } from "lucide-react"
+import { AlertTriangle, User, FileText, Calendar, AlertCircle, CreditCard, LogOut, ChevronRight, Eye, Download, Search } from "lucide-react"
 import { branchOpsService } from "@/services/branchops.service"
 import { decryptString } from "@/lib/crypto"
 import { Card } from "@/components/ui/card"
 import { Label } from "@/components/ui/label"
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table"
 import PageHeader from "@/components/layout/PageHeader"
 import { useLanguage } from "@/components/providers/LanguageProvider"
 
 import DashboardSidebar from "./DashboardSidebar"
+import { DataTable } from "@/components/ui/data-table"
+import { columns as transactionColumns, requestColumns, alarmColumns, appointmentColumns } from "@/app/(dashboard)/branch-operations/account-dashboard/[accountNumber]/column"
+import { Input } from "@/components/ui/input"
+import { format, subMonths, subWeeks, startOfDay } from "date-fns"
 
 const DashboardOverview = dynamic(() => import("./DashboardOverview"), {
   loading: () => <div className="p-20 text-center font-bold text-slate-400">Loading Overview Charts...</div>,
+  ssr: false
+})
+
+const AccountDetailsTable = dynamic(() => import("./AccountDetailsTable"), {
+  loading: () => <div className="p-10 text-center font-bold text-slate-400">Loading Details...</div>,
   ssr: false
 })
 
@@ -52,30 +53,67 @@ export default function AccountDashboard({ accountNumber }: AccountDashboardProp
   const [outstandingByGroup, setOutstandingByGroup] = useState<any[]>([])
   const [consumptionData, setConsumptionData] = useState<any[]>([])
   const [changeServiceDetails, setChangeServiceDetails] = useState<any[]>([])
+  const [activeConsumptionInterval, setActiveConsumptionInterval] = useState<'Monthly' | 'Daily' | 'Hourly'>('Monthly')
   const [isLoading, setIsLoading] = useState(true)
+  const [ccbStatus, setCcbStatus] = useState<any>(null)
+  const [menuData, setMenuData] = useState<any[]>([])
+  const [smrData, setSmrData] = useState<any[]>([])
+  const [requestSummary, setRequestSummary] = useState<any>({
+      Pending: 0,
+      Completed: 0,
+      Cancelled: 0,
+      TotalCount: 0
+  })
+
+  // Filters
+  const [paymentFilters, setPaymentFilters] = useState({ fromDate: '', toDate: '' })
+  const [requestFilter, setRequestFilter] = useState<'all' | 'month' | 'week'>('all')
+
+  const filteredRequests = useMemo(() => {
+    const list = Array.isArray(requestList) ? requestList : []
+    
+    if (requestFilter === 'all') return list
+
+    const now = new Date()
+    const filterDuration = requestFilter === 'week' ? subWeeks(now, 1) : subMonths(now, 1)
+    
+    return list.filter(r => {
+      const dateVal = r.RequestDate || r["Updated Date"] || r.RequestedDate || r.CreatedDate || r.SRDate || r.date
+      if (!dateVal) return false
+      const date = new Date(dateVal)
+      return !isNaN(date.getTime()) && date >= filterDuration
+    })
+  }, [requestList, requestFilter])
 
   useEffect(() => {
     const initDashboard = async () => {
       setIsLoading(true)
       try {
+        console.log('Initializing dashboard for account:', accountNumber)
+        
         const customerInfo = await branchOpsService.getCustomerInfo(accountNumber, false)
         const serviceType = await branchOpsService.getServiceType(accountNumber)
 
+
+
+ 
+        
         const initialData = {
+          customerInfo: customerInfo,
           ...customerInfo,
           AccountNumber: accountNumber,
           ServiceType: serviceType?.ServiceType,
-          LegacyId: serviceType?.LegacyId || serviceType?.CCBAccountNumber || "",
+          LegacyId: customerInfo?.legacyId || serviceType?.LegacyId || serviceType?.CCBAccountNumber || "",
           CCBAccountNumber: serviceType?.CCBAccountNumber,
-          AccountHolderName: customerInfo ? (decryptString(customerInfo.personNameEn) || decryptString(customerInfo.personName) || "Ahmad Abdullah") : "Ahmad Abdullah"
+          AccountHolderName: customerInfo?.personNameEn || customerInfo?.FullNameEn || customerInfo?.personName || customerInfo?.FullName 
         }
         
+        console.log('Initial Account Data:', initialData)
         setAccountData(initialData)
         
-        const accNumForData = serviceType?.CCBAccountNumber || accountNumber
-        await loadDashboardData(accNumForData)
+        await loadDashboardData(accountNumber, initialData.LegacyId, initialData)
       } catch (error) {
-        console.error("Failed to initialize dashboard", error)
+        console.error("Failed to initialize dashboard:", error)
       } finally {
         setIsLoading(false)
       }
@@ -86,55 +124,256 @@ export default function AccountDashboard({ accountNumber }: AccountDashboardProp
     }
   }, [accountNumber])
 
-  const loadDashboardData = async (accNum: string) => {
+  useEffect(() => {
+    if (requestList && requestList.length > 0) {
+      console.log('FINAL Request List in State:', requestList)
+      console.log('Keys in first request item:', Object.keys(requestList[0]))
+    }
+  }, [requestList])
+
+  // Handle unit consumed interval change
+  const handleIntervalChange = async (interval: 'Monthly' | 'Daily' | 'Hourly') => {
+      setActiveConsumptionInterval(interval)
+      if (!accountData?.AccountNumber) return
+
       try {
-          // Load Metrics in parallel
-          const [outstanding, requests, payments, alarms] = await Promise.all([
-              branchOpsService.getTotalOutstandingAmount(accNum),
-              branchOpsService.getMyRequestDashboard(accNum),
-              branchOpsService.getPaymentHistory(accNum),
-              branchOpsService.getAMRAlertHistory(accNum)
-          ])
+          let data = []
+          if (interval === 'Monthly') {
+              data = await branchOpsService.getConsumptionData(accountData.AccountNumber)
+          } else if (interval === 'Daily') {
+              data = await branchOpsService.getConsumptionDataDaily(accountData.AccountNumber)
+          } else if (interval === 'Hourly') {
+               data = await branchOpsService.getConsumptionDataHourly(accountData.AccountNumber)
+          }
+          
+          setConsumptionData(flattenConsumptionData(data))
+      } catch (error) {
+          console.error(`Failed to fetch ${interval} consumption data:`, error)
+      }
+  }
 
-          setMetrics({
-              outstanding: outstanding || "0.000",
-              requests: requests && requests.length > 0 ? requests[0].TotalCount : 0,
-              transactions: payments.length,
-              alarms: alarms.length
+  // Helper to flatten consumption data regardless of API structure
+  const flattenConsumptionData = (data: any[]) => {
+      if (!data || !Array.isArray(data) || data.length === 0) return []
+      
+      // Check if data is nested in readings array (common structure)
+      if (data[0]?.readings) {
+          return data[0].readings.map((r: any) => ({
+              Date: r.readingDate || r.Date || r.date || '',
+              Value: parseFloat(r.consumption || r.Value || r.value || r.Consumption || '0')
+          })).filter((item: any) => item.Date && !isNaN(item.Value))
+      }
+      
+      // If flat array
+      return data.map((r: any) => ({
+          Date: r.readingDate || r.Date || r.date || '',
+          Value: parseFloat(r.consumption || r.Value || r.value || r.Consumption || '0')
+      })).filter((item: any) => item.Date && !isNaN(item.Value))
+  }
+
+  const loadDashboardData = async (accNum: string, knownLegacyId?: string, initialData?: any) => {
+    setIsLoading(true)
+    try {
+        console.log('Loading dashboard data for account:', accNum)
+        
+        // Load all dashboard data in parallel
+        const [
+            outstanding, 
+            dashRequests, 
+            payments, 
+            alarms,
+            byGroup, 
+            consData, 
+            reqList, 
+            apptList, 
+            changeSvc, 
+            billPayment,
+            ccbResult,
+            ccbStatusResult,
+            menuResult
+        ] = await Promise.all([
+            branchOpsService.getTotalOutstandingAmount(accNum),
+            branchOpsService.getMyRequestDashboard(accNum),
+            branchOpsService.getPaymentHistory(accNum, '', ''), 
+            branchOpsService.getAMRAlertHistory(accNum),
+            branchOpsService.getOutstandingByGroup(accNum),
+            branchOpsService.getConsumptionData(accNum), // Default to Monthly
+            (console.log('CALLING getMyRequestList with:', { accNum, legacy: knownLegacyId || initialData?.LegacyId }), 
+             branchOpsService.getMyRequestList(accNum, knownLegacyId || initialData?.LegacyId)),
+            branchOpsService.getAppointmentList(accNum),
+            branchOpsService.getChangeServiceTypeDet(accNum),
+            branchOpsService.viewBillPayment(accNum),
+            branchOpsService.getCCBConnectionStatus(accNum),
+            branchOpsService.getCCBStatus(accNum),
+            branchOpsService.getMenudata()
+        ])
+
+        console.log('Connection Status Results:', { ccbResult, ccbStatusResult })
+
+          const billOutstanding = billPayment?.TotalResult;
+          const billLegacy = billPayment?.LegacyAccount;
+          const billName = billPayment?.AccountName?.trim();
+
+          // Robust legacyId definition
+          const legacyId = billLegacy || knownLegacyId || initialData?.LegacyId || accNum
+
+          // Map connection status from API responses
+          // Prioritize CCBStatus or AccountStatus as found in legacy code
+          const rawCcbStatus = ccbStatusResult?.CCBStatus || ccbStatusResult?.Data?.CCBStatus || 
+                               ccbResult?.CCBStatus || ccbResult?.Data?.CCBStatus || 
+                               ccbResult?.AccountStatus || ccbResult?.Data?.AccountStatus
+
+          let connectionStatus = "NOT CONNECTED"
+          const statusStr = String(rawCcbStatus || "").toUpperCase()
+          
+          if (statusStr === "TRUE" || rawCcbStatus === true || statusStr === "CONNECTED" || statusStr === "ACTIVE" || statusStr === "IN SERVICE") {
+              connectionStatus = "CONNECTED"
+          } else if (statusStr === "FALSE" || rawCcbStatus === false || statusStr === "NOT CONNECTED" || statusStr === "INACTIVE" || statusStr === "DISCONNECTED") {
+              connectionStatus = "NOT CONNECTED"
+          } else {
+              // Default to NOT CONNECTED if we can't determine it, to avoid "connected for all"
+              connectionStatus = rawCcbStatus ? "CONNECTED" : "NOT CONNECTED" 
+          }
+          console.log('Resolved Connection Status:', connectionStatus)
+
+          setAccountData((prev: any) => ({
+              ...prev,
+              ...billPayment,
+              AccountHolderName: billName || prev.AccountHolderName,
+              LegacyId: legacyId,
+              ccbStatus: connectionStatus,
+              connectionStatus: connectionStatus // Both for compatibility
+          }))
+
+          // Filter transactions by Legacy ID or Account Number
+          const filteredPayments = (payments || []).filter((p: any) => {
+              const paymentLegacyId = String(p.LegacyID || p.LegacyId || '').trim()
+              const currentLegacyId = String(legacyId || '').trim()
+              const isLegacyMatch = paymentLegacyId === currentLegacyId && currentLegacyId !== ''
+              const isAccountNoMatch = (p.AccountNo || p.AccountNumber || p.AccountNum) === accNum
+              
+              return (isLegacyMatch || isAccountNoMatch) && p.PaymentAmount > 0
           })
-
-          setPaymentHistory(payments)
-          setAlarmList(alarms)
-
-          const [byGroup, consData, reqList, apptList, changeSvc] = await Promise.all([
-              branchOpsService.getOutstandingByGroup(accNum),
-              branchOpsService.getConsumptionData(accNum),
-              branchOpsService.getMyRequestList(accNum),
-              branchOpsService.getAppointmentList(accNum),
-              branchOpsService.getChangeServiceTypeDet(accNum)
-          ])
 
           // Flatten outstanding by group
           const flattenedByGroup = (byGroup || []).map((g: any) => ({
-              GroupName: g.GroupName,
-              Amount: g.Accounts?.[0]?.GroupOutstandingAmount || g.GroupOutstandingAmount || "0"
+              GroupName: g.GroupName ,
+              Amount: g.GroupOutstandingAmount || g.Accounts?.[0]?.GroupOutstandingAmount 
           }))
           setOutstandingByGroup(flattenedByGroup)
 
-          // Flatten consumption data
-          const flattenedConsumption = (consData?.[0]?.readings || []).map((r: any) => ({
-              Date: r.readingDate,
-              Value: r.consumption
-          }))
-          setConsumptionData(flattenedConsumption)
+          // 1. Calculate final outstanding as sum of groups if available, else fallback to billPayment
+          const totalFromGroups = flattenedByGroup.reduce((sum, g) => sum + parseFloat(g.Amount || "0"), 0)
+          const finalOutstanding = totalFromGroups > 0 ? totalFromGroups.toFixed(3) : (billOutstanding !== undefined && billOutstanding !== null ? billOutstanding : (outstanding || "0.000"))
 
+          // 2. Fetch SMR Data using account IDs from groups, with fallback to accNum
+          let accountIds = (byGroup || []).flatMap((g: any) => (g.Accounts || []).map((a: any) => a.AccountId)).filter(id => id)
+          if (accountIds.length === 0 && accNum) {
+              accountIds = [accNum]
+          }
+
+          if (accountIds.length > 0) {
+              try {
+                  const smr = await branchOpsService.getSMRHistory(accountIds)
+                  
+                  // fallback: if smr is empty, try to seed with initialData.customerInfo
+                  if ((!smr || smr.length === 0) && initialData?.customerInfo?.meterNumber) {
+                      console.log("Seeding SMR data from initialData.customerInfo fallback",initialData.customerInfo)
+                      const ci = initialData.customerInfo
+                      setSmrData([{
+                          MeterNo: ci.meterNumber,
+                          Status:  ci.Status,
+                          LastReadingDate: ci.latestReadDateTime || ci.LatestReadDateTime,
+                          ReadingType: ci.readType || ci.ReadType || "Current"
+                      }])
+                  } else {
+                      setSmrData(smr)
+                  }
+              } catch (e) {
+                  console.warn("SMR fetch failed, using fallback", e)
+                  if (initialData?.customerInfo?.meterNumber) {
+                       setSmrData([{
+                          MeterNo: initialData.customerInfo.meterNumber,
+                          Status: initialData.customerInfo.Status,
+                          LastReadingDate: initialData.customerInfo.latestReadDateTime,
+                          ReadingType: "Current"
+                      }])
+                  }
+              }
+          } else if (initialData?.customerInfo?.meterNumber) {
+              // No account IDs but we have meter info in customerInfo
+              setSmrData([{
+                  MeterNo: initialData.customerInfo.meterNumber,
+                  Status: "Active",
+                  LastReadingDate: initialData.customerInfo.latestReadDateTime,
+                  ReadingType: "Current"
+              }])
+          }
+
+          // 3. Set Request Summary from dashboard API
+        const reqSummaries = Array.isArray(dashRequests) ? dashRequests[0] : (dashRequests || {})
+        const totalReqCount = reqSummaries?.TotalCount || (reqList && Array.isArray(reqList) ? reqList.length : 0)
+        setRequestSummary({
+            Pending: reqSummaries?.Pending || 0,
+            Completed: reqSummaries?.Completed || 0,
+            Cancelled: reqSummaries?.Cancelled || 0,
+            TotalCount: totalReqCount
+        })
+
+        // Final State Updates
+        setMetrics({
+            outstanding: finalOutstanding,
+            requests: totalReqCount,
+            transactions: filteredPayments.length,
+            alarms: (alarms && Array.isArray(alarms)) ? alarms.length : 0
+        })
+
+          setPaymentHistory(filteredPayments)
+          setAlarmList(alarms || [])
+          setConsumptionData(flattenConsumptionData(consData))
+          
+          if (reqList && Array.isArray(reqList) && reqList.length > 0) {
+              console.log('First Request Item Structure:', Object.keys(reqList[0]))
+              console.log('Sample Request Item:', reqList[0])
+          }
           setRequestList(reqList || [])
           setAppointmentList(apptList || [])
           setChangeServiceDetails(changeSvc || [])
+          setCcbStatus(ccbResult)
+          setMenuData(menuResult)
           
       } catch (err) {
-          console.warn("Failed to load dashboard data", err)
+          console.error("Failed to load dashboard data:", err)
+      } finally {
+          setIsLoading(false)
       }
+  }
+
+  const handlePaymentFilterSearch = async () => {
+    const accNum = accountData?.CCBAccountNumber || accountNumber
+    setIsLoading(true)
+    try {
+        const payments = await branchOpsService.getPaymentHistory(accNum, paymentFilters.fromDate, paymentFilters.toDate)
+        setPaymentHistory(payments)
+    } catch (err) {
+        console.error("Failed to filter payments", err)
+    } finally {
+        setIsLoading(false)
+    }
+  }
+
+  const handlePaymentFilterReset = async () => {
+    setPaymentFilters({ fromDate: '', toDate: '' })
+    const accNum = accountData?.CCBAccountNumber || accountNumber
+    setIsLoading(true)
+    try {
+        const payments = await branchOpsService.getPaymentHistory(accNum)
+        setPaymentHistory(payments)
+    } catch (err) {
+        console.error("Failed to reset payments", err)
+    } finally {
+        setIsLoading(false)
+    }
   }
   
   const handleEndSession = async () => {
@@ -145,6 +384,8 @@ export default function AccountDashboard({ accountNumber }: AccountDashboardProp
     localStorage.clear()
     router.push('/branch-operations/validate')
   }
+
+  const [activeTab, setActiveTab] = useState("overview")
 
   if (isLoading) {
     return (
@@ -166,166 +407,221 @@ export default function AccountDashboard({ accountNumber }: AccountDashboardProp
   }
 
   return (
-    <div className="flex h-screen bg-slate-100 overflow-hidden font-sans">
+    <div className="flex flex-col lg:flex-row min-h-screen lg:h-screen lg:overflow-hidden bg-slate-100 font-sans text-sm">
       
-      {/* SIDEBAR - Collapsible (1/4 width expanded) */}
-      <aside 
-        className={`relative h-full bg-white shadow-2xl transition-all duration-500 ease-in-out z-30 ${
-            isSidebarOpen ? 'w-[400px]' : 'w-0 overflow-hidden'
-        }`}
-      >
+      {/* SIDEBAR - Desktop Only */}
+      <aside className="hidden lg:block w-[25%] lg:h-full bg-white shadow-xl z-30 shrink-0 overflow-y-auto">
         <DashboardSidebar accountData={accountData} />
       </aside>
 
-      {/* SIDEBAR TOGGLE BUTTON */}
-      <button 
-        onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-        className={`absolute top-1/2 -translate-y-1/2 z-40 h-10 w-10 bg-red-500 text-white rounded-full flex items-center justify-center shadow-lg transition-all duration-500 ${
-            isSidebarOpen ? 'left-[380px]' : 'left-8'
-        } transform hover:scale-110 active:scale-95`}
-      >
-        <ChevronRight className={`h-6 w-6 transition-transform duration-500 ${isSidebarOpen ? 'rotate-180' : ''}`} />
-      </button>
-
       {/* MAIN CONTENT AREA */}
-      <main className="flex-1 overflow-y-auto w-full relative">
-        <div className="p-6 md:p-10 space-y-8">
+      <main className="flex-1 lg:overflow-y-auto">
+        <div className="flex flex-col min-h-full">
             
-            {/* Professional Breadcrumb & Title */}
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                <div>
-                     <nav className="flex items-center gap-2 text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">
-                        <Link href="/branchhome" className="hover:text-teal-900 transition-colors">Home</Link>
-                        <ChevronRight className="h-3 w-3" />
-                        <Link href="/branch-operations/validate" className="hover:text-teal-900 transition-colors">Search Customer</Link>
-                        <ChevronRight className="h-3 w-3" />
-                        <span className="text-teal-900">Account Dashboard</span>
-                    </nav>
-                    <h1 className="text-3xl font-black text-slate-800 tracking-tight flex items-center gap-3">
-                        Account Dashboard <span className="h-2 w-2 rounded-full bg-red-500"></span>
-                    </h1>
-                </div>
-            </div>
+            {/* Page Header and Tabs Integration */}
+            <div className="flex-1 bg-slate-100 shadow-lg">
+                <PageHeader 
+                    language={language}
+                    titleEn="Customer Dashboard"
+                    titleAr="لوحة تحكم العميل"
+                    breadcrumbItems={[
+                        { labelEn: "Home", labelAr: "الرئيسية", href: "/branchhome" },
+                        { labelEn: "Search Customer", labelAr: "بحث عميل", href: "/branch-operations/validate" },
+                        { labelEn: "Account Dashboard", labelAr: "لوحة تحكم الحساب" }
+                    ]}
+                    showShadow={false}
+                />
+                
+                <div className="px-6 pb-2">
+                    <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+                        <div className="flex items-center justify-between gap-4">
+                            {/* Horizontal Scroll Tabs */}
+                            <div className="overflow-x-auto hide-scrollbar flex-1">
+                                <TabsList className="bg-transparent p-0 h-10 flex w-max gap-6">
+                                    <TabsTrigger value="overview" className="data-[state=active]:border-b-2 data-[state=active]:border-teal-600 data-[state=active]:text-teal-600 rounded-none px-2 text-xs font-bold uppercase tracking-wider h-full transition-all bg-transparent shadow-none">Overview</TabsTrigger>
+                                    <TabsTrigger value="details" className="data-[state=active]:border-b-2 data-[state=active]:border-teal-600 data-[state=active]:text-teal-600 rounded-none px-2 text-xs font-bold uppercase tracking-wider h-full transition-all bg-transparent shadow-none">Account details</TabsTrigger>
+                                    <TabsTrigger value="requests" className="data-[state=active]:border-b-2 data-[state=active]:border-teal-600 data-[state=active]:text-teal-600 rounded-none px-2 text-xs font-bold uppercase tracking-wider h-full transition-all bg-transparent shadow-none">Request/Complaints</TabsTrigger>
+                                    <TabsTrigger value="appointments" className="data-[state=active]:border-b-2 data-[state=active]:border-teal-600 data-[state=active]:text-teal-600 rounded-none px-2 text-xs font-bold uppercase tracking-wider h-full transition-all bg-transparent shadow-none">Appointments</TabsTrigger>
+                                    <TabsTrigger value="alarm" className="data-[state=active]:border-b-2 data-[state=active]:border-teal-600 data-[state=active]:text-teal-600 rounded-none px-2 text-xs font-bold uppercase tracking-wider h-full transition-all bg-transparent shadow-none">Alarm</TabsTrigger>
+                                    <TabsTrigger value="paybill" className="data-[state=active]:border-b-2 data-[state=active]:border-teal-600 data-[state=active]:text-teal-600 rounded-none px-2 text-xs font-bold uppercase tracking-wider h-full transition-all bg-transparent shadow-none">View & Pay Your Bill</TabsTrigger>
+                                </TabsList>
+                            </div>
+                            
+                            <Button 
+                                variant="destructive" 
+                                onClick={handleEndSession} 
+                                className="bg-[#EF4444] hover:bg-red-600 text-white font-black text-[10px] tracking-widest px-6 h-9 rounded-lg uppercase shadow-lg shadow-red-100 transition-all active:scale-95 shrink-0"
+                            >
+                                END SESSION & SEARCH NEW
+                            </Button>
+                        </div>
 
-            {/* Account Header / Tab Bar / End Session Button */}
-            <div className="bg-white p-2 rounded-2xl shadow-sm border border-slate-100 flex flex-col xl:flex-row items-stretch xl:items-center gap-4">
-                {/* Tabs with Horizontal Scroll */}
-                <Tabs defaultValue="overview" className="flex-1 w-full min-w-0">
-                    <div className="flex items-center justify-between flex-wrap xl:flex-nowrap gap-4">
-                        <div className="overflow-x-auto pb-1 -mb-1 hide-scrollbar w-full xl:w-auto">
-                            <TabsList className="bg-slate-50 p-1 h-12 rounded-xl flex w-fit min-w-full xl:min-w-0">
-                                <TabsTrigger value="overview" className="data-[state=active]:bg-white data-[state=active]:text-teal-900 data-[state=active]:shadow-sm rounded-lg px-8 text-xs font-bold uppercase tracking-widest h-10 transition-all">Overview</TabsTrigger>
-                                <TabsTrigger value="details" className="data-[state=active]:bg-white data-[state=active]:text-teal-900 data-[state=active]:shadow-sm rounded-lg px-8 text-xs font-bold uppercase tracking-widest h-10 transition-all">Account details</TabsTrigger>
-                                <TabsTrigger value="requests" className="data-[state=active]:bg-white data-[state=active]:text-teal-900 data-[state=active]:shadow-sm rounded-lg px-8 text-xs font-bold uppercase tracking-widest h-10 transition-all">Request/Complaints</TabsTrigger>
-                                <TabsTrigger value="appointments" className="data-[state=active]:bg-white data-[state=active]:text-teal-900 data-[state=active]:shadow-sm rounded-lg px-8 text-xs font-bold uppercase tracking-widest h-10 transition-all" disabled>Appointments</TabsTrigger>
-                                <TabsTrigger value="alarm" className="data-[state=active]:bg-white data-[state=active]:text-teal-900 data-[state=active]:shadow-sm rounded-lg px-8 text-xs font-bold uppercase tracking-widest h-10 transition-all" disabled>Alarm</TabsTrigger>
-                                <TabsTrigger value="paybill" className="data-[state=active]:bg-white data-[state=active]:text-teal-900 data-[state=active]:shadow-sm rounded-lg px-8 text-xs font-bold uppercase tracking-widest h-10 transition-all" disabled>View & Pay Your Bill</TabsTrigger>
-                            </TabsList>
+
+                        <div className="mt-6 px-0 pb-10">
+                            <TabsContent value="overview" className="focus-visible:outline-none m-0">
+                                <DashboardOverview 
+                                    accountNumber={accountNumber}
+                                    legacyAccountNumber={accountData.LegacyId}
+                                    metrics={metrics}
+                                    outstandingByGroup={outstandingByGroup}
+                                    consumptionData={consumptionData}
+                                    recentTransactions={paymentHistory}
+                                    myRequests={requestList}
+                                    requestSummary={requestSummary}
+                                    smrData={smrData}
+                                    changeServiceDetails={changeServiceDetails}
+                                    ccbStatus={ccbStatus}
+                                    menuData={menuData}
+                                    onSwitchTab={setActiveTab}
+                                    onIntervalChange={handleIntervalChange}
+                                    activeInterval={activeConsumptionInterval}
+                                    onRequestIntervalChange={async (interval) => {
+                                        if (!accountData?.AccountNumber) return
+                                        const dash = await branchOpsService.getMyRequestDashboard(accountData.AccountNumber, interval)
+                                        const summaries = Array.isArray(dash) ? dash[0] : (dash || {})
+                                        setRequestSummary({
+                                            Pending: summaries?.Pending || 0,
+                                            Completed: summaries?.Completed || 0,
+                                            Cancelled: summaries?.Cancelled || 0,
+                                            TotalCount: summaries?.TotalCount || 0
+                                        })
+                                    }}
+                                />
+                            </TabsContent>
+                            <TabsContent value="details" className="focus-visible:outline-none">
+                                <div className="space-y-6">
+                                    <AccountDetailsTable 
+                                        data={[{
+                                            AccountNumber: accountNumber, 
+                                            LegacyNumber: accountData.LegacyId || accountNumber, 
+                                            ServiceType: accountData.AccountType || accountData.ServiceType || "Water", 
+                                            ServiceAgreement: accountData.connectionStatus === "CONNECTED" ? "Active" : "Inactive", 
+                                            ConnectionStatus: accountData.connectionStatus || "NOT CONNECTED",
+                                            DisconnectionReason: "--" 
+                                          }]}
+                                        meterDataMap={{
+                                            [String(accountData.AccountNumber)]: smrData.map(item => {
+                                                const date = item.LastReadingDate ? new Date(item.LastReadingDate) : null
+                                                const isValidDate = date && !isNaN(date.getTime())
+                                                
+                                                return {
+                                                    MeterNumber: item.MeterNo || item.SerialNo || item.DeviceNo || "--",
+                                                    MeterStatus: item.Status || (item.ReadingType?.toLowerCase().includes('final') ? "Inactive" : "Active"),
+                                                    MeterReplacementHistory: item.MeterReplacementHistory || (item.ReadingType || "--"),
+                                                    DateTime: isValidDate ? format(date!, 'dd-MM-yyyy') : (item.LastReadingDate || "--")
+                                                }
+                                            })
+                                        }}
+                                    />
+                                </div>
+                            </TabsContent>
+
+                            <TabsContent value="appointments" className="focus-visible:outline-none">
+                                <Card className="p-8 shadow-sm border-none bg-white rounded-2xl">
+                                    <h3 className="text-xl font-black uppercase tracking-tighter text-teal-900 mb-6">Appointments</h3>
+                                    <DataTable 
+                                        columns={appointmentColumns} 
+                                        data={appointmentList} 
+                                    />
+                                </Card>
+                            </TabsContent>
+
+                            <TabsContent value="alarm" className="focus-visible:outline-none">
+                                <Card className="p-8 shadow-sm border-none bg-white rounded-2xl">
+                                    <h3 className="text-xl font-black uppercase tracking-tighter text-teal-900 mb-6">Alarms</h3>
+                                    <DataTable 
+                                        columns={alarmColumns} 
+                                        data={alarmList} 
+                                    />
+                                </Card>
+                            </TabsContent>
+
+                            <TabsContent value="requests" className="focus-visible:outline-none">
+                                <Card className="p-8 shadow-sm border-none bg-white rounded-2xl">
+                                    <div className="flex justify-between items-center mb-8">
+                                        <div className="flex items-center gap-6">
+                                            <h3 className="text-xl font-black uppercase tracking-tighter text-teal-900">Request & Complaints</h3>
+                                        </div>
+                                    </div>
+                                        
+                                    <div className="rounded-xl border border-slate-100 overflow-hidden bg-white">
+                                        <div className="overflow-x-auto no-scrollbar pb-2">
+                                            <DataTable 
+                                                columns={requestColumns}
+                                                data={filteredRequests}
+                                                hidePagination={false}
+                                            />
+                                        </div>
+                                    </div>
+                                </Card>
+                            </TabsContent>
+
+                            <TabsContent value="paybill" className="focus-visible:outline-none">
+                                <Card className="p-8 shadow-sm border-none bg-white rounded-2xl">
+                                    <h3 className="text-xl font-black mb-6 uppercase tracking-tighter text-teal-900">Recent Transactions</h3>
+                                    
+                                    {/* Date Filters as per Image 1 */}
+                                    <div className="bg-slate-50 p-6 rounded-xl mb-8 border border-slate-100">
+                                        <div className="flex flex-wrap gap-6 items-end">
+                                            <div className="flex-1 min-w-[200px] space-y-2">
+                                                <Label className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Account Number</Label>
+                                                <p className="text-sm font-black text-slate-800 bg-white border border-slate-200 h-10 flex items-center px-4 rounded-md">{accountData.AccountNumber || accountNumber}</p>
+                                            </div>
+                                            <div className="flex-1 min-w-[200px] space-y-2">
+                                                <Label className="text-[10px] font-black text-gray-400 uppercase tracking-widest">From Date</Label>
+                                                <Input 
+                                                    type="date" 
+                                                    value={paymentFilters.fromDate}
+                                                    onChange={(e) => setPaymentFilters(prev => ({ ...prev, fromDate: e.target.value }))}
+                                                    className="bg-white border-slate-200 h-10" 
+                                                />
+                                            </div>
+                                            <div className="flex-1 min-w-[200px] space-y-2">
+                                                <Label className="text-[10px] font-black text-gray-400 uppercase tracking-widest">To Date</Label>
+                                                <Input 
+                                                    type="date" 
+                                                    value={paymentFilters.toDate}
+                                                    onChange={(e) => setPaymentFilters(prev => ({ ...prev, toDate: e.target.value }))}
+                                                    className="bg-white border-slate-200 h-10" 
+                                                />
+                                            </div>
+                                            <div className="flex gap-2 min-w-[200px]">
+                                                <Button 
+                                                    onClick={handlePaymentFilterSearch}
+                                                    className="flex-1 bg-teal-900 hover:bg-teal-800 font-bold h-10"
+                                                >
+                                                    Search
+                                                </Button>
+                                                <Button 
+                                                    variant="outline"
+                                                    onClick={handlePaymentFilterReset}
+                                                    className="flex-1 font-bold h-10"
+                                                >
+                                                    Reset
+                                                </Button>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <DataTable 
+                                        columns={transactionColumns} 
+                                        data={paymentHistory} 
+                                    />
+                                </Card>
+                            </TabsContent>
                         </div>
                         
-                        {/* Integrated End Session Button */}
-                        <Button 
-                            variant="destructive" 
-                            onClick={handleEndSession} 
-                            className="bg-[#EF4444] hover:bg-red-600 text-white font-black text-[10px] tracking-[0.2em] px-8 h-12 rounded-xl shrink-0 uppercase shadow-lg shadow-red-100 transition-all active:scale-95"
-                        >
-                            END SESSION & SEARCH NEW
-                        </Button>
-                    </div>
-
-                    <div className="mt-10">
-                        <TabsContent value="overview" className="focus-visible:outline-none">
-                            <DashboardOverview 
-                                metrics={metrics}
-                                outstandingByGroup={outstandingByGroup}
-                                consumptionData={consumptionData}
-                                recentTransactions={paymentHistory}
-                                myRequests={requestList}
-                                changeServiceDetails={changeServiceDetails}
-                            />
-                        </TabsContent>
-
-                        <TabsContent value="details" className="focus-visible:outline-none">
-                            <Card className="p-10 shadow-sm border-none bg-white rounded-3xl">
-                                <h3 className="text-2xl font-black mb-10 flex items-center gap-3 text-teal-900">
-                                    <User className="h-7 w-7" /> Profile Information
-                                </h3>
-                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-12">
-                                    <div className="space-y-2"><Label className="text-gray-400 text-[10px] font-black uppercase tracking-widest">Account ID</Label><p className="form-input-val font-black text-slate-800 text-lg border-b pb-2">{accountData.AccountNumber || "-"}</p></div>
-                                    <div className="space-y-2"><Label className="text-gray-400 text-[10px] font-black uppercase tracking-widest">Legacy Reference</Label><p className="form-input-val font-black text-slate-800 text-lg border-b pb-2">{accountData.LegacyId || "-"}</p></div>
-                                    <div className="space-y-2"><Label className="text-gray-400 text-[10px] font-black uppercase tracking-widest">Billing Cycle</Label><p className="form-input-val font-black text-slate-800 text-lg border-b pb-2">{accountData.ServiceType || "POSTPAID"}</p></div>
-                                    
-                                    {accountData.customerInfo && (
-                                        <>
-                                            <div className="space-y-2"><Label className="text-gray-400 text-[10px] font-black uppercase tracking-widest">Subscriber Name</Label><p className="form-input-val font-black text-slate-800 text-lg border-b pb-2">{accountData.customerInfo.tenantNameEn ? decryptString(accountData.customerInfo.tenantNameEn) : "--"}</p></div>
-                                            <div className="space-y-2"><Label className="text-gray-400 text-[10px] font-black uppercase tracking-widest">Electronic Mail</Label><p className="form-input-val font-black text-slate-800 text-lg border-b pb-2 lowercase">{accountData.customerInfo.emailId ? decryptString(accountData.customerInfo.emailId) : "--"}</p></div>
-                                            <div className="space-y-2"><Label className="text-gray-400 text-[10px] font-black uppercase tracking-widest">GSM Protocol</Label><p className="form-input-val font-black text-slate-800 text-lg border-b pb-2">{accountData.customerInfo.gsmNumber ? decryptString(accountData.customerInfo.gsmNumber) : "--"}</p></div>
-                                        </>
-                                    )}
-                                </div>
-                            </Card>
-                        </TabsContent>
-
-                        <TabsContent value="requests" className="focus-visible:outline-none">
-                            <Card className="p-10 shadow-sm border-none bg-white rounded-3xl">
-                                <div className="flex justify-between items-center mb-10">
-                                    <h3 className="text-2xl font-black flex items-center gap-3 text-teal-900 uppercase tracking-tighter">
-                                        <FileText className="h-7 w-7" /> Support Tickets
-                                    </h3>
-                                    <Button className="bg-teal-900 hover:bg-teal-800 font-black text-[10px] tracking-widest shadow-lg shadow-teal-50 px-8 py-6 rounded-2xl">CREATE TICKET</Button>
-                                </div>
-                                <div className="rounded-2xl border border-slate-100 overflow-hidden shadow-sm">
-                                    <Table>
-                                        <TableHeader className="bg-slate-900">
-                                            <TableRow className="hover:bg-slate-900 border-none">
-                                                <TableHead className="text-white font-black h-14 uppercase text-[10px] tracking-widest text-center">Reference</TableHead>
-                                                <TableHead className="text-white font-black h-14 uppercase text-[10px] tracking-widest">Service Classification</TableHead>
-                                                <TableHead className="text-white font-black h-14 uppercase text-[10px] tracking-widest">Incident Date</TableHead>
-                                                <TableHead className="text-white font-black h-14 uppercase text-[10px] tracking-widest text-center">Status</TableHead>
-                                            </TableRow>
-                                        </TableHeader>
-                                        <TableBody className="bg-white">
-                                            {requestList.length > 0 ? (
-                                                requestList.map((req: any, index: number) => (
-                                                    <TableRow key={index} className="hover:bg-slate-50 border-b-slate-50 h-16 transition-colors">
-                                                        <TableCell className="font-bold text-teal-900 text-center">{req.CompletionRequestID || req["Ref.Number"]}</TableCell>
-                                                        <TableCell className="font-medium text-slate-700">{req.RequestType || req["service Name"]}</TableCell>
-                                                        <TableCell className="text-slate-500 text-sm font-medium">{req.RequestDate || req["Updated Date"]}</TableCell>
-                                                        <TableCell className="text-center">
-                                                            <span className={`px-5 py-2 rounded-xl text-[10px] font-black uppercase shadow-sm ${
-                                                                (req.RequestStatus || req.Status) === 'Completed' ? 'bg-green-100 text-green-700 border border-green-200' : 'bg-blue-100 text-blue-700 border border-blue-200'
-                                                            }`}>
-                                                                {req.RequestStatus || req.Status}
-                                                            </span>
-                                                        </TableCell>
-                                                    </TableRow>
-                                                ))
-                                            ) : (
-                                                <TableRow>
-                                                    <TableCell colSpan={4} className="text-center py-20 text-slate-300 font-black tracking-[0.4em] bg-white border-none uppercase text-xs">NO SUPPORT TICKET HISTORY</TableCell>
-                                                </TableRow>
-                                            )}
-                                        </TableBody>
-                                    </Table>
-                                </div>
-                            </Card>
-                        </TabsContent>
-                    </div>
-                </Tabs>
+                        {/* MOBILE SIDEBAR - Moved to bottom as per requirement */}
+                        <div className="lg:hidden px-6 pb-10">
+                             <DashboardSidebar accountData={accountData} />
+                        </div>
+                    </Tabs>
+                </div>
             </div>
         </div>
       </main>
 
-      {/* CUSTOM CSS FOR HIDE SCROLLBAR */}
-      <style jsx global>{`
-        .hide-scrollbar::-webkit-scrollbar {
-          display: none;
-        }
-        .hide-scrollbar {
-          -ms-overflow-style: none;
-          scrollbar-width: none;
-        }
-      `}</style>
+
     </div>
   )
 }

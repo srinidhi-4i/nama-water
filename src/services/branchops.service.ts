@@ -85,7 +85,7 @@ export const branchOpsService = {
             console.log(`validateUser Payload [${type}]:`, payload)
 
             const response = await api.post<any>(
-                '/api/BranchOfficer/GetBranchOfficerCivilID',
+                '/BranchOfficer/GetBranchOfficerCivilID',
                 formData
             )
 
@@ -146,7 +146,7 @@ export const branchOpsService = {
             formData.append('islegacy', '0')
 
             const response = await api.post<any>(
-                '/api/UserActionWeb/GetUserDetailsByUserID',
+                '/UserActionWeb/GetUserDetailsByUserID',
                 formData
             )
 
@@ -181,7 +181,7 @@ export const branchOpsService = {
             formData.append('islegacy', '0')
 
             const response = await api.post<any>(
-                '/api/UserActionWeb/GetROPMOCSyncData',
+                '/UserActionWeb/GetROPMOCSyncData',
                 formData
             )
 
@@ -204,7 +204,7 @@ export const branchOpsService = {
             formData.append('islegacy', '0')
 
             const response = await api.post<any>(
-                '/api/BranchOfficer/GetROPUserDetails',
+                '/BranchOfficer/GetROPUserDetails',
                 formData
             )
 
@@ -271,16 +271,28 @@ export const branchOpsService = {
     getCustomerInfo: async (accountNumber: string, isLegacy: boolean = false): Promise<any> => {
         try {
             const formData = new FormData()
-            // Try common variations for the key name as Nama APIs are often inconsistent
-            formData.append('ccountNumber', accountNumber)
+            // Try lowercase 'accountNumber' - backend might be case-sensitive
+            formData.append('accountNumber', accountNumber)
             formData.append('islegacy', isLegacy ? '1' : '0')
             formData.append('sourceType', 'Web')
             formData.append('langCode', 'EN')
 
+            // Log what we're sending
+            console.log('GetCustomerInfoService Request:', {
+                accountNumber: accountNumber,
+                islegacy: isLegacy ? '1' : '0',
+                sourceType: 'Web',
+                langCode: 'EN',
+                endpoint: '/api/CommonService/GetCustomerInfoService'
+            })
+
             const response = await api.post<any>(
-                '/CommonService/GetCustomerInfoService',
-                formData
+                '/api/CommonService/GetCustomerInfoService',
+                formData,
+                { timeout: 60000 }
             )
+
+            console.log('GetCustomerInfoService Raw Response:', response.data)
 
             const data = response.data.Data || response.data
 
@@ -291,6 +303,7 @@ export const branchOpsService = {
 
             return null
         } catch (error) {
+            console.error('GetCustomerInfoService error:', error)
             return null
         }
     },
@@ -328,13 +341,13 @@ export const branchOpsService = {
     getTotalOutstandingAmount: async (accountNumber: string): Promise<string> => {
         try {
             const formData = new FormData()
-            formData.append('AccountNumber', accountNumber)
-            formData.append('sourceType', 'Web')
+            formData.append('accountNum', accountNumber)
             formData.append('langCode', 'EN')
 
-            const response = await api.post<any>('/AccountDetails/GetTotalOutstandingAccSearch', formData)
+            // Use /api and 60s timeout
+            const response = await api.post<any>('/api/AccountDetails/GetTotalOutstandingAccSearch', formData, { timeout: 60000 })
             const data = response.data.Data
-            // STRICT SAFETY: Only return data if it's a string/number. If object/missing, return "0.000"
+            // STRICT SAFETY: Only return data if it's a string/number. 
             if (typeof data === 'string' || typeof data === 'number') {
                 return String(data)
             }
@@ -345,43 +358,44 @@ export const branchOpsService = {
     },
 
     // Get My Request Dashboard Data (Summary)
-    getMyRequestDashboard: async (accountNumber: string): Promise<any> => {
+    getMyRequestDashboard: async (accountNumber: string, option: string = ''): Promise<any> => {
         try {
             const formData = new FormData()
-            formData.append('AccountNum', accountNumber)
-            formData.append('Option', '')
+            formData.append('accountNum', accountNumber)
+            // UAT expects Option: "" (All Time), "Month", or "Week"
+            formData.append('Option', option === 'all' ? '' : (option === 'month' ? 'Month' : (option === 'week' ? 'Week' : option)))
             formData.append('sourceType', 'Web')
             formData.append('langCode', 'EN')
 
-            const response = await api.post<any>('/MyRequest/GetDashboradMyRequestAccSearch', formData)
-            // STRICT SAFETY: Ensure we return an array or object, but handle the case where Data is missing
+            // Use /api and 60s timeout for slow UAT
+            const response = await api.post<any>('/api/MyRequest/GetDashboradMyRequestAccSearch', formData, { timeout: 60000 })
             const data = response.data.Data
             if (data && Array.isArray(data) && data.length > 0) {
                 return data
             }
-            // If it's a single object (not array), wrap or return null depending on usage
-            // The usage in dashboard checks requests[0], so we should return an array if possible
             return []
         } catch (error) {
-            return null
+            console.error('GetDashboradMyRequestAccSearch error:', error)
+            return []
         }
     },
 
     // Get Payment Transaction Count / History
-    getPaymentHistory: async (accountNumber: string): Promise<any[]> => {
+    getPaymentHistory: async (accountNumber: string, fromDate: string = '', toDate: string = ''): Promise<any[]> => {
         try {
             const formData = new FormData()
-            formData.append('AccountNum', accountNumber)
-            formData.append('FromDate', '')
-            formData.append('ToDate', '')
-            formData.append('sourceType', 'Web')
+            formData.append('accountNum', accountNumber)
+            formData.append('FromDate', fromDate)
+            formData.append('ToDate', toDate)
             formData.append('langCode', 'EN')
 
-            const response = await api.post<any>('/AccountDetails/GetPaymentDashboardHistoryAccSearch', formData)
+            // Use /api and 60s timeout
+            const response = await api.post<any>('/api/AccountDetails/GetPaymentDashboardHistoryAccSearch', formData, { timeout: 60000 })
             const data = response.data.Data
             if (Array.isArray(data)) return data
             return []
         } catch (error) {
+            console.error('GetPaymentDashboardHistoryAccSearch error:', error)
             return []
         }
     },
@@ -412,7 +426,8 @@ export const branchOpsService = {
             formData.append('End_Date', formatDate(today))
 
 
-            const response = await api.post<any>('/WaterLeakAlarm/GetAMRAlertHistoryAccSearch', formData)
+            // Use /api and 60s timeout for slow UAT
+            const response = await api.post<any>('/api/WaterLeakAlarm/GetAMRAlertHistoryAccSearch', formData, { timeout: 60000 })
             const data = response.data.Data
             if (Array.isArray(data)) return data
             return []
@@ -422,30 +437,55 @@ export const branchOpsService = {
     },
 
     // Get My Request List
-    getMyRequestList: async (accountNumber: string): Promise<any[]> => {
-        try {
-            const formData = new FormData()
-            formData.append('accountNum', accountNumber)
-            formData.append("langCode", "EN")
-            formData.append("ServiceNo", "null")
-            formData.append("RequestedDate", "null")
-            formData.append("ServiceName", "null")
-            formData.append("ToDate", "null")
+    getMyRequestList: async (accountNumber: string, legacyId?: string): Promise<any[]> => {
+        const accs = [accountNumber]
+        if (legacyId && legacyId !== accountNumber) accs.push(legacyId)
 
-            const response = await api.post<any>('/MyRequest/GetMyRequestAccSearch', formData)
-            const data = response.data.Data
-            if (Array.isArray(data)) return data
-            return []
-        } catch (error) {
-            return []
+        // Only try the most reliable UAT endpoints
+        const endpoints = [
+            '/api/MyRequest/GetMyRequestAccSearch',
+            '/api/MyRequest/GetMyRequestListAccSearch',
+            '/api/MyRequest/GetMyRequest_AccSearch'
+        ]
+
+        for (const acc of accs) {
+            for (const url of endpoints) {
+                try {
+                    const formData = new FormData()
+                    formData.append('accountNum', acc)
+                    formData.append('langCode', 'EN')
+
+                    // Use empty strings instead of "null" as strings to avoid UAT rejections/crashes
+                    formData.append("ServiceNo", "")
+                    formData.append("RequestedDate", "")
+                    formData.append("ServiceName", "")
+                    formData.append("ToDate", "")
+
+                    console.log(`[getMyRequestList] Trying ${url} with accountNum=${acc}`)
+                    // Increased timeout to 60s for UAT search
+                    const response = await api.post<any>(url, formData, { timeout: 60000 })
+                    const data = response.data?.Data || response.data
+
+                    if (data && (Array.isArray(data) && data.length > 0)) {
+                        return data
+                    }
+                    if (data && data.Table && Array.isArray(data.Table) && data.Table.length > 0) {
+                        return data.Table
+                    }
+                } catch (e: any) {
+                    console.error(`[getMyRequestList] Failed ${url}:`, e.message)
+                }
+            }
         }
+
+        return []
     },
 
     // Get Appointment List
     getAppointmentList: async (accountNumber: string): Promise<any[]> => {
         try {
             const formData = new FormData()
-            formData.append('accountNum', accountNumber)
+            formData.append('accountNumber', encryptString(accountNumber))
             // Reference doesn't show params clearly in view_file but typically accountNum
             const response = await api.post<any>('/BranchOfficer/GetAppointmentDetailsForAccount', formData)
             const data = response.data.Data
@@ -454,10 +494,10 @@ export const branchOpsService = {
             }
             return []
         } catch (error) {
+            console.error('GetAppointmentDetailsForAccount error:', error)
             return []
         }
     },
-
 
     // Get Change Service Type Details
     getChangeServiceTypeDet: async (accountNumber: string): Promise<any> => {
@@ -467,6 +507,7 @@ export const branchOpsService = {
             const response = await api.post<any>('/BranchOfficer/GetChangeServiceTypeDet', formData)
             return response.data.Data || response.data
         } catch (error) {
+            console.error('GetChangeServiceTypeDet error:', error)
             return null
         }
     },
@@ -476,7 +517,35 @@ export const branchOpsService = {
         try {
             const formData = new FormData()
 
-            const response = await api.post<any>('/MyRequest/GetServiceNamesAccSearch', formData)
+            // Use /api and 60s timeout
+            const response = await api.post<any>('/api/MyRequest/GetServiceNamesAccSearch', formData, { timeout: 60000 })
+            return response.data.Data || response.data
+        } catch (error) {
+            return null
+        }
+    },
+
+    // Get Menu Data
+    getMenudata: async (): Promise<any[]> => {
+        try {
+            const formData = new FormData()
+            formData.append('sourceType', 'Web')
+            formData.append('langCode', 'EN')
+            const response = await api.post<any>('/Menu/GetMenudata', formData)
+            const data = response.data.Data || response.data
+            return Array.isArray(data) ? data : []
+        } catch (error) {
+            return []
+        }
+    },
+
+    // Get CCB Connection Status
+    getCCBConnectionStatus: async (accountNumber: string): Promise<any> => {
+        try {
+            const formData = new FormData()
+            formData.append('AccountNumber', accountNumber)
+            // Use /api and 60s timeout
+            const response = await api.post<any>('/api/Account/GetCCBConnectionStatus', formData, { timeout: 60000 })
             return response.data.Data || response.data
         } catch (error) {
             return null
@@ -484,16 +553,23 @@ export const branchOpsService = {
     },
 
     // Get Outstanding By Group
-    getOutstandingByGroup: async (accountNumber: string): Promise<any> => {
+    getOutstandingByGroup: async (accountNumber: string): Promise<any[]> => {
         try {
             const formData = new FormData()
+            // UAT often uses 'accountNum' (lowercase n) for Group Outstanding
             formData.append('accountNum', accountNumber)
-            const response = await api.post<any>('/AccountDetails/GetOutstandingByGroupAccSearch', formData)
+            formData.append('sourceType', 'Web')
+            formData.append('langCode', 'EN')
+
+            // Increased timeout to 60s because UAT takes >30s for this call
+            // Use /api prefix to hit local proxy route
+            const response = await api.post<any>('/api/AccountDetails/GetOutstandingByGroupAccSearch', formData, { timeout: 60000 })
             const data = response.data.Data
             if (Array.isArray(data)) return data
             return []
-        } catch (error) {
-            return null
+        } catch (error: any) {
+            console.error('GetOutstandingByGroupAccSearch error:', error?.message || error)
+            return []
         }
     },
 
@@ -501,23 +577,85 @@ export const branchOpsService = {
     getConsumptionData: async (accountNumber: string): Promise<any> => {
         try {
             const formData = new FormData()
-            formData.append('AccountNumber', accountNumber)
-            const response = await api.post<any>('/AccountDetails/GetActConsumptionDataMonthlyAccSearch', formData)
+            formData.append('accountNum', accountNumber)
+            // Use /api prefix to hit local proxy route for better header forwarding 
+            // and increase timeout for slow UAT
+            const response = await api.post<any>('/api/AccountDetails/GetActConsumptionDataMonthlyAccSearch', formData, { timeout: 60000 })
             const data = response.data.Data
             if (Array.isArray(data)) return data
             return []
         } catch (error) {
-            return null
+            return []
         }
+    },
+
+    // Get Consumption Data (Daily)
+    getConsumptionDataDaily: async (accountNumber: string): Promise<any[]> => {
+        const endpoints = [
+            '/AccountDetails/GetActConsumptionDataDailyAccSearch',
+            '/AccountDetails/GetConsumptionDataDailyAccSearch'
+        ]
+
+        for (const url of endpoints) {
+            try {
+                const formData = new FormData()
+                formData.append('accountNum', accountNumber)
+                // Hits local proxy and use longer timeout for slow UAT
+                const apiUrl = url.startsWith('/api') ? url : `/api${url}`
+                const response = await api.post<any>(apiUrl, formData, { timeout: 60000 })
+                if (response.data && Array.isArray(response.data.Data)) return response.data.Data
+            } catch (error) { }
+        }
+        return []
+    },
+
+    // Get SMR History (Last Meter Reading)
+    getSMRHistory: async (accountNumbers: string[]): Promise<any[]> => {
+        try {
+            const formData = new FormData()
+            // UAT expects CSV of account IDs
+            formData.append('AccountNo', accountNumbers.join(','))
+            // Use /api and 60s timeout
+            const response = await api.post<any>('/api/AccountDetails/GetSMRHistory', formData, { timeout: 60000 })
+            const data = response.data.Data
+            return Array.isArray(data) ? data : []
+        } catch (error) {
+            console.error('GetSMRHistory error:', error)
+            return []
+        }
+    },
+
+    // Get Consumption Data (Hourly)
+    getConsumptionDataHourly: async (accountNumber: string): Promise<any[]> => {
+        const endpoints = [
+            '/AccountDetails/GetActConsumptionDataHourlyAccSearch',
+            '/AccountDetails/GetConsumptionDataHourlyAccSearch'
+        ]
+
+        for (const url of endpoints) {
+            try {
+                const formData = new FormData()
+                formData.append('accountNum', accountNumber)
+                // Hits local proxy and use longer timeout for slow UAT
+                const apiUrl = url.startsWith('/api') ? url : `/api${url}`
+                const response = await api.post<any>(apiUrl, formData, { timeout: 60000 })
+                if (response.data && Array.isArray(response.data.Data)) return response.data.Data
+            } catch (error) { }
+        }
+        return []
     },
 
     // View Bill Payment
     viewBillPayment: async (accountNumber: string): Promise<any> => {
         try {
             const formData = new FormData()
-            formData.append('AccountNumber', encryptString(accountNumber))
-            formData.append('Mn', encryptString("12")) // Hardcoded as per reference
-            const response = await api.post<any>('/AccountDetails/ViewBillPayment_V1', formData)
+            formData.append('accountNum', accountNumber)
+            const currentMonth = new Date().getMonth() + 1
+            formData.append('Mn', encryptString(String(currentMonth)))
+            formData.append('sourceType', 'Web')
+            formData.append('langCode', 'EN')
+            // Use /api and 60s timeout
+            const response = await api.post<any>('/api/AccountDetails/ViewBillPayment_V1', formData, { timeout: 60000 })
             return response.data.Data || response.data
         } catch (error) {
             return null
@@ -527,12 +665,12 @@ export const branchOpsService = {
     // Get Account Payment Details (Aggregated)
     getAccountPaymentDetails: async (accountNumber: string): Promise<AccountPaymentDetails | null> => {
         try {
-            // Check CCB Status first as it might be needed
-            await branchOpsService.getCCBStatus(accountNumber)
-
             const formData = new FormData()
-            formData.append('AccountNumber', encryptString(accountNumber))
-            formData.append('Mn', encryptString("12"))
+            formData.append('accountNum', accountNumber)
+            const currentMonth = new Date().getMonth() + 1
+            formData.append('Mn', encryptString(String(currentMonth)))
+            formData.append('sourceType', 'Web')
+            formData.append('langCode', 'EN')
 
             const response = await api.post<any>('/AccountDetails/ViewBillPayment_V1', formData)
             let responseData = response.data.Data || response.data
@@ -720,15 +858,13 @@ export const branchOpsService = {
     // Get CCB Server Status
     getCCBStatus: async (accountNumber?: string): Promise<any> => {
         try {
-            // Based on error logs, the exact URI might be Case Sensitive or slightly different.
-            // Using the one specified in original requirements: /PrePaid/GetCCBSServertatus (with 't')
             const formData = new FormData()
             if (accountNumber) {
-                formData.append('accountNumber', encryptString(accountNumber))
+                formData.append('accountNum', accountNumber)
             }
             formData.append('sourceType', 'Web')
             formData.append('langCode', 'EN')
-            const response = await api.post<any>('/PrePaid/GetCCBSServertatus', formData)
+            const response = await api.post<any>('/api/PrePaid/GetCCBSServertatus', formData, { timeout: 60000 })
             return response.data.Data || response.data
         } catch (error) {
             return null
@@ -738,11 +874,10 @@ export const branchOpsService = {
     getPrepaidOutstanding: async (accountNumber: string): Promise<any> => {
         try {
             const formData = new FormData()
-            formData.append('actNum', encryptString(accountNumber))
-            const response = await api.post<any>('/PrePaid/GetOutstandingForPrepaid', formData)
+            formData.append('accountNum', accountNumber)
+            const response = await api.post<any>('/api/PrePaid/GetOutstandingForPrepaid', formData, { timeout: 60000 })
             return response.data.Data || response.data
         } catch (error) {
-            // Silently return null for UAT errors
             return null
         }
     },
@@ -750,11 +885,10 @@ export const branchOpsService = {
     getInstallmentOutstanding: async (accountNumber: string): Promise<any> => {
         try {
             const formData = new FormData()
-            formData.append('accountNum', encryptString(accountNumber))
-            const response = await api.post<any>('/CommonService/GetInstallmentOutstandingAmount', formData)
+            formData.append('accountNum', accountNumber)
+            const response = await api.post<any>('/api/CommonService/GetInstallmentOutstandingAmount', formData, { timeout: 60000 })
             return response.data.Data || response.data
         } catch (error) {
-            // Silently return null for UAT errors
             return null
         }
     },
@@ -764,19 +898,21 @@ export const branchOpsService = {
         try {
             const formData = new FormData()
             formData.append('AccountId', encryptString(accountNumber))
-            const response = await api.post<any>('/PrePaid/GetTopUp', formData)
+            // Use /api and 60s timeout
+            const response = await api.post<any>('/api/PrePaid/GetTopUp', formData, { timeout: 60000 })
             return response.data.Data || response.data
         } catch (error) {
             return null
         }
     },
 
-    // Check Transaction Status (e.g. after Online Payment)
+    // Check Transaction Status
     checkTransactionStatus: async (transactionId: string): Promise<any> => {
         try {
             const formData = new FormData()
             formData.append('TransactionID', transactionId)
-            const response = await api.post<any>('/PrePaid/CheckTransactionStatus', formData)
+            // Use /api and 60s timeout
+            const response = await api.post<any>('/api/PrePaid/CheckTransactionStatus', formData, { timeout: 60000 })
             return response.data.Data || response.data
         } catch (error) {
             return null
@@ -790,10 +926,7 @@ export const branchOpsService = {
             formData.append('GSMNumber', mobile)
             formData.append('sourceType', 'Web')
             formData.append('langCode', 'EN')
-            formData.append('islegacy', '0')
-
-            const response = await api.post<any>('/api/BranchOfficer/GetOtpLog', formData)
-
+            const response = await api.post<any>('/BranchOfficer/GetOtpLog', formData)
             const data = response.data.Data || response.data || []
             const logData = Array.isArray(data) ? data : []
 
@@ -803,16 +936,11 @@ export const branchOpsService = {
                     try {
                         const date = new Date(formattedDate)
                         formattedDate = date.toLocaleString('en-GB', {
-                            day: '2-digit',
-                            month: '2-digit',
-                            year: 'numeric',
-                            hour: '2-digit',
-                            minute: '2-digit',
-                            hour12: true
+                            day: '2-digit', month: '2-digit', year: 'numeric',
+                            hour: '2-digit', minute: '2-digit', hour12: true
                         }).toUpperCase()
                     } catch (e) { }
                 }
-
                 return {
                     SI_No: item.SlNo || item.SI_No || 0,
                     GSM_Number: item.GSMNumber || item.GSM_Number || mobile,
@@ -821,7 +949,6 @@ export const branchOpsService = {
                 }
             })
         } catch (error) {
-            console.error('Error getting OTP log:', error)
             return []
         }
     },
@@ -834,78 +961,45 @@ export const branchOpsService = {
             formData.append('ProcessType', 'New')
             formData.append('SourceType', 'Web')
             formData.append('RequestedBy', '') // Empty for guest
-
-            // Format date as DD-MM-YYYY
             const now = new Date()
             const day = String(now.getDate()).padStart(2, '0')
             const month = String(now.getMonth() + 1).padStart(2, '0')
             const year = now.getFullYear()
             formData.append('RequestedTime', `${day}-${month}-${year}`)
-
             formData.append('SecurityToken', 'INTERTEC')
-
             if (processData.ServiceSeggreagation) {
                 formData.append('ServiceSeggreagation', processData.ServiceSeggreagation.toString())
                 delete processData.ServiceSeggreagation
             }
-
-            formData.append('ProcessData', JSON.stringify({
-                ...processData,
-                LanguageCode: 'EN'
-            }))
-
+            formData.append('ProcessData', JSON.stringify({ ...processData, LanguageCode: 'EN' }))
             const response = await api.post<any>(`/${endpoint}`, formData)
             const data = response.data.Data || response.data
-
-            if (data === 'Failed' || !data) {
-                return { success: false, message: 'Submission failed' }
-            }
-
+            if (data === 'Failed' || !data) return { success: false, message: 'Submission failed' }
             return { success: true, requestNumber: data }
         } catch (error: any) {
-            console.error(`Error submitting guest service [${serviceType}]:`, error)
             return { success: false, message: error.message || 'Submission failed' }
         }
     },
 
     // Specific Guest Service Wrappers
-    submitContractorWorkComplaint: (data: any) =>
-        branchOpsService.submitGuestService('CommonService/CWGuestSubmitNewDetails', 'CMCACWRK', data),
-
-    submitWastewaterComplaint: (data: any) =>
-        branchOpsService.submitGuestService('CommonService/ReportWasteWaterSubmitNewDetails', 'WASTEWSRVC', data),
-
-    submitWaterQualityComplaint: (data: any) =>
-        branchOpsService.submitGuestService('CommonService/ReportWaterQualitySubmitNewDetails', 'WATERQUALT', data),
-
-    submitWaterLeakageComplaint: (data: any) =>
-        branchOpsService.submitGuestService('CommonService/ReportWaterLeakageSubmitNewDetails', 'WATERLEAK', data),
-
-    submitWaterOverflowComplaint: (data: any) =>
-        branchOpsService.submitGuestService('CommonService/ReportWasteWaterSubmitNewDetails', 'WASTEWSRVC', data),
-
-    submitSewerOdorComplaint: (data: any) =>
-        branchOpsService.submitGuestService('CommonService/ReportWasteWaterSubmitNewDetails', 'WASTEWSRVC', {
-            ...data,
-            ServiceSeggreagation: 2539
-        }),
-
-    submitPressureComplaint: (data: any) =>
-        branchOpsService.submitGuestService('CommonService/OperationIssueSubmitNewDetails', 'WLOPRISU', data),
-
-    submitCompanyVehicleComplaint: (data: any) =>
-        branchOpsService.submitGuestService('CommonService/VehicleComplaintSubmitNewDetails', 'VEHICLECOMP', data),
+    submitContractorWorkComplaint: (data: any) => branchOpsService.submitGuestService('CommonService/CWGuestSubmitNewDetails', 'CMCACWRK', data),
+    submitWastewaterComplaint: (data: any) => branchOpsService.submitGuestService('CommonService/ReportWasteWaterSubmitNewDetails', 'WASTEWSRVC', data),
+    submitWaterQualityComplaint: (data: any) => branchOpsService.submitGuestService('CommonService/ReportWaterQualitySubmitNewDetails', 'WATERQUALT', data),
+    submitWaterLeakageComplaint: (data: any) => branchOpsService.submitGuestService('CommonService/ReportWaterLeakageSubmitNewDetails', 'WATERLEAK', data),
+    submitWaterOverflowComplaint: (data: any) => branchOpsService.submitGuestService('CommonService/ReportWasteWaterSubmitNewDetails', 'WASTEWSRVC', data),
+    submitSewerOdorComplaint: (data: any) => branchOpsService.submitGuestService('CommonService/ReportWasteWaterSubmitNewDetails', 'WASTEWSRVC', { ...data, ServiceSeggreagation: 2539 }),
+    submitPressureComplaint: (data: any) => branchOpsService.submitGuestService('CommonService/OperationIssueSubmitNewDetails', 'WLOPRISU', data),
+    submitCompanyVehicleComplaint: (data: any) => branchOpsService.submitGuestService('CommonService/VehicleComplaintSubmitNewDetails', 'VEHICLECOMP', data),
 
     getCustomerClass: async (): Promise<any[]> => {
         try {
             const formData = new FormData()
             formData.append('sourceType', 'Web')
             formData.append('langCode', 'EN')
-            const response = await api.post<any>('/api/CustomerRegistrationWeb/GetCustomerClass', formData)
+            const response = await api.post<any>('/CustomerRegistrationWeb/GetCustomerClass', formData)
             const data = response.data.Data || response.data
             return Array.isArray(data) ? data : []
         } catch (error) {
-            // Silently return empty array if endpoint not available - component has fallback
             return []
         }
     },
@@ -915,81 +1009,43 @@ export const branchOpsService = {
             const formData = new FormData()
             formData.append('sourceType', 'Web')
             formData.append('langCode', 'EN')
-            const response = await api.post<any>('/api/CustomerRegistrationWeb/GetMasterLanguage', formData)
+            const response = await api.post<any>('/CustomerRegistrationWeb/GetMasterLanguage', formData)
             const data = response.data.Data || response.data
             return Array.isArray(data) ? data : []
         } catch (error) {
-            // Silently return empty array if endpoint not available - component has fallback
             return []
         }
     },
 
-    // Validate National ID before registration (UAT flow step 1)
     validateNationalID: async (nationalId: string): Promise<ValidationResponse> => {
         try {
             const formData = new FormData()
             formData.append('NationalID', nationalId)
-            formData.append('UserGuid', '') // Empty as per UAT
-
-            const response = await api.post<any>(
-                '/api/UserActionWeb/ValidateNationalID',
-                formData
-            )
-
+            formData.append('UserGuid', '')
+            const response = await api.post<any>('/UserActionWeb/ValidateNationalID', formData)
             const data = response.data
-
             if (data.StatusCode === 605 && data.Status === 'success') {
-                return {
-                    success: true,
-                    message: 'National ID validated',
-                    data: data.Data
-                }
+                return { success: true, message: 'National ID validated', data: data.Data }
             }
-
-            return {
-                success: false,
-                message: data.Message || 'National ID validation failed'
-            }
+            return { success: false, message: data.Message || 'National ID validation failed' }
         } catch (error: any) {
-            return {
-                success: false,
-                message: error.message || 'National ID validation failed'
-            }
+            return { success: false, message: error.message || 'National ID validation failed' }
         }
     },
 
-    // Get ROP GSM Number (UAT flow step 2)
     getROPGSMNumber: async (nationalId: string, expiryDate: string): Promise<ValidationResponse> => {
         try {
             const formData = new FormData()
-            // Encrypt the data as per UAT
             formData.append('NationalId', encryptString(nationalId))
             formData.append('ExpiryDate', encryptString(expiryDate))
-
-            const response = await api.post<any>(
-                '/api/CommonService/GetROPGSMNumber',
-                formData
-            )
-
+            const response = await api.post<any>('/CommonService/GetROPGSMNumber', formData)
             const data = response.data
-
             if (data.StatusCode === 605 && data.Status === 'success') {
-                return {
-                    success: true,
-                    message: 'ROP data retrieved',
-                    data: data.Data
-                }
+                return { success: true, message: 'ROP data retrieved', data: data.Data }
             }
-
-            return {
-                success: false,
-                message: data.Data?.ResponseMessageEn || 'Failed to retrieve ROP data'
-            }
+            return { success: false, message: data.Data?.ResponseMessageEn || 'Failed to retrieve ROP data' }
         } catch (error: any) {
-            return {
-                success: false,
-                message: error.message || 'Failed to retrieve ROP data'
-            }
+            return { success: false, message: error.message || 'Failed to retrieve ROP data' }
         }
     },
 
@@ -1003,15 +1059,13 @@ export const branchOpsService = {
             })
             formData.append('sourceType', 'Web')
             formData.append('langCode', 'EN')
-            formData.append('CustomerType', 'IND')
-            const response = await api.post<any>('/api/CustomerRegistrationWeb/RegisterCustomer', formData)
+            const response = await api.post<any>('/CustomerRegistrationWeb/RegisterCustomer', formData)
             const data = response.data
             if (data.StatusCode === 605 || data === 'Success') {
                 return { success: true, message: 'Registration successful', data: data.Data || data }
             }
             return { success: false, message: data.Message || 'Registration failed' }
         } catch (error: any) {
-            // Silently handle - error message will be shown to user via toast
             return { success: false, message: error.message || 'Registration failed' }
         }
     },
@@ -1027,14 +1081,13 @@ export const branchOpsService = {
             formData.append('sourceType', 'Web')
             formData.append('langCode', 'EN')
             formData.append('CustomerType', 'CORP')
-            const response = await api.post<any>('/api/CustomerRegistrationWeb/RegisterCustomer', formData)
+            const response = await api.post<any>('/CustomerRegistrationWeb/RegisterCustomer', formData)
             const data = response.data
             if (data.StatusCode === 605 || data === 'Success') {
                 return { success: true, message: 'Registration successful', data: data.Data || data }
             }
             return { success: false, message: data.Message || 'Registration failed' }
         } catch (error: any) {
-            // Silently handle - error message will be shown to user via toast
             return { success: false, message: error.message || 'Registration failed' }
         }
     },
@@ -1048,7 +1101,7 @@ export const branchOpsService = {
             console.error('Error during logout:', error)
             return false
         }
-    },
+    }
 }
 
 // Helper for decrypting customer info fields (using function declaration for hoisting)
@@ -1089,4 +1142,3 @@ function decryptCustomerInfo(obj: any): any {
     })
     return result
 }
-

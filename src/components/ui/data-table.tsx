@@ -38,6 +38,8 @@ interface DataTableProps<TData, TValue> {
   data: TData[]
   isLoading?: boolean
   emptyMessage?: string
+  hidePagination?: boolean
+  headerClassName?: string
 }
 
 export function DataTable<TData, TValue>({
@@ -45,6 +47,8 @@ export function DataTable<TData, TValue>({
   data,
   isLoading = false,
   emptyMessage = "No data available",
+  hidePagination = false,
+  headerClassName,
 }: DataTableProps<TData, TValue>) {
   const [sorting, setSorting] = React.useState<SortingState>([])
 
@@ -70,7 +74,7 @@ export function DataTable<TData, TValue>({
     <div>
       <div className="rounded-lg border bg-white overflow-x-auto">
         <Table className="rounded-lg w-full" style={{ minWidth: table.getTotalSize() }}>
-          <TableHeader className="bg-slate-800 text-white">
+          <TableHeader className={headerClassName || "bg-slate-800 text-white"}>
             {table.getHeaderGroups().map((headerGroup) => (
               <TableRow key={headerGroup.id} className="hover:bg-slate-800">
                 {headerGroup.headers.map((header) => {
@@ -155,10 +159,8 @@ export function DataTable<TData, TValue>({
         </Table>
       </div>
 
-      <div className="flex flex-col lg:flex-row items-center justify-between py-4 gap-4 select-none">
-          {/* Left Side: Page info */}
-        
-
+      {!hidePagination && (
+        <div className="flex flex-col lg:flex-row items-center justify-between py-4 gap-4 select-none">
           {/* Middle: Pagination Controls */}
            <Pagination className="w-auto mx-0">
               <PaginationContent className="flex-wrap justify-center">
@@ -239,6 +241,7 @@ export function DataTable<TData, TValue>({
               </select>
             </div>
         </div>
+      )}
     </div>
   )
 }

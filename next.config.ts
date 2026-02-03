@@ -7,6 +7,10 @@ const nextConfig: NextConfig = {
     }
     return [
       {
+        source: '/api/:path*',
+        destination: 'https://eservicesuat.nws.nama.om:444/api/:path*',
+      },
+      {
         source: '/Menu/:path*',
         destination: 'https://eservicesuat.nws.nama.om:444/api/Menu/:path*',
       },

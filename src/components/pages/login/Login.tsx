@@ -21,6 +21,7 @@ import { Input } from "@/components/ui/input"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Card } from "@/components/ui/card"
 import { authService } from "@/services/auth.service"
+import { decryptData } from "@/lib/crypto"
 
 const formSchema = z.object({
   username: z.string().min(1, "Username is required"),
@@ -51,6 +52,38 @@ const form = useForm<FormValues>({
     rememberMe: false,
   },
 })
+
+  // Check for saved username ("Remember Me") on mount
+  // Check for saved username ("Remember Me") on mount
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const encryptedUsername = localStorage.getItem('b\\u//n\\'); // 'b\u//n\' matches legacy key
+      if (encryptedUsername) {
+        try {
+           const decryptedUsername = decryptData<string>(encryptedUsername);
+           if (decryptedUsername) {
+             console.log("Found remembered user:", decryptedUsername);
+             form.setValue("username", decryptedUsername);
+             // When "remember me" is active, pre-check the box too
+             form.setValue("rememberMe", true);
+           }
+        } catch (e) {
+          console.error("Failed to decrypt saved username");
+        }
+      }
+    }
+  }, [form]);
+  
+  // Actually, let's redo the replacement to include the import and the logic properly.
+  // I will add the import 'decryptData' to the top of the file in a separate step if needed,
+  // but let me check if I can add it here.
+  // The user wants me to implement it. I'll read the file imports first.
+  
+  // Login.tsx doesn't import decryptData. I should add it.
+  
+  // Retrying the plan:
+  // 1. Add `decryptData` to imports.
+  // 2. Add the useEffect hook to load the username.
 
   async function onSubmit(values: FormValues) {
     setIsLoading(true)

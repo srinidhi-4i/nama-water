@@ -3,23 +3,18 @@ import React, { useMemo } from "react"
 
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Wallet, FileText, CreditCard, Bell, Filter, ChevronRight, LayoutDashboard, History, ClipboardList, Settings2 } from "lucide-react"
+import { Wallet, FileText, CreditCard, Bell } from "lucide-react"
 import { 
     BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, 
     PieChart, Pie, Cell, Legend, CartesianGrid
 } from 'recharts'
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table"
+import { format, subMonths, subWeeks, startOfDay } from "date-fns"
 import { DataTable } from "@/components/ui/data-table"
 import { columns } from "@/app/(dashboard)/branch-operations/account-dashboard/[accountNumber]/column"
 
 interface DashboardOverviewProps {
+    accountNumber: string
+    legacyAccountNumber?: string
     metrics: {
         outstanding: string
         requests: number
@@ -31,355 +26,472 @@ interface DashboardOverviewProps {
     recentTransactions: any[]
     myRequests: any[]
     changeServiceDetails: any[]
+    ccbStatus?: any
+    menuData?: any[]
+    onSwitchTab?: (tab: string) => void
+    activeInterval?: 'Monthly' | 'Daily' | 'Hourly'
+    requestSummary?: {
+        Pending: number
+        Completed: number
+        Cancelled: number
+        TotalCount: number
+    }
+    smrData?: any[]
+    onIntervalChange?: (interval: 'Monthly' | 'Daily' | 'Hourly') => void
+    onRequestIntervalChange?: (interval: 'all' | 'month' | 'week') => void
 }
 
 export default React.memo(function DashboardOverview({ 
+    accountNumber,
+    legacyAccountNumber,
     metrics, 
     outstandingByGroup, 
     consumptionData,
     recentTransactions,
     myRequests,
-    changeServiceDetails
+    changeServiceDetails,
+    ccbStatus,
+    menuData,
+    onSwitchTab,
+    onIntervalChange,
+    activeInterval = 'Monthly',
+    requestSummary,
+    smrData = [],
+    onRequestIntervalChange
 }: DashboardOverviewProps) {
+    
+    const [requestActiveInterval, setRequestActiveInterval] = React.useState<'all' | 'month' | 'week'>('all')
 
     // Process data for charts
     const dueAmountData = useMemo(() => {
-        return outstandingByGroup.length > 0 ? outstandingByGroup.map(item => ({
-            name: item.GroupName,
-            value: parseFloat(item.Amount || "0")
-        })) : []
+        if (!outstandingByGroup || outstandingByGroup.length === 0) return []
+        
+        const groupMapping: {[key: string]: string} = {
+            'demo1': 'Refund',
+            'demo2 group': 'My Accounts',
+            'demo3 groups': 'Testing',
+            'demo4 groups': 'Miscellaneous',
+            'demo5 groups': 'Arrears'
+        }
+
+        return outstandingByGroup.map((item: any) => ({
+            name: groupMapping[item.GroupName] || item.GroupName,
+            value: parseFloat(item.GroupOutstandingAmount || item.Amount || "0")
+        })).filter(item => item.value > 0)
     }, [outstandingByGroup])
 
+    const totalDueFromGroups = useMemo(() => {
+        return dueAmountData.reduce((sum, item) => sum + item.value, 0).toFixed(3)
+    }, [dueAmountData])
+
     const requestStatusData = useMemo(() => {
+        if (requestSummary) {
+            return [
+            ]
+        }
         return [
-            { name: 'Completed', value: myRequests.filter(r => (r.RequestStatus || r.Status) === 'Completed').length, color: '#10B981' },
-            { name: 'Pending', value: myRequests.filter(r => (r.RequestStatus || r.Status) === 'Pending' || (r.RequestStatus || r.Status) === 'In Progress' || (r.RequestStatus || r.Status) === 'Assigned to Contractor').length, color: '#3B82F6' },
-            { name: 'Cancelled', value: myRequests.filter(r => (r.RequestStatus || r.Status) === 'Cancelled').length, color: '#9CA3AF' },
-        ].filter(d => d.value > 0)
-    }, [myRequests])
+            { name: 'Pending', value: myRequests.filter(r => (r.RequestStatus || r.Status || '').toLowerCase().includes('pending') || (r.RequestStatus || r.Status || '').toLowerCase().includes('progress')).length, color: '#f43f5e' },
+            { name: 'Completed', value: myRequests.filter(r => (r.RequestStatus || r.Status || '').toLowerCase().includes('completed')).length, color: '#0f766e' },
+            { name: 'Cancelled', value: myRequests.filter(r => (r.RequestStatus || r.Status || '').toLowerCase().includes('cancelled')).length, color: '#94a3b8' },
+        ]
+    }, [myRequests, requestSummary])
+
+    const totalRequestsSafe = useMemo(() => {
+        if (requestSummary) return requestSummary.TotalCount || 0
+        return requestStatusData.reduce((sum, item) => sum + item.value, 0)
+    }, [requestSummary, requestStatusData])
+
+    const consumptionSubtitle = useMemo(() => {
+        const now = new Date()
+        if (activeInterval === 'Monthly') {
+            const start = subMonths(now, 11)
+            return `${format(start, 'dd-MM-yyyy')} - ${format(now, 'dd-MM-yyyy')}`
+        }
+        if (activeInterval === 'Daily') {
+            const start = subWeeks(now, 4)
+            return `${format(start, 'dd-MM-yyyy')} - ${format(now, 'dd-MM-yyyy')}`
+        }
+        // Hourly
+        const start = startOfDay(now)
+        return `${format(start, 'dd-MM-yyyy')} - ${format(now, 'dd-MM-yyyy')}`
+    }, [activeInterval])
+
+    const smrChartData = useMemo(() => {
+        if (!smrData || smrData.length === 0) return []
+        return smrData.slice(-12).map(item => {
+            const date = item.LastReadingDate ? new Date(item.LastReadingDate) : null
+            const isValidDate = date && !isNaN(date.getTime())
+            return {
+                name: isValidDate ? format(date!, 'MMM yy') : '--',
+                value: parseFloat(item.SMR || item.Reading || "0")
+            }
+        })
+    }, [smrData])
 
     const consumptionChartData = useMemo(() => {
-        return consumptionData.map(item => ({
-            name: item.Date ? new Date(item.Date).toLocaleDateString('en-GB', { day: '2-digit', month: 'short' }) : '',
-            value: parseFloat(item.Value || "0")
-        }))
+        return consumptionData.map(item => {
+            const date = item.Date ? new Date(item.Date) : null
+            const isValidDate = date && !isNaN(date.getTime())
+            return {
+                name: isValidDate ? format(date!, 'dd/MM') : '--',
+                value: parseFloat(item.Value || "0")
+            }
+        })
     }, [consumptionData])
 
     return (
-        <div className="space-y-8 pb-10">
+        <div className="space-y-6 pb-10">
             
-            {/* Row 1: Metrics - Grid for top summary */}
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-                <Card className="p-6 flex flex-row items-center justify-between border-none shadow-sm bg-white hover:shadow-md transition-all group overflow-hidden relative">
-                    <div className="absolute top-0 left-0 w-1 h-full bg-red-500"></div>
-                    <div>
-                        <div className="text-3xl font-black text-red-500 mb-1">
-                            {metrics.outstanding} <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">OMR</span>
+            {/* Row 1: Metrics Cards - UAT Style (Icon Left, Value Right) */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+                {/* Total Outstanding */}
+                <Card className="p-4 bg-white border border-slate-100 shadow-sm rounded-xl">
+                    <div className="flex items-center gap-3">
+                        <div className="h-12 w-12 rounded-full bg-red-50 flex items-center justify-center shrink-0">
+                            <Wallet className="h-6 w-6 text-red-500" />
                         </div>
-                        <div className="text-[11px] font-bold text-gray-500 uppercase tracking-wider">Total Outstanding</div>
-                    </div>
-                    <div className="h-12 w-12 rounded-2xl bg-red-50 flex items-center justify-center group-hover:bg-red-500 group-hover:scale-110 transition-all duration-300">
-                        <Wallet className="h-6 w-6 text-red-500 group-hover:text-white" />
+                        <div className="flex-1">
+                            <div className="text-[10px] font-medium text-slate-400 leading-tight mb-1">Total Outstanding Amount</div>
+                            <div className="flex items-baseline gap-1">
+                                <span className="text-xl font-black text-slate-800">{metrics.outstanding}</span>
+                                <span className="text-[9px] font-bold text-gray-400 uppercase">OMR</span>
+                            </div>
+                        </div>
                     </div>
                 </Card>
-                 <Card className="p-6 flex flex-row items-center justify-between border-none shadow-sm bg-white hover:shadow-md transition-all group overflow-hidden relative">
-                    <div className="absolute top-0 left-0 w-1 h-full bg-blue-500"></div>
-                    <div>
-                        <div className="text-3xl font-black text-blue-500 mb-1">
-                            {metrics.requests}
+
+                {/* Total Requests */}
+                <Card className="p-4 bg-white border border-slate-100 shadow-sm rounded-xl">
+                    <div className="flex items-center gap-3">
+                        <div className="h-12 w-12 rounded-full bg-blue-50 flex items-center justify-center shrink-0">
+                            <FileText className="h-6 w-6 text-blue-500" />
                         </div>
-                         <div className="text-[11px] font-bold text-gray-500 uppercase tracking-wider">Total Requests</div>
-                    </div>
-                     <div className="h-12 w-12 rounded-2xl bg-blue-50 flex items-center justify-center group-hover:bg-blue-500 group-hover:scale-110 transition-all duration-300">
-                        <FileText className="h-6 w-6 text-blue-500 group-hover:text-white" />
+                        <div className="flex-1">
+                            <div className="text-[10px] font-medium text-slate-400 leading-tight mb-1">Total Requests</div>
+                            <div className="text-xl font-black text-blue-600">{metrics.requests}</div>
+                        </div>
                     </div>
                 </Card>
-                 <Card className="p-6 flex flex-row items-center justify-between border-none shadow-sm bg-white hover:shadow-md transition-all group overflow-hidden relative">
-                    <div className="absolute top-0 left-0 w-1 h-full bg-green-500"></div>
-                    <div>
-                        <div className="text-3xl font-black text-green-500 mb-1">
-                             {metrics.transactions}
+
+                {/* Transaction */}
+                <Card className="p-4 bg-white border border-slate-100 shadow-sm rounded-xl">
+                    <div className="flex items-center gap-3">
+                        <div className="h-12 w-12 rounded-full bg-teal-50 flex items-center justify-center shrink-0">
+                            <CreditCard className="h-6 w-6 text-teal-500" />
                         </div>
-                        <div className="text-[11px] font-bold text-gray-500 uppercase tracking-wider">Transactions</div>
-                    </div>
-                    <div className="h-12 w-12 rounded-2xl bg-green-50 flex items-center justify-center group-hover:bg-green-500 group-hover:scale-110 transition-all duration-300">
-                        <CreditCard className="h-6 w-6 text-green-500 group-hover:text-white" />
+                        <div className="flex-1">
+                            <div className="text-[10px] font-medium text-slate-400 leading-tight mb-1">Transactions</div>
+                            <div className="text-xl font-black text-teal-600">{metrics.transactions}</div>
+                        </div>
                     </div>
                 </Card>
-                 <Card className="p-6 flex flex-row items-center justify-between border-none shadow-sm bg-white hover:shadow-md transition-all group overflow-hidden relative">
-                    <div className="absolute top-0 left-0 w-1 h-full bg-orange-500"></div>
-                    <div>
-                        <div className="text-3xl font-black text-orange-500 mb-1">
-                             {metrics.alarms}
+
+                {/* Alarms */}
+                <Card className="p-4 bg-white border border-slate-100 shadow-sm rounded-xl">
+                    <div className="flex items-center gap-3">
+                        <div className="h-12 w-12 rounded-full bg-orange-50 flex items-center justify-center shrink-0">
+                            <Bell className="h-6 w-6 text-orange-500" />
                         </div>
-                        <div className="text-[11px] font-bold text-gray-500 uppercase tracking-wider">Active Alarms</div>
-                    </div>
-                    <div className="h-12 w-12 rounded-2xl bg-orange-50 flex items-center justify-center group-hover:bg-orange-500 group-hover:scale-110 transition-all duration-300">
-                        <Bell className="h-6 w-6 text-orange-500 group-hover:text-white" />
+                        <div className="flex-1">
+                            <div className="text-[10px] font-medium text-slate-400 leading-tight mb-1">Alarms</div>
+                            <div className="text-xl font-black text-orange-600">{metrics.alarms}</div>
+                        </div>
                     </div>
                 </Card>
             </div>
 
-            {/* VERTICAL STACKED COMPONENTS - One Per Row */}
-
-            {/* Due Amount Section */}
-            <Card className="p-8 shadow-sm border-none bg-white">
-                <div className="flex items-center gap-3 mb-8">
-                    <div className="h-8 w-8 rounded-lg bg-teal-900 flex items-center justify-center">
-                        <Wallet className="h-4 w-4 text-white" />
-                    </div>
-                    <h3 className="text-xl font-bold text-slate-800">Due Amount Breakdown</h3>
-                </div>
-                <div className="grid md:grid-cols-2 gap-10">
-                     <div className="relative h-[280px] w-full flex items-center justify-center bg-slate-50 rounded-2xl border-2 border-dashed border-slate-100">
-                        <ResponsiveContainer width="100%" height="100%">
-                            <PieChart>
-                            <Pie
-                                data={[{value: 100}]}
-                                innerRadius={75}
-                                outerRadius={95}
-                                fill="#F1F5F9"
-                                dataKey="value"
-                                stroke="none"
-                            />
-                            <Pie
-                                data={dueAmountData.length > 0 ? dueAmountData : [{name: 'None', value: 0}]}
-                                innerRadius={75}
-                                outerRadius={95}
-                                dataKey="value"
-                                stroke="none"
-                                animationBegin={0}
-                                animationDuration={1000}
-                            >
-                                 {dueAmountData.map((entry, index) => (
-                                    <Cell key={`cell-${index}`} fill="#EF4444" />
-                                ))}
-                            </Pie>
-                            </PieChart>
-                        </ResponsiveContainer>
-                         <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-                            <span className="text-4xl font-black text-red-500">{metrics.outstanding}</span>
-                            <span className="text-[10px] text-gray-400 font-black uppercase tracking-[0.2em] mt-1">Total OMR</span>
-                         </div>
-                    </div>
-                     <div className="w-full h-[280px]">
-                         <div className="flex items-center justify-between mb-4">
-                             <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Group wise outstanding</p>
-                             <div className="h-1 px-10 bg-slate-100 rounded-full"></div>
-                         </div>
-                         <ResponsiveContainer width="100%" height="90%">
-                            <BarChart data={dueAmountData} margin={{ top: 20, right: 30, left: 0, bottom: 0 }}>
-                                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#F1F5F9" />
-                                <XAxis dataKey="name" fontSize={11} fontWeight={600} tickLine={false} axisLine={false} tick={{fill: '#64748B'}} />
-                                <YAxis axisLine={false} tickLine={false} fontSize={10} tick={{fill: '#94A3B8'}} />
-                                <Tooltip cursor={{fill: '#F8FAFC'}} contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)' }} />
-                                <Bar dataKey="value" fill="#3B82F6" radius={[6, 6, 0, 0]} barSize={48} label={{ position: 'top', fill: '#1E293B', fontSize: 10, fontWeight: 700 }} />
-                            </BarChart>
-                         </ResponsiveContainer>
-                     </div>
-                </div>
-            </Card>
-
-            {/* Unit Consumed Section */}
-            <Card className="p-8 shadow-sm border-none bg-white">
-                 <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
-                    <div className="flex items-center gap-3">
-                        <div className="h-8 w-8 rounded-lg bg-red-600 flex items-center justify-center">
-                            <LayoutDashboard className="h-4 w-4 text-white" />
-                        </div>
-                        <h3 className="text-xl font-bold text-slate-800">Consumption Trends</h3>
-                    </div>
-                    <div className="flex items-center bg-slate-100 p-1.5 rounded-xl border border-slate-200 shadow-inner">
-                        <Button variant="default" size="sm" className="h-8 text-[11px] font-bold bg-white text-slate-800 shadow-sm border border-slate-200 px-5 hover:bg-white">MONTHLY</Button>
-                        <Button variant="ghost" size="sm" className="h-8 text-[11px] font-bold text-gray-500 hover:text-slate-800 px-5">DAILY</Button>
-                        <Button variant="ghost" size="sm" className="h-8 text-[11px] font-bold text-gray-500 hover:text-slate-800 px-5">HOURLY</Button>
-                    </div>
-                </div>
-                <div className="h-[350px] w-full pt-4">
-                    {consumptionChartData.length > 0 ? (
-                        <ResponsiveContainer width="100%" height="100%">
-                            <BarChart data={consumptionChartData} margin={{ top: 20, right: 10, left: -20, bottom: 0 }}>
-                                <CartesianGrid strokeDasharray="5 5" vertical={false} stroke="#F8FAFC" />
-                                <XAxis dataKey="name" fontSize={10} fontWeight={600} axisLine={false} tickLine={false} stroke="#94A3B8" />
-                                <YAxis fontSize={10} fontWeight={600} axisLine={false} tickLine={false} stroke="#94A3B8" />
-                                <Tooltip contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)' }} />
-                                <Bar dataKey="value" fill="url(#colorRed)" radius={[4, 4, 0, 0]} barSize={12}>
-                                    <defs>
-                                        <linearGradient id="colorRed" x1="0" y1="0" x2="0" y2="1">
-                                            <stop offset="5%" stopColor="#EF4444" stopOpacity={1}/>
-                                            <stop offset="95%" stopColor="#EF4444" stopOpacity={0.6}/>
-                                        </linearGradient>
-                                    </defs>
-                                </Bar>
-                            </BarChart>
-                        </ResponsiveContainer>
-                    ) : (
-                         <div className="h-full flex flex-col items-center justify-center text-gray-400 border-2 border-dashed border-slate-100 rounded-2xl bg-slate-50">
-                            <LayoutDashboard className="h-10 w-10 text-slate-200 mb-2" />
-                            <span className="text-xs font-bold uppercase tracking-[0.2em]">No Consumption Analytics</span>
-                         </div>
-                    )}
-                </div>
-            </Card>
-
-            {/* Recent Transactions Table */}
-            <Card className="p-8 shadow-sm border-none bg-white">
-                 <div className="flex justify-between items-center mb-8">
-                    <div className="flex items-center gap-3">
-                        <div className="h-8 w-8 rounded-lg bg-green-600 flex items-center justify-center">
-                            <History className="h-4 w-4 text-white" />
-                        </div>
-                        <h3 className="text-xl font-bold text-slate-800">Transaction History</h3>
-                    </div>
-                    <Button variant="outline" size="sm" className="text-[11px] font-bold border-teal-800 text-teal-800 hover:bg-teal-50 px-5 gap-2">
-                        VIEW FULL HISTORY <ChevronRight className="h-3 w-3" />
-                    </Button>
-                </div>
-                <div className="border border-slate-100 rounded-2xl overflow-hidden shadow-sm">
-                    <DataTable 
-                        columns={columns} 
-                        data={recentTransactions || []} 
-                        emptyMessage="No billing records found for this period"
-                    />
-                </div>
-            </Card>
-            
-            {/* My Requests Section */}
-            <Card className="p-8 shadow-sm border-none bg-white">
-                 <div className="flex justify-between items-center mb-10">
-                    <div className="flex items-center gap-3">
-                        <div className="h-8 w-8 rounded-lg bg-blue-600 flex items-center justify-center">
-                            <ClipboardList className="h-4 w-4 text-white" />
-                        </div>
-                        <h3 className="text-xl font-bold text-slate-800">Support Requests</h3>
-                    </div>
-                    <div className="flex space-x-2 bg-slate-50 p-1 rounded-lg border">
-                        <Button variant="secondary" size="sm" className="h-7 text-[10px] font-bold bg-white shadow-sm px-4">ALL TIME</Button>
-                        <Button variant="ghost" size="sm" className="h-7 text-[10px] font-bold px-4">MONTHLY</Button>
-                        <Button variant="ghost" size="sm" className="h-7 text-[10px] font-bold px-4">WEEKLY</Button>
-                    </div>
-                </div>
-
-                <div className="flex flex-col md:flex-row items-center gap-12">
-                     <div className="h-[260px] w-full md:w-1/2 relative bg-slate-50 rounded-2xl border-2 border-slate-100 p-4">
-                         <ResponsiveContainer width="100%" height="100%">
-                            <PieChart>
-                                <Pie
-                                    data={requestStatusData.length > 0 ? requestStatusData : [{name: 'None', value: 1}]}
-                                    innerRadius={75}
-                                    outerRadius={95}
-                                    dataKey="value"
-                                    stroke="none"
-                                    animationBegin={0}
-                                    animationDuration={1500}
-                                >
-                                    {(requestStatusData.length > 0 ? requestStatusData : [{name: 'None', value: 1, color: '#F1F5F9'}]).map((entry, index) => (
-                                        <Cell key={`cell-${index}`} fill={entry.color} />
-                                    ))}
-                                </Pie>
-                                <Legend verticalAlign="bottom" height={36} iconType="circle" iconSize={10} wrapperStyle={{fontSize: '12px', fontWeight: 700, paddingTop: '20px'}}/>
-                            </PieChart>
-                        </ResponsiveContainer>
-                         <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none pb-12">
-                             <span className="text-4xl font-black text-slate-800 leading-none">{metrics.requests}</span>
-                             <span className="text-[10px] text-gray-400 font-black uppercase tracking-widest mt-2">Active Tickets</span>
-                         </div>
-                    </div>
-                    
-                    <div className="flex-1 w-full space-y-6">
-                        <p className="text-xs font-black text-slate-400 uppercase tracking-[0.2em] border-b pb-4">Status Breakdown</p>
-                        <div className="space-y-4">
-                            {requestStatusData.map((s, i) => (
-                                <div key={i} className="flex items-center justify-between p-4 bg-slate-50 rounded-xl border border-slate-100 active:scale-[0.98] transition-transform cursor-default">
-                                    <div className="flex items-center gap-3">
-                                        <div className="h-3 w-3 rounded-full" style={{backgroundColor: s.color}}></div>
-                                        <span className="text-sm font-bold text-slate-700">{s.name}</span>
-                                    </div>
-                                    <span className="text-lg font-black text-slate-800">{s.value}</span>
+            {/* Row 2: Due Amount & Unit Consumed */}
+            <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
+                {/* Due Amount */}
+                <Card className="lg:col-span-2 p-6 shadow-sm border-none bg-white rounded-2xl">
+                    <h3 className="text-base font-black text-slate-800 mb-6 uppercase tracking-tight">Due Amount</h3>
+                    <div className="flex flex-col gap-6">
+                        <div className="relative h-48 w-full flex items-center justify-center min-h-[192px] min-w-0">
+                            <ResponsiveContainer width="100%" height="100%" minWidth={0}>
+                                <PieChart>
+                                    <Pie
+                                        data={dueAmountData.length > 0 ? dueAmountData : [{value: 1}]}
+                                        innerRadius={65}
+                                        outerRadius={80}
+                                        dataKey="value"
+                                        stroke="none"
+                                        paddingAngle={2}
+                                    >
+                                        {dueAmountData.map((entry, index) => (
+                                            <Cell key={`cell-${index}`} fill={index % 2 === 0 ? "#6366f1" : "#a5b4fc"} />
+                                        ))}
+                                        {dueAmountData.length === 0 && <Cell fill="#F1F5F9" />}
+                                    </Pie>
+                                </PieChart>
+                            </ResponsiveContainer>
+                            <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+                                <div className="h-28 w-28 rounded-full bg-white border border-slate-100 flex flex-col items-center justify-center">
+                                    <span className="text-xl font-black text-red-500 leading-tight">{totalDueFromGroups !== "0.000" ? totalDueFromGroups : metrics.outstanding}</span>
+                                    <span className="text-[9px] text-gray-400 font-black uppercase tracking-widest">OMR</span>
                                 </div>
-                            ))}
-                            {requestStatusData.length === 0 && (
-                                 <div className="text-center py-10 text-slate-300 italic text-sm">No historical data found</div>
-                            )}
+                            </div>
+                        </div>
+                        <div className="h-32 w-full mt-4 min-h-[150px]">
+                            <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-4">Group wise due amount</p>
+                            <ResponsiveContainer width="100%" height="100%">
+                                <BarChart data={dueAmountData} layout="vertical" margin={{ left: -20, right: 20 }}>
+                                    <XAxis type="number" hide />
+                                    <YAxis dataKey="name" type="category" axisLine={false} tickLine={false} fontSize={10} width={80} />
+                                    <Tooltip cursor={{fill: 'transparent'}} />
+                                    <Bar dataKey="value" radius={[0, 4, 4, 0]} barSize={20}>
+                                        {dueAmountData.map((entry, index) => (
+                                            <Cell key={`cell-${index}`} fill={index % 2 === 0 ? "#6366f1" : "#a5b4fc"} />
+                                        ))}
+                                    </Bar>
+                                </BarChart>
+                            </ResponsiveContainer>
                         </div>
                     </div>
-                </div>
-            </Card>
+                </Card>
 
-            {/* Change Service Details Table */}
-            <Card className="p-8 shadow-sm border-none bg-white">
-                <div className="flex justify-between items-center mb-8">
-                    <div className="flex items-center gap-3">
-                        <div className="h-8 w-8 rounded-lg bg-orange-600 flex items-center justify-center">
-                            <Settings2 className="h-4 w-4 text-white" />
+                {/* Unit Consumed */}
+                <Card className="lg:col-span-3 p-5 shadow-sm border-none bg-white rounded-2xl overflow-hidden">
+                    <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+                        <div className="space-y-1">
+                            <h3 className="text-sm font-black text-slate-800 uppercase tracking-tight flex flex-wrap items-center gap-2">
+                                Unit Consumed <span className="text-[10px] text-gray-400 font-medium lowercase tracking-normal">{consumptionSubtitle}</span>
+                            </h3>
                         </div>
-                        <h3 className="text-xl font-bold text-slate-800">Change Service Details</h3>
+                        <div className="flex bg-slate-100 p-1 rounded-lg">
+                            <Button 
+                                variant={activeInterval === 'Monthly' ? "secondary" : "ghost"} 
+                                size="sm" 
+                                onClick={() => onIntervalChange?.('Monthly')}
+                                className={`h-6 text-[9px] font-black px-3 ${activeInterval === 'Monthly' ? "bg-white shadow-sm" : "hover:bg-white hover:shadow-sm transition-all"}`}
+                            >
+                                Monthly
+                            </Button>
+                            <Button 
+                                variant={activeInterval === 'Daily' ? "secondary" : "ghost"} 
+                                size="sm" 
+                                onClick={() => onIntervalChange?.('Daily')}
+                                className={`h-6 text-[9px] font-black px-3 ${activeInterval === 'Daily' ? "bg-white shadow-sm" : "hover:bg-white hover:shadow-sm transition-all"}`}
+                            >
+                                Daily
+                            </Button>
+                            <Button 
+                                variant={activeInterval === 'Hourly' ? "secondary" : "ghost"} 
+                                size="sm" 
+                                onClick={() => onIntervalChange?.('Hourly')}
+                                className={`h-6 text-[9px] font-black px-3 ${activeInterval === 'Hourly' ? "bg-white shadow-sm" : "hover:bg-white hover:shadow-sm transition-all"}`}
+                            >
+                                Hourly
+                            </Button>
+                        </div>
                     </div>
-                     <Button variant="ghost" size="sm" className="text-blue-600 font-bold hover:bg-blue-50">VIEW ALL</Button>
-                </div>
-                 <div className="border border-slate-100 rounded-2xl overflow-hidden shadow-sm">
-                    <Table>
-                        <TableHeader className="bg-slate-800">
-                            <TableRow className="hover:bg-slate-800 border-none">
-                                <TableHead className="text-white text-[10px] font-black uppercase tracking-widest h-12 text-center">Sr No</TableHead>
-                                <TableHead className="text-white text-[10px] font-black uppercase tracking-widest h-12">Account No</TableHead>
-                                <TableHead className="text-white text-[10px] font-black uppercase tracking-widest h-12">Status</TableHead>
-                                <TableHead className="text-white text-[10px] font-black uppercase tracking-widest h-12">Action Date</TableHead>
-                                <TableHead className="text-white text-[10px] font-black uppercase tracking-widest h-12">Bill Amount</TableHead>
-                                <TableHead className="text-white text-[10px] font-black uppercase tracking-widest h-12 text-center">Action</TableHead>
-                            </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                            {changeServiceDetails && changeServiceDetails.length > 0 ? (
-                                changeServiceDetails.map((item, idx) => (
-                                    <TableRow key={idx} className="hover:bg-slate-50 transition-colors">
-                                        <TableCell className="text-center font-bold text-slate-400">{idx + 1}</TableCell>
-                                        <TableCell className="font-bold text-teal-900">{item.AccountNumber}</TableCell>
-                                        <TableCell>
-                                            <span className="px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-[10px] font-black">
-                                                {item.Status}
-                                            </span>
-                                        </TableCell>
-                                        <TableCell className="text-sm text-slate-600">{item.Date}</TableCell>
-                                        <TableCell className="font-black text-slate-800">{item.BillAmount} <span className="text-[10px] text-gray-400">OMR</span></TableCell>
-                                        <TableCell className="text-center">
-                                            <Button size="sm" className="h-7 text-[10px] font-bold bg-slate-100 text-slate-600 hover:bg-slate-200 shadow-none border border-slate-200">VIEW</Button>
-                                        </TableCell>
-                                    </TableRow>
-                                ))
-                            ) : (
-                                <TableRow>
-                                    <TableCell colSpan={6} className="text-center py-20 text-slate-400 font-black tracking-[0.3em] bg-slate-50 border-none">
-                                        NO ACTIVE RECORDS
-                                    </TableCell>
-                                </TableRow>
-                            )}
-                        </TableBody>
-                    </Table>
-                 </div>
-            </Card>
+                    <div className="h-72 w-full min-h-[288px] min-w-0">
+                        <ResponsiveContainer width="100%" height="100%" minWidth={0}>
+                            <BarChart data={consumptionChartData} margin={{ top: 10, right: 0, left: -25, bottom: 20 }}>
+                                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#F1F5F9" />
+                                <XAxis dataKey="name" fontSize={9} fontWeight={700} axisLine={false} tickLine={false} angle={-45} textAnchor="end" />
+                                <YAxis axisLine={false} tickLine={false} fontSize={9} />
+                                <Bar dataKey="value" fill="#EF4444" radius={[2, 2, 0, 0]} barSize={4} />
+                            </BarChart>
+                        </ResponsiveContainer>
+                    </div>
+                     <div className="flex justify-center mt-2">
+                          <div className="flex items-center gap-4">
+                              <div className="flex items-center gap-2">
+                                  <div className="h-2 w-2 rounded-full bg-red-500"></div>
+                                  <span className="text-[9px] font-black text-slate-500 uppercase">{legacyAccountNumber || "--"}</span>
+                              </div>
+                          </div>
+                     </div>
+                </Card>
+            </div>
 
-            {/* Last Meter Reading Chart */}
-            <Card className="p-8 shadow-sm border-none bg-white">
-                <div className="flex items-center gap-3 mb-8">
-                    <div className="h-8 w-8 rounded-lg bg-slate-800 flex items-center justify-center">
-                        <CreditCard className="h-4 w-4 text-white" />
+            {/* Row 3: Recent Transactions & My Requests */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {/* Recent Transactions */}
+                <Card className="p-5 shadow-sm border-none bg-white rounded-2xl overflow-hidden">
+                    <div className="flex justify-between items-center mb-6">
+                        <h3 className="text-sm font-black text-slate-800 uppercase tracking-tight">Recent Transactions</h3>
+                        <Button 
+                            variant="link" 
+                            onClick={() => onSwitchTab?.('paybill')}
+                            className="text-teal-600 text-[10px] font-black uppercase p-0 h-auto"
+                        >
+                            View All
+                        </Button>
                     </div>
-                    <h3 className="text-xl font-bold text-slate-800">Meter Reading Baseline</h3>
-                </div>
-                <div className="h-[250px] w-full flex flex-col items-center justify-center bg-slate-50 rounded-2xl border-2 border-dashed border-slate-100 group">
-                    <div className="p-5 bg-white rounded-2xl shadow-sm border border-slate-100 mb-4 group-hover:scale-110 transition-transform">
-                         <BarChart width={40} height={40} data={[{v:1}]}>
-                            <Bar dataKey="v" fill="#94A3B8" opacity={0.2} radius={2} />
-                        </BarChart>
+                    <div className="w-full">
+                        <div className="overflow-x-auto custom-scrollbar pb-2">
+                            <div className="min-w-max">
+                                <DataTable 
+                                    columns={columns} 
+                                    data={recentTransactions.slice(0, 5)} 
+                                    hidePagination={true}
+                                />
+                            </div>
+                        </div>
                     </div>
-                    <p className="text-xs font-black text-slate-400 uppercase tracking-widest text-center">
-                        Telemetry data sync pending<br/>
-                        <span className="text-[10px] font-medium lowercase tracking-normal">last checked: just now</span>
-                    </p>
-                </div>
-            </Card>
+                </Card>
 
+                {/* My Requests */}
+                <Card className="p-5 shadow-sm border-none bg-white rounded-2xl overflow-hidden">
+                    <div className="flex justify-between items-center mb-6">
+                        <h3 className="text-sm font-black text-slate-800 uppercase tracking-tight">My Requests</h3>
+                        <Button 
+                            variant="link" 
+                            onClick={() => onSwitchTab?.('requests')}
+                            className="text-teal-600 text-[10px] font-black uppercase p-0 h-auto"
+                        >
+                            View All
+                        </Button>
+                    </div>
+                    <div className="flex flex-col items-center">
+                        <div className="flex bg-slate-100 p-1 rounded-lg mb-8 w-full sm:w-auto overflow-x-auto no-scrollbar">
+                            <Button 
+                                variant={requestActiveInterval === 'all' ? "secondary" : "ghost"} 
+                                size="sm" 
+                                onClick={() => { setRequestActiveInterval('all'); onRequestIntervalChange?.('all'); }}
+                                className={`flex-1 sm:flex-none h-8 text-[10px] font-black px-6 ${requestActiveInterval === 'all' ? "bg-slate-800 text-white shadow-sm" : "text-slate-400"}`}
+                            >
+                                All Time
+                            </Button>
+                            <Button 
+                                variant={requestActiveInterval === 'month' ? "secondary" : "ghost"} 
+                                size="sm" 
+                                onClick={() => { setRequestActiveInterval('month'); onRequestIntervalChange?.('month'); }}
+                                className={`flex-1 sm:flex-none h-8 text-[10px] font-black px-6 ${requestActiveInterval === 'month' ? "bg-slate-800 text-white shadow-sm" : "text-slate-400"}`}
+                            >
+                                This month
+                            </Button>
+                            <Button 
+                                variant={requestActiveInterval === 'week' ? "secondary" : "ghost"} 
+                                size="sm" 
+                                onClick={() => { setRequestActiveInterval('week'); onRequestIntervalChange?.('week'); }}
+                                className={`flex-1 sm:flex-none h-8 text-[10px] font-black px-6 ${requestActiveInterval === 'week' ? "bg-slate-800 text-white shadow-sm" : "text-slate-400"}`}
+                            >
+                                This week
+                            </Button>
+                        </div>
+                        
+                        <div className="flex flex-col items-center w-full gap-8">
+                            <div className="relative h-48 sm:h-56 w-48 sm:w-56 shrink-0 min-h-[192px] min-w-0">
+                                <ResponsiveContainer width="100%" height="100%" minWidth={0}>
+                                    <PieChart>
+                                        <Pie
+                                            data={requestStatusData}
+                                            innerRadius={65}
+                                            outerRadius={85}
+                                            dataKey="value"
+                                            stroke="none"
+                                            paddingAngle={0}
+                                            startAngle={90}
+                                            endAngle={450}
+                                        >
+                                            {requestStatusData.map((entry, index) => (
+                                                <Cell key={`cell-${index}`} fill={entry.color} />
+                                            ))}
+                                        </Pie>
+                                    </PieChart>
+                                </ResponsiveContainer>
+                                <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+                                    <span className="text-3xl sm:text-4xl font-black text-slate-800 leading-none">{totalRequestsSafe}</span>
+                                    <span className="text-[9px] sm:text-[10px] text-gray-400 font-bold uppercase tracking-widest mt-2">{totalRequestsSafe === 0 ? "No Requests" : "Total Requests"}</span>
+                                </div>
+                            </div>
+                            <div className="flex flex-wrap justify-center gap-4 sm:gap-10 w-full pt-4">
+                                {requestStatusData.map((s, i) => (
+                                    <div key={i} className="flex items-center gap-2">
+                                        <div className="h-2 w-2 rounded-[2px]" style={{backgroundColor: s.color}}></div>
+                                        <span className="text-[10px] sm:text-[11px] font-bold text-slate-600 tracking-tight">{s.name}</span>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    </div>
+                </Card>
+            </div>
+
+            {/* Row 4: Change Service Type Details & Last Meter Reading */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 pb-6">
+                {/* Change Service Type Details */}
+                <Card className="p-5 shadow-sm border-none bg-white rounded-2xl overflow-hidden">
+                    <div className="flex justify-between items-center mb-6">
+                         <h3 className="text-sm font-black text-slate-800 uppercase tracking-tight">Change Service Type Details</h3>
+                         <Button variant="link" className="text-teal-600 text-[10px] font-black uppercase p-0 h-auto">View All</Button>
+                    </div>
+                    <div className="min-h-[160px] w-full">
+                        <div className="overflow-x-auto custom-scrollbar pb-2">
+                            <div className="min-w-max">
+                                <DataTable
+                                    columns={[
+                                        { id: "srNo", header: "Sr No", cell: ({ row }) => <span className="text-gray-500 font-bold">{row.index + 1}</span> },
+                                        { accessorKey: "AccountNo", header: "Account No", cell: ({ row }) => <span className="font-bold">{row.original.AccountNo || row.original.AccountNumber || row.original.accountNumber || row.original.AccNo}</span> },
+                                        { accessorKey: "Status", header: "Status", cell: ({ row }) => <span className="text-blue-600 font-bold uppercase text-[10px]">{row.original.Status || row.original.ServiceStatus || row.original.RequestStatus || row.original.StatusDesc}</span> },
+                                        { accessorKey: "Date", header: "Date", cell: ({ row }) => <span>{row.original.Date || row.original.RequestDate || row.original.ReqDate || row.original.DateTime}</span> },
+                                        { accessorKey: "BillAmount", header: "Bill Amount", cell: ({ row }) => <span className="font-black text-teal-700">{row.original.BillAmount || row.original.Amount || row.original.RequestedAmount || row.original.Total}</span> },
+                                        { 
+                                            id: "actions", 
+                                            header: "Action", 
+                                            cell: () => <Button className="h-7 px-3 bg-[#5F8D92] hover:bg-[#4D767A] text-white text-[9px] font-bold rounded">Pay Now</Button> 
+                                        }
+                                    ]}
+                                    data={changeServiceDetails}
+                                    hidePagination={true}
+                                />
+                            </div>
+                        </div>
+                    </div>
+                </Card>
+
+                {/* Last Meter Reading */}
+                <Card className="p-5 shadow-sm border-none bg-white rounded-2xl overflow-hidden">
+                    <h3 className="text-sm font-black text-slate-800 mb-6 uppercase tracking-tight">Last Meter Reading</h3>
+                    <div className="h-64 w-full min-h-[256px] min-w-0">
+                        <ResponsiveContainer width="100%" height="100%" minWidth={0}>
+                            <BarChart 
+                                data={smrChartData.length > 0 ? smrChartData : [{name: 'Jan', value: 0}, {name: 'Feb', value: 0}]} 
+                                margin={{ top: 10, right: 10, left: -20, bottom: 40 }}
+                            >
+                                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E2E8F0" />
+                                <XAxis 
+                                    dataKey="name" 
+                                    fontSize={8} 
+                                    fontWeight={600}
+                                    axisLine={false} 
+                                    tickLine={false} 
+                                    angle={-45} 
+                                    textAnchor="end"
+                                />
+                                <YAxis 
+                                    axisLine={false} 
+                                    tickLine={false} 
+                                    fontSize={9}
+                                    label={{ value: 'Reading', angle: -90, position: 'insideLeft', fontSize: 10 }}
+                                />
+                                <Tooltip 
+                                    cursor={{fill: 'rgba(6, 78, 59, 0.05)'}}
+                                    content={({ active, payload }) => {
+                                        if (active && payload && payload.length) {
+                                            return (
+                                                <div className="bg-slate-900 text-white p-2 rounded shadow-lg text-[10px] font-black uppercase">
+                                                    {payload[0].value} M3
+                                                </div>
+                                            )
+                                        }
+                                        return null
+                                    }}
+                                />
+                                <Bar dataKey="value" fill="#064E3B" radius={[4, 4, 0, 0]} barSize={20} />
+                            </BarChart>
+                        </ResponsiveContainer>
+                    </div>
+                    <div className="flex justify-center mt-4">
+                        <div className="flex items-center gap-2">
+                            <div className="h-3 w-8 bg-[#064E3B] rounded-sm"></div>
+                            <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Reading</span>
+                        </div>
+                    </div>
+                </Card>
+            </div>
         </div>
     )
 })

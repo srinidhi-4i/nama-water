@@ -127,9 +127,16 @@ export const authService = {
         }
     },
 
-    branchLogout: () => {
+    branchLogout: async () => {
+        // Call the server to clear cookies
+        try {
+            await api.post('/api/auth/logout');
+        } catch (e) {
+            console.error('Logout API call failed', e);
+        }
+
         if (typeof window !== 'undefined') {
-            // Clear all possible auth keys used across versions
+            // Clear all possible auth keys used across versions EXCEPT remember me
             const keysToClear = [
                 STORAGE_KEYS.BRANCH_USER_DATA,
                 STORAGE_KEYS.AUTH_TOKEN,
@@ -137,7 +144,7 @@ export const authService = {
                 'brUd/APtiypx/sw7lu83P7A==',
                 'wcb/APtiypx/sw7lu83P7A==',
                 'branchAccountSearch',
-                'b\\u//n\\'
+                // 'b\\u//n\\' // DO NOT CLEAR THIS - It's for Remember Me
             ];
 
             keysToClear.forEach(key => {
@@ -145,7 +152,7 @@ export const authService = {
                 sessionStorage.removeItem(key);
             });
 
-            localStorage.clear();
+            // Do NOT call localStorage.clear() as it wipes everything including Remember Me
             sessionStorage.clear();
 
             // Force redirect to login

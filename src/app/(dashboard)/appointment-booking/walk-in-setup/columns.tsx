@@ -77,10 +77,10 @@ function EditableWalkInCell({ row }: { row: any }) {
       <Button
         variant="ghost"
         size="sm"
-        className="h-5 w-5 p-0 hover:bg-gray-100"
+        className="h-5 w-5 p-0 hover:bg-teal-50"
         onClick={() => setIsEditing(true)}
       >
-        <Pencil className="h-3 w-3 text-gray-600" />
+        <Pencil className="h-3 w-3 text-teal-600" />
       </Button>
     </div>
   )

@@ -19,7 +19,7 @@ export const notificationService = {
      */
     async getTemplates(): Promise<TemplateResponse> {
         try {
-            const response = await apiClient.simplePost<TemplateResponse>('/PushNotification/NewGetTemplates')
+            const response = await apiClient.simplePost<TemplateResponse>('/api/PushNotification/NewGetTemplates')
             return response
         } catch (error) {
             throw error
@@ -38,7 +38,7 @@ export const notificationService = {
                 TemplateEn: data.TemplateEn,
                 TemplateAr: data.TemplateAr
             }
-            const response = await apiClient.post<any>('/PushNotification/InsertUpdateTemplate', formData)
+            const response = await apiClient.post<any>('/api/PushNotification/InsertUpdateTemplate', formData)
             return response
         } catch (error) {
             throw error
@@ -58,7 +58,7 @@ export const notificationService = {
                 SearchQuery: filters.searchQuery || ''
             }
             const response = await apiClient.post<NotificationListResponse>(
-                '/PushNotification/NewGetNotificationScreen',
+                '/api/PushNotification/NewGetNotificationScreen',
                 formData
             )
             return response || { Table: [], TotalCount: 0 }
@@ -82,7 +82,7 @@ export const notificationService = {
                 ScheduledDateTime: data.ScheduledDateTime,
                 CreatedBy: data.CreatedBy
             }
-            const response = await apiClient.post<any>('/PushNotification/InsertUpdatePushNotification', formData)
+            const response = await apiClient.post<any>('/api/PushNotification/InsertUpdatePushNotification', formData)
             return response
         } catch (error) {
             throw error
@@ -100,7 +100,7 @@ export const notificationService = {
                 ScheduledDateTime: data.ScheduledDateTime,
                 ModifiedBy: data.ModifiedBy
             }
-            const response = await apiClient.post<any>('/PushNotification/InsertUpdatePushNotification', formData)
+            const response = await apiClient.post<any>('/api/PushNotification/InsertUpdatePushNotification', formData)
             return response
         } catch (error) {
             throw error
@@ -119,7 +119,7 @@ export const notificationService = {
                 SearchQuery: filters.searchQuery || ''
             }
             const response = await apiClient.post<Blob>(
-                '/PushNotification/ExportNotifications',
+                '/api/PushNotification/ExportNotifications',
                 formData,
                 {
                     responseType: 'blob'

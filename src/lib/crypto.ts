@@ -38,6 +38,7 @@ export function encryptString(text: string): string {
  * Matches React.js pattern: CommonService.Decrypt()
  */
 export function decryptString(encryptedText: string): string {
+    if (!encryptedText) return '';
     try {
         const key = CryptoJS.enc.Utf8.parse(ENCRYPTION_KEY_STRING);
         const iv = CryptoJS.enc.Utf8.parse(ENCRYPTION_IV_STRING);

@@ -32,7 +32,7 @@ export const appointmentService = {
                 '/AppointmentRequest/GetMaster',
                 '/WetLand/GetMasterData',
                 '/BranchOfficer/GetMasterData',
-                '/Common/GetMasterData',
+                '/Common/GetCommonData',
                 '/CommonService/GetMasterData'
             ]
 
@@ -117,6 +117,21 @@ export const appointmentService = {
                 Table: [],
                 "Appointment Request Category": []
             }
+        }
+    },
+
+    async getCommonData(): Promise<any> {
+        try {
+            const formData = new FormData()
+            const endpoints = [
+                '/Menu/GetCommonData',
+                '/Menu/GetCommon',
+                '/Common/GetCommonData'
+            ]
+            const response = await this._probeApi(endpoints, formData, 'common data')
+            return response?.data?.Data || response?.data
+        } catch (error) {
+            return null
         }
     },
 
@@ -440,14 +455,22 @@ export const appointmentService = {
     // Global probe helper
     async _probeApi(endpoints: string[], formData: FormData, context: string): Promise<any> {
         for (const url of endpoints) {
-            try {
-                const res = await api.post<any>(url, formData)
-                // StatusCode 605 is the "Success" code for these legacy APIs
-                if (res.status === 200 || (res.data && res.data.StatusCode === 605)) {
-                    return res
+            // Create list of candidates (original and with /api prefix)
+            const candidates = [url];
+            if (!url.startsWith('/api')) {
+                candidates.push('/api' + url);
+            }
+
+            for (const candidate of candidates) {
+                try {
+                    const res = await api.post<any>(candidate, formData)
+                    // StatusCode 605 is the "Success" code for these legacy APIs
+                    if (res.status === 200 || (res.data && res.data.StatusCode === 605)) {
+                        return res
+                    }
+                } catch (e: any) {
+                    // Silence errors for individual probes
                 }
-            } catch (e: any) {
-                // Silence errors
             }
         }
         return null
@@ -802,5 +825,52 @@ export const appointmentService = {
         }
 
         return { month, year, days }
+    },
+
+    async updateWalkinStatus(payload: { getType: string; branchId: string; date: string; userId: string }): Promise<any> {
+        try {
+            const formData = new FormData()
+            formData.append('Pi_GetType', payload.getType)
+            formData.append('Pi_BranchId', payload.branchId)
+            formData.append('Pi_Date', payload.date)
+            formData.append('Pi_UserId', payload.userId)
+
+            const endpoints = [
+                '/AppointmentReqest/UpdateWalkinStatus',
+                '/AppointmentRequest/UpdateWalkinStatus',
+                '/Appointment/UpdateWalkinStatus'
+            ]
+            const response = await this._probeApi(endpoints, formData, 'update walkin status')
+            return response?.data
+        } catch (error) {
+            throw error
+        }
+    },
+
+    async insertUpdateWalkinStatusCount(payload: {
+        branchId: string;
+        fromDate: string;
+        toDate: string;
+        count: string;
+        userId: string;
+    }): Promise<any> {
+        try {
+            const formData = new FormData()
+            formData.append('Pi_BranchId', payload.branchId)
+            formData.append('Pi_FromDate', payload.fromDate)
+            formData.append('Pi_ToDate', payload.toDate)
+            formData.append('Pi_Count', payload.count)
+            formData.append('Pi_UserId', payload.userId)
+
+            const endpoints = [
+                '/AppointmentReqest/InsertUpdateWalkinStatusCount',
+                '/AppointmentRequest/InsertUpdateWalkinStatusCount',
+                '/Appointment/InsertUpdateWalkinStatusCount'
+            ]
+            const response = await this._probeApi(endpoints, formData, 'update walkin count')
+            return response?.data
+        } catch (error) {
+            throw error
+        }
     }
 }
