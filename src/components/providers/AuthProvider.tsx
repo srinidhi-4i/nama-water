@@ -16,7 +16,7 @@ const AuthContext = createContext<AuthContextType>({
   isLoading: true,
 })
 
-const PUBLIC_ROUTES = ["/login"]
+const PUBLIC_ROUTES = ["/", "/login"]
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const router = useRouter()
