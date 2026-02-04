@@ -107,7 +107,12 @@ export default function AppointmentWeeklyView({ branchID, refreshTrigger, dateRa
                 <div className={`p-2 border-b border-slate-50 text-center relative group ${isTodayDay ? "bg-teal-500 text-white" : ""}`}>
                   <div className="text-xl font-black">{format(day, "d")}</div>
                   <div className={`text-[10px] font-bold uppercase tracking-widest ${isTodayDay ? "text-white/80" : "text-slate-400"}`}>
-                    {format(day, "EEEE")}
+                    <span className="hidden lg:inline">{format(day, "EEEE")}</span>
+                    <span className="lg:hidden">
+                      {language === "EN" 
+                        ? format(day, "EEE").replace("Tue", "Tues").replace("Thu", "Thurs") 
+                        : format(day, "EEE").replace("ال", "")}
+                    </span>
                   </div>
                   
                   {/* Edit button (visible on hover) - Only if slots exist */}

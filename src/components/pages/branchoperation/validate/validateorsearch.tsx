@@ -34,14 +34,13 @@ import { AccountPaymentResult } from "@/components/branchoperations/AccountPayme
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Loader2, AlertCircle, LogOut } from "lucide-react"
 import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog"
+  ResponsiveModal,
+  ResponsiveModalContent,
+  ResponsiveModalHeader,
+  ResponsiveModalTitle,
+  ResponsiveModalDescription,
+  ResponsiveModalFooter,
+} from "@/components/ui/responsive-modal"
 
 export default function ValidateCustomerPage() {
   const router = useRouter()
@@ -536,35 +535,35 @@ export default function ValidateCustomerPage() {
       </>
 
       {/* Session Expired Alert Dialog */}
-      <AlertDialog open={showSessionExpired} onOpenChange={setShowSessionExpired}>
-          <AlertDialogContent>
-              <AlertDialogHeader>
-                  <AlertDialogTitle className="flex items-center gap-2 text-red-600">
+      <ResponsiveModal open={showSessionExpired} onOpenChange={setShowSessionExpired}>
+          <ResponsiveModalContent side="bottom">
+              <ResponsiveModalHeader>
+                  <ResponsiveModalTitle className="flex items-center gap-2 text-red-600">
                       <LogOut className="h-5 w-5" />
                       {language === "EN" ? "Session Expired" : "انتهت الجلسة"}
-                  </AlertDialogTitle>
-                  <AlertDialogDescription>
+                  </ResponsiveModalTitle>
+                  <ResponsiveModalDescription>
                       {language === "EN" 
                           ? "Your session has expired. Please login again to continue."
                           : "انتهت جلسة العمل الخاصة بك. يرجى تسجيل الدخول مرة أخرى للمتابعة."}
-                  </AlertDialogDescription>
-              </AlertDialogHeader>
-              <AlertDialogFooter>
-                  <AlertDialogAction 
+                  </ResponsiveModalDescription>
+              </ResponsiveModalHeader>
+              <ResponsiveModalFooter>
+                  <Button 
                       onClick={() => router.push('/login')}
                       className="bg-[#006A72] hover:bg-[#005a61]"
                   >
                       {language === "EN" ? "Login Now" : "تسجيل الدخول"}
-                  </AlertDialogAction>
-              </AlertDialogFooter>
-          </AlertDialogContent>
-      </AlertDialog>
+                  </Button>
+              </ResponsiveModalFooter>
+          </ResponsiveModalContent>
+      </ResponsiveModal>
 
       {/* User Not Found Alert Dialog */}
-      <AlertDialog open={showUserNotFound} onOpenChange={setShowUserNotFound}>
-          <AlertDialogContent className="max-w-md bg-white border-2 border-teal-800 p-0 overflow-hidden">
-              <div className="flex justify-end p-2">
-                <Button variant="ghost" size="icon" onClick={() => setShowUserNotFound(false)} className="h-8 w-8">
+      <ResponsiveModal open={showUserNotFound} onOpenChange={setShowUserNotFound}>
+          <ResponsiveModalContent side="bottom" className="max-w-md bg-white border-2 border-teal-800 p-0 overflow-hidden sm:rounded-xl">
+              <div className="flex justify-end p-2 relative z-10">
+                <Button variant="ghost" size="icon" onClick={() => setShowUserNotFound(false)} className="h-8 w-8 hover:bg-teal-50">
                   <span className="text-xl">×</span>
                 </Button>
               </div>
@@ -572,14 +571,14 @@ export default function ValidateCustomerPage() {
                   <div className="h-16 w-16 rounded-full border-4 border-teal-800 flex items-center justify-center">
                     <span className="text-teal-800 text-4xl font-bold">!</span>
                   </div>
-                  <AlertDialogTitle className="text-3xl font-bold text-teal-900 tracking-tight">
+                  <ResponsiveModalTitle className="text-3xl font-bold text-teal-900 tracking-tight">
                       USER NOT FOUND
-                  </AlertDialogTitle>
-                  <AlertDialogDescription className="text-gray-600 text-lg">
+                  </ResponsiveModalTitle>
+                  <ResponsiveModalDescription className="text-gray-600 text-lg">
                       This user is not registered<br />
                       Please register user account using the option below.
-                  </AlertDialogDescription>
-                  <div className="flex flex-col w-full gap-3 pt-4">
+                  </ResponsiveModalDescription>
+                  <div className="flex flex-row w-full gap-3 pt-4 pb-4 px-4">
                       <Button 
                         onClick={() => {
                           setShowUserNotFound(false)
@@ -588,7 +587,7 @@ export default function ValidateCustomerPage() {
                           if (inputValue) params.append('value', inputValue)
                           router.push(`/branch-operations/registration?${params.toString()}`)
                         }}
-                        className="bg-teal-900 hover:bg-teal-800 text-white font-bold h-12 uppercase tracking-wide"
+                        className="bg-teal-900 hover:bg-teal-800 text-white font-bold h-12 uppercase tracking-wide flex-1 text-xs"
                       >
                           REGISTER
                       </Button>
@@ -598,14 +597,14 @@ export default function ValidateCustomerPage() {
                           setShowUserNotFound(false)
                           router.push('/branch-operations/guest')
                         }}
-                        className="border-teal-900 text-teal-900 hover:bg-teal-50 font-bold h-12"
+                        className="border-teal-900 text-teal-900 hover:bg-teal-50 font-bold h-12 flex-1 text-xs px-1"
                       >
-                          Proceed As Guest User
+                          Proceed As Guest
                       </Button>
                   </div>
               </div>
-          </AlertDialogContent>
-      </AlertDialog>
+          </ResponsiveModalContent>
+      </ResponsiveModal>
     </div>
   )
 }

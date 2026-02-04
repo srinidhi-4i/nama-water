@@ -13,7 +13,15 @@ import { wetlandService } from '@/services/wetland.service'
 import { WetlandSlot } from '@/types/wetland.types'
 import { useLanguage } from '@/components/providers/LanguageProvider'
 import moment from 'moment'
-import { AlertDialogContent, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogDescription, AlertDialogCancel, AlertDialogAction, AlertDialog } from '@/components/ui/alert-dialog'
+import {
+  ResponsiveModal,
+  ResponsiveModalContent,
+  ResponsiveModalHeader,
+  ResponsiveModalTitle,
+  ResponsiveModalDescription,
+  ResponsiveModalFooter,
+} from '@/components/ui/responsive-modal'
+import { LoadingButton } from '@/components/ui/loading-button'
 
 interface SlotData {
   SlotID: string
@@ -531,37 +539,38 @@ export function WetlandSlotEditor({ date, onBack }: WetlandSlotEditorProps) {
                 <Button variant="ghost" onClick={onBack} className="px-6 text-slate-500 hover:text-slate-800">
                     Back
                 </Button>
-                <Button 
+                <LoadingButton 
                     onClick={handleSave} 
-                    disabled={loading} 
+                    isLoading={loading} 
                     className="bg-teal-600 hover:bg-teal-700 text-white shadow-lg shadow-teal-600/20 px-8 min-w-[140px] h-10"
                 >
-                    {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                     Save Changes
-                </Button>
+                </LoadingButton>
             </div>
             </>
         )}
         </Card>
     </div>
     
-    <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
-    <AlertDialogContent>
-        <AlertDialogHeader>
-        <AlertDialogTitle>Delete all slots?</AlertDialogTitle>
-        <AlertDialogDescription>
-            This will mark all slots for {selectedDate ? moment(selectedDate).format('MMMM Do') : 'this day'} as deleted. 
-            This action cannot be undone after saving.
-        </AlertDialogDescription>
-        </AlertDialogHeader>
-        <AlertDialogFooter>
-        <AlertDialogCancel>Cancel</AlertDialogCancel>
-        <AlertDialogAction onClick={confirmDeleteAllSlots} className="bg-red-600 hover:bg-red-700">
-            Yes, Delete All
-        </AlertDialogAction>
-        </AlertDialogFooter>
-    </AlertDialogContent>
-    </AlertDialog>
+    <ResponsiveModal open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <ResponsiveModalContent side="bottom">
+            <ResponsiveModalHeader>
+                <ResponsiveModalTitle>Delete all slots?</ResponsiveModalTitle>
+                <ResponsiveModalDescription>
+                    This will mark all slots for {selectedDate ? moment(selectedDate).format('MMMM Do') : 'this day'} as deleted. 
+                    This action cannot be undone after saving.
+                </ResponsiveModalDescription>
+            </ResponsiveModalHeader>
+            <ResponsiveModalFooter className="flex-row gap-3 sm:justify-end">
+                <Button variant="outline" onClick={() => setIsDeleteDialogOpen(false)} className="flex-1 sm:flex-none sm:w-auto">
+                    Cancel
+                </Button>
+                <Button onClick={confirmDeleteAllSlots} className="bg-red-600 hover:bg-red-700 text-white flex-1 sm:flex-none sm:w-auto">
+                    Yes, Delete All
+                </Button>
+            </ResponsiveModalFooter>
+        </ResponsiveModalContent>
+    </ResponsiveModal>
     </div>
   )
 }

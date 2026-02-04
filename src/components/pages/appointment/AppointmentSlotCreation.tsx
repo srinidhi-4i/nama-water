@@ -26,13 +26,14 @@ import {
 import { toast } from "sonner"
 import { format, addDays, getYear, eachYearOfInterval } from "date-fns"
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog"
+  ResponsiveModal,
+  ResponsiveModalContent,
+  ResponsiveModalHeader,
+  ResponsiveModalTitle,
+  ResponsiveModalDescription,
+  ResponsiveModalFooter,
+} from "@/components/ui/responsive-modal"
+import { LoadingButton } from "@/components/ui/loading-button"
 
 import AppointmentSlotEditor from "@/components/appointment/AppointmentSlotEditor"
 
@@ -504,13 +505,14 @@ export default function AppointmentSlotCreation() {
                 </div>
               </div>
 
-              <Button 
+              <LoadingButton 
                 onClick={handleCreateClick} 
                 className="w-full bg-teal-600 hover:bg-teal-700 text-white shadow-lg shadow-teal-900/20 h-10 text-xs font-bold tracking-wide uppercase"
-                disabled={isSubmitting || !selectedBranch || !fromDate || !toDate}
+                isLoading={isSubmitting}
+                disabled={!selectedBranch || !fromDate || !toDate}
               >
-                {isSubmitting ? <Loader2 className="h-4 w-4 animate-spin" /> : (language === "EN" ? "Create Slots" : "إنشاء الفترات")}
-              </Button>
+                {language === "EN" ? "Create Slots" : "إنشاء الفترات"}
+              </LoadingButton>
             </div>
           </Card>
         </div>
@@ -527,48 +529,48 @@ export default function AppointmentSlotCreation() {
       </div>
       
       {/* Confirm existing slots modal */}
-      <Dialog open={showConfirmModal} onOpenChange={setShowConfirmModal}>
-          <DialogContent>
-              <DialogHeader>
-                  <DialogTitle>{language === "EN" ? "Existing Slots Found" : "تم العثور على فترات موجودة"}</DialogTitle>
-                  <DialogDescription>
+      <ResponsiveModal open={showConfirmModal} onOpenChange={setShowConfirmModal}>
+          <ResponsiveModalContent side="bottom">
+              <ResponsiveModalHeader>
+                  <ResponsiveModalTitle>{language === "EN" ? "Existing Slots Found" : "تم العثور على فترات موجودة"}</ResponsiveModalTitle>
+                  <ResponsiveModalDescription>
                       {language === "EN" 
                        ? "Are you sure you want to overwrite existing slots for the selected date range?" 
                        : "هل أنت متأكد أنك تريد استبدال الفترات الزمنية الموجودة للنطاق الزمني المحدد؟"}
-                  </DialogDescription>
-              </DialogHeader>
-              <DialogFooter>
-                  <Button variant="outline" onClick={() => setShowConfirmModal(false)}>
+                  </ResponsiveModalDescription>
+              </ResponsiveModalHeader>
+              <ResponsiveModalFooter className="flex-row gap-3 sm:justify-end">
+                  <Button variant="outline" onClick={() => setShowConfirmModal(false)} className="flex-1 sm:flex-none sm:w-auto">
                       {language === "EN" ? "Cancel" : "إلغاء"}
                   </Button>
-                  <Button onClick={performCreate}>
+                  <LoadingButton onClick={performCreate} isLoading={isSubmitting} className="flex-1 sm:flex-none sm:w-auto">
                       {language === "EN" ? "Yes, Overwrite" : "نعم، استبدل"}
-                  </Button>
-              </DialogFooter>
-          </DialogContent>
-      </Dialog>
+                  </LoadingButton>
+              </ResponsiveModalFooter>
+          </ResponsiveModalContent>
+      </ResponsiveModal>
       
       {/* Holidays not defined modal */}
-      <Dialog open={showHolidayModal} onOpenChange={setShowHolidayModal}>
-          <DialogContent>
-              <DialogHeader>
-                  <DialogTitle className="flex items-center gap-2 text-amber-600">
+      <ResponsiveModal open={showHolidayModal} onOpenChange={setShowHolidayModal}>
+          <ResponsiveModalContent side="bottom">
+              <ResponsiveModalHeader>
+                  <ResponsiveModalTitle className="flex items-center gap-2 text-amber-600">
                       <AlertTriangle className="h-5 w-5" />
                       {language === "EN" ? "Configuration Required" : "مطلوب تكوين"}
-                  </DialogTitle>
-                  <DialogDescription>
+                  </ResponsiveModalTitle>
+                  <ResponsiveModalDescription>
                       {language === "EN" 
                        ? "Holidays are not defined for the selected year(s). Please configure the holiday calendar first." 
                        : "العطلات غير محددة للسنة (السنوات) المحددة. يرجى تكوين تقويم العطلات أولاً."}
-                  </DialogDescription>
-              </DialogHeader>
-              <DialogFooter>
-                  <Button onClick={() => setShowHolidayModal(false)}>
-                      {language === "EN" ? "Close" : "إغلاق"}
+                  </ResponsiveModalDescription>
+              </ResponsiveModalHeader>
+              <ResponsiveModalFooter className="flex-row">
+                  <Button onClick={() => setShowHolidayModal(false)} className="flex-1 sm:flex-none sm:w-auto">
+                      {language === "EN" ? "Close" : "إإغلاق"}
                   </Button>
-              </DialogFooter>
-          </DialogContent>
-      </Dialog>
+              </ResponsiveModalFooter>
+          </ResponsiveModalContent>
+      </ResponsiveModal>
     </div>
   )
 }

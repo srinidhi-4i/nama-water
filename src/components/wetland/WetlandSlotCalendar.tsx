@@ -10,13 +10,14 @@ import { MonthCalendar } from "@/types/wetland.types"
 import { format, addMonths, subMonths, isSameMonth, isToday } from "date-fns"
 import { useLanguage } from "@/components/providers/LanguageProvider"
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-  DialogFooter,
-} from "@/components/ui/dialog"
+  ResponsiveModal,
+  ResponsiveModalContent,
+  ResponsiveModalHeader,
+  ResponsiveModalTitle,
+  ResponsiveModalTrigger,
+  ResponsiveModalFooter,
+} from "@/components/ui/responsive-modal"
+import { LoadingButton } from "@/components/ui/loading-button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { toast } from "sonner"
@@ -95,8 +96,24 @@ export function WetlandSlotCalendar({ onDateSelect }: WetlandSlotCalendarProps) 
   }
 
   const dayNames = language === "EN" 
-    ? ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
-    : ['الأثنين', 'الثلاثاء', 'الأربعاء', 'الخميس', 'الجمعة', 'السبت', 'الأحد']
+    ? [
+        { long: 'Monday', short: 'Mon' },
+        { long: 'Tuesday', short: 'Tues' },
+        { long: 'Wednesday', short: 'Wed' },
+        { long: 'Thursday', short: 'Thurs' },
+        { long: 'Friday', short: 'Fri' },
+        { long: 'Saturday', short: 'Sat' },
+        { long: 'Sunday', short: 'Sun' }
+      ]
+    : [
+        { long: 'الأثنين', short: 'أثنين' },
+        { long: 'الثلاثاء', short: 'ثلاثاء' },
+        { long: 'الأربعاء', short: 'ربعاء' },
+        { long: 'الخميس', short: 'خميس' },
+        { long: 'الجمعة', short: 'جمعة' },
+        { long: 'السبت', short: 'سبت' },
+        { long: 'الأحد', short: 'أحد' }
+      ]
 
   return (
     <div className="px-6 mt-4">
@@ -115,20 +132,22 @@ export function WetlandSlotCalendar({ onDateSelect }: WetlandSlotCalendarProps) 
             </h2>
           </div>
 
-          <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
-            <DialogTrigger asChild>
-              <Button className="bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 shadow-sm">
+          <ResponsiveModal open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
+            <ResponsiveModalTrigger asChild>
+              <Button className="bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 shadow-sm sm:w-auto w-full">
                 <Plus className="h-4 w-4 mr-2 text-teal-600" />
                 {language === "EN" ? "Create New Slot" : "إنشاء فترة جديدة"}
               </Button>
-            </DialogTrigger>
-            <DialogContent className="sm:max-w-[425px]">
-              <DialogHeader>
-                <DialogTitle>{language === "EN" ? "Create New Slot" : "إنشاء فترة جديدة"}</DialogTitle>
-              </DialogHeader>
-              <div className="grid gap-4 py-4">
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="date" className="text-right">
+            </ResponsiveModalTrigger>
+            <ResponsiveModalContent side="bottom" className="sm:max-w-[500px]">
+              <ResponsiveModalHeader>
+                <ResponsiveModalTitle className="text-xl font-bold text-teal-900 border-b pb-4">
+                  {language === "EN" ? "Create New Slot" : "إنشاء فترة جديدة"}
+                </ResponsiveModalTitle>
+              </ResponsiveModalHeader>
+              <div className="grid gap-6 py-6">
+                <div className="grid grid-cols-1 sm:grid-cols-4 items-center gap-2 sm:gap-4">
+                  <Label htmlFor="date" className="sm:text-right font-semibold text-slate-700">
                     {language === "EN" ? "Date" : "التاريخ"}
                   </Label>
                   <Input
@@ -136,11 +155,11 @@ export function WetlandSlotCalendar({ onDateSelect }: WetlandSlotCalendarProps) 
                     type="date"
                     value={newSlotDate}
                     onChange={(e) => setNewSlotDate(e.target.value)}
-                    className="col-span-3"
+                    className="sm:col-span-3 h-11 border-slate-200 focus:ring-teal-500"
                   />
                 </div>
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="startTime" className="text-right">
+                <div className="grid grid-cols-1 sm:grid-cols-4 items-center gap-2 sm:gap-4">
+                  <Label htmlFor="startTime" className="sm:text-right font-semibold text-slate-700">
                     {language === "EN" ? "Start" : "البدء"}
                   </Label>
                   <Input
@@ -148,11 +167,11 @@ export function WetlandSlotCalendar({ onDateSelect }: WetlandSlotCalendarProps) 
                     type="time"
                     value={newSlotStartTime}
                     onChange={(e) => setNewSlotStartTime(e.target.value)}
-                    className="col-span-3"
+                    className="sm:col-span-3 h-11 border-slate-200"
                   />
                 </div>
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="endTime" className="text-right">
+                <div className="grid grid-cols-1 sm:grid-cols-4 items-center gap-2 sm:gap-4">
+                  <Label htmlFor="endTime" className="sm:text-right font-semibold text-slate-700">
                     {language === "EN" ? "End" : "الانتهاء"}
                   </Label>
                   <Input
@@ -160,11 +179,11 @@ export function WetlandSlotCalendar({ onDateSelect }: WetlandSlotCalendarProps) 
                     type="time"
                     value={newSlotEndTime}
                     onChange={(e) => setNewSlotEndTime(e.target.value)}
-                    className="col-span-3"
+                    className="sm:col-span-3 h-11 border-slate-200"
                   />
                 </div>
-                <div className="grid grid-cols-4 items-center gap-4">
-                  <Label htmlFor="capacity" className="text-right">
+                <div className="grid grid-cols-1 sm:grid-cols-4 items-center gap-2 sm:gap-4">
+                  <Label htmlFor="capacity" className="sm:text-right font-semibold text-slate-700">
                     {language === "EN" ? "Capacity" : "السعة"}
                   </Label>
                   <Input
@@ -172,24 +191,30 @@ export function WetlandSlotCalendar({ onDateSelect }: WetlandSlotCalendarProps) 
                     type="number"
                     value={newSlotCapacity}
                     onChange={(e) => setNewSlotCapacity(e.target.value)}
-                    className="col-span-3"
+                    className="sm:col-span-3 h-11 border-slate-200"
                   />
                 </div>
               </div>
-              <DialogFooter>
-                <Button type="submit" onClick={handleCreateSlot} disabled={isLoading} className="bg-teal-600 hover:bg-teal-700">
+              <ResponsiveModalFooter className="mt-2">
+                <LoadingButton 
+                  type="submit" 
+                  onClick={handleCreateSlot} 
+                  isLoading={isLoading} 
+                  className="w-full bg-teal-600 hover:bg-teal-700 text-white font-bold h-12 rounded-lg shadow-lg shadow-teal-100"
+                >
                   {language === "EN" ? "Save Slot" : "حفظ الفترة"}
-                </Button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
+                </LoadingButton>
+              </ResponsiveModalFooter>
+            </ResponsiveModalContent>
+          </ResponsiveModal>
         </div>
 
         {/* Calendar Grid Header */}
-        <div className="grid grid-cols-7 border-b border-slate-100 bg-slate-50/50">
-          {dayNames.map((day) => (
-            <div key={day} className="py-3 px-4 text-sm font-semibold text-slate-600 border-r border-slate-100 last:border-r-0 text-center">
-              {day}
+        <div className="grid grid-cols-7 border-b border-slate-100 bg-slate-100">
+          {dayNames.map((day, i) => (
+            <div key={i} className="py-3 px-1 sm:px-4 text-sm sm:text-sm font-semibold text-slate-600 border-r border-slate-100 last:border-r-0 text-center uppercase tracking-tighter sm:tracking-normal">
+              <span className="hidden lg:inline">{day.long}</span>
+              <span className="lg:hidden">{day.short}</span>
             </div>
           ))}
         </div>

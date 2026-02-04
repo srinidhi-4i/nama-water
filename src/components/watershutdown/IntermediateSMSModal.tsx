@@ -1,5 +1,11 @@
 import { useState, useEffect } from "react"
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
+import {
+  ResponsiveModal,
+  ResponsiveModalContent,
+  ResponsiveModalHeader,
+  ResponsiveModalTitle,
+  ResponsiveModalFooter,
+} from "@/components/ui/responsive-modal"
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
 import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
@@ -7,7 +13,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { Input } from "@/components/ui/input"
 import { waterShutdownService } from "@/services/watershutdown.service"
 import { format } from "date-fns"
-import { Loader2 } from "lucide-react"
+import { LoadingButton } from "@/components/ui/loading-button"
 
 interface IntermediateSMSModalProps {
     open: boolean
@@ -90,13 +96,13 @@ export function IntermediateSMSModal({
     }
 
     return (
-        <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="max-w-5xl">
-                <DialogHeader>
-                    <DialogTitle className="bg-[#006A72] text-white p-3 -mx-6 -mt-6 rounded-t-lg">
+        <ResponsiveModal open={open} onOpenChange={onOpenChange}>
+            <ResponsiveModalContent side="bottom" className="max-w-5xl">
+                <ResponsiveModalHeader>
+                    <ResponsiveModalTitle className="bg-[#006A72] text-white p-3 -mx-6 -mt-6 rounded-t-lg">
                         Send Intermediate Message
-                    </DialogTitle>
-                </DialogHeader>
+                    </ResponsiveModalTitle>
+                </ResponsiveModalHeader>
 
                 <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
                     <div className="flex justify-start mb-4 border-b">
@@ -160,17 +166,17 @@ export function IntermediateSMSModal({
                             </div>
                         </div>
 
-                         <DialogFooter className="mt-6">
-                            <Button variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
-                            <Button 
-                                className="bg-[#006A72] text-white hover:bg-[#00555b]" 
+                         <ResponsiveModalFooter className="flex-row gap-2 sm:justify-end">
+                            <Button variant="outline" onClick={() => onOpenChange(false)} className="flex-1 sm:flex-none sm:w-auto">Cancel</Button>
+                            <LoadingButton 
+                                className="bg-[#006A72] text-white hover:bg-[#00555b] flex-1 sm:flex-none sm:w-auto" 
                                 onClick={handleSend}
-                                disabled={isLoading}
+                                isLoading={isLoading}
+                                loadingText="Sending..."
                             >
-                                {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                                 Send
-                            </Button>
-                        </DialogFooter>
+                            </LoadingButton>
+                        </ResponsiveModalFooter>
                     </TabsContent>
 
                     <TabsContent value="history" className="mt-4">
@@ -202,12 +208,12 @@ export function IntermediateSMSModal({
                                 </table>
                             )}
                         </div>
-                        <DialogFooter className="mt-6">
-                            <Button variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
-                        </DialogFooter>
+                        <ResponsiveModalFooter className="mt-6 flex-row">
+                            <Button variant="outline" onClick={() => onOpenChange(false)} className="flex-1 sm:flex-none sm:w-auto">Cancel</Button>
+                        </ResponsiveModalFooter>
                     </TabsContent>
                 </Tabs>
-            </DialogContent>
-        </Dialog>
+            </ResponsiveModalContent>
+        </ResponsiveModal>
     )
 }

@@ -15,11 +15,12 @@ export const authService = {
             // STEP 1: LDAP Validation with encrypted credentials
             const encryptedUsername = encryptString(loginData.username);
             const encryptedPassword = encryptString(loginData.password);
+
             const ldapFormData = new FormData();
             ldapFormData.append('UserName', encryptedUsername);
             ldapFormData.append('Password', encryptedPassword);
 
-            // Don't set Content-Type - let browser set it for FormData
+            // Proxy call to Next.js API
             const ldapResponse = await api.post<any>('/api/auth/validate', ldapFormData);
 
             console.log('LDAP Response:', ldapResponse.data);
@@ -49,7 +50,7 @@ export const authService = {
 
             // STEP 2: Get Branch Details with PLAIN username (not encrypted)
             const branchFormData = new FormData();
-            branchFormData.append('UserADId', loginData.username); // Plain username, not encrypted
+            branchFormData.append('UserADId', loginData.username);
 
             const branchResponse = await api.post<any>('/api/auth/details', branchFormData);
 
@@ -93,103 +94,65 @@ export const authService = {
                         console.warn('No real token found, using dummy token');
                     }
 
-                    // Always use localStorage for token to support multiple tabs/persistence
+                    // Store auth token (for middleware/API calls)
+                    sessionStorage.setItem(STORAGE_KEYS.AUTH_TOKEN, tokenToUse);
                     localStorage.setItem(STORAGE_KEYS.AUTH_TOKEN, tokenToUse);
-                    if (!rememberMe) {
-                        sessionStorage.setItem(STORAGE_KEYS.AUTH_TOKEN, tokenToUse);
-                    }
+
+                    // Also set a cookie for middleware (fallback if httpOnly cookie fails)
+                    document.cookie = `auth_token=${tokenToUse}; path=/; max-age=86400; SameSite=Lax`;
                 }
 
-                // Return the first user details for the toast message
-                return userData.BranchUserDetails[0] || apiData;
+                return apiData;
+            } else {
+                throw {
+                    message: branchResponse.data?.Data?.ErrMessage || 'Failed to get branch details',
+                    statusCode: branchResponse.data.StatusCode,
+                };
             }
-
-            throw {
-                message: branchResponse.data?.Status || 'Failed to get branch details',
-                statusCode: branchResponse.data?.StatusCode,
-            };
         } catch (error: any) {
-            // Re-throw standardized error without noisy console.error
-            throw {
-                message: error.message || 'Login failed',
-                statusCode: error.statusCode,
-            };
-        }
-    },
-
-    login: async (data: LoginRequest) => {
-        try {
-            const user = await authService.loginBranchOps(data, data.rememberMe, data.username);
-            if (user) return { success: true, user };
-            return { success: false, message: 'Login failed' };
-        } catch (error: any) {
-            return { success: false, message: error.message || 'An error occurred during login' };
-        }
-    },
-
-    branchLogout: async () => {
-        // Call the server to clear cookies
-        try {
-            await api.post('/api/auth/logout');
-        } catch (e) {
-            console.error('Logout API call failed', e);
-        }
-
-        if (typeof window !== 'undefined') {
-            // Clear all possible auth keys used across versions EXCEPT remember me
-            const keysToClear = [
-                STORAGE_KEYS.BRANCH_USER_DATA,
-                STORAGE_KEYS.AUTH_TOKEN,
-                'AU/@/#/TO/#/VA',
-                'brUd/APtiypx/sw7lu83P7A==',
-                'wcb/APtiypx/sw7lu83P7A==',
-                'branchAccountSearch',
-                // 'b\\u//n\\' // DO NOT CLEAR THIS - It's for Remember Me
-            ];
-
-            keysToClear.forEach(key => {
-                localStorage.removeItem(key);
-                sessionStorage.removeItem(key);
-            });
-
-            // Do NOT call localStorage.clear() as it wipes everything including Remember Me
-            sessionStorage.clear();
-
-            // Force redirect to login
-            window.location.href = '/login';
-        }
-    },
-
-    getCurrentUser: (): BranchUser | null => {
-        if (typeof window === 'undefined') return null;
-        const encryptedUser = localStorage.getItem(STORAGE_KEYS.BRANCH_USER_DATA);
-        if (!encryptedUser) return null;
-        try {
-            return decryptData<BranchUser>(encryptedUser);
-        } catch (e) {
-            return null;
+            console.error('Branch Ops Login Error:', error);
+            throw error;
         }
     },
 
     isAuthenticated: (): boolean => {
         if (typeof window === 'undefined') return false;
-        const user = authService.getCurrentUser();
-        const token = localStorage.getItem(STORAGE_KEYS.AUTH_TOKEN) ||
-            sessionStorage.getItem(STORAGE_KEYS.AUTH_TOKEN) ||
-            localStorage.getItem('AU/@/#/TO/#/VA');
-        return !!(user && token);
+
+        const userData = localStorage.getItem(STORAGE_KEYS.BRANCH_USER_DATA);
+        const token = sessionStorage.getItem(STORAGE_KEYS.AUTH_TOKEN) || localStorage.getItem(STORAGE_KEYS.AUTH_TOKEN);
+
+        return !!userData && !!token;
     },
 
-    generateOTP: async (mobileOrEmail: string) => {
-        console.log('Generating OTP for:', mobileOrEmail);
-        await new Promise((resolve) => setTimeout(resolve, 1000));
-        return { success: true };
+    getCurrentUser: (): BranchUser | null => {
+        if (typeof window === 'undefined') return null;
+
+        const encryptedUser = localStorage.getItem(STORAGE_KEYS.BRANCH_USER_DATA);
+        if (!encryptedUser) return null;
+
+        try {
+            return decryptData(encryptedUser);
+        } catch (error) {
+            console.error('Error decrypting user data:', error);
+            return null;
+        }
     },
 
-    validateOTP: async (otp: string) => {
-        console.log('Validating OTP:', otp);
-        await new Promise((resolve) => setTimeout(resolve, 1000));
-        if (otp === '1234') return { success: true };
-        return { success: false, message: 'Invalid OTP' };
-    },
+    branchLogout: async (): Promise<void> => {
+        try {
+            await api.post('/api/auth/logout');
+        } catch (error) {
+            console.error('Logout error:', error);
+        } finally {
+            if (typeof window !== 'undefined') {
+                localStorage.removeItem(STORAGE_KEYS.BRANCH_USER_DATA);
+                localStorage.removeItem(STORAGE_KEYS.AUTH_TOKEN);
+                sessionStorage.removeItem(STORAGE_KEYS.AUTH_TOKEN);
+                localStorage.removeItem('AU/@/#/TO/#/VA'); // Legacy token key
+
+                // Clear cookies
+                document.cookie = 'auth_token=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT;';
+            }
+        }
+    }
 };

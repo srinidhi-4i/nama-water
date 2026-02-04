@@ -10,25 +10,45 @@ export async function POST(
 
         console.log(`BranchOfficer Proxy [POST]: ${uatUrl}`);
 
+        // Get ALL cookies from the request - UAT uses session cookies for auth
         const incomingCookies = request.headers.get('cookie') || '';
-        console.log(`BranchOfficer Proxy: Incoming Cookies string length: ${incomingCookies.length}`);
+        console.log(`BranchOfficer Proxy: Forwarding cookies (length: ${incomingCookies.length})`);
 
-        // Forward FormData
+        // Forward FormData as-is
         const formData = await request.formData();
+
+        // Log FormData for debugging
+        const formDataObj: any = {};
+        formData.forEach((val, key) => { formDataObj[key] = val; });
+        console.log(`BranchOfficer Proxy: FormData:`, formDataObj);
+
+        // Extract token from Authorization header if present
+        const authHeader = request.headers.get('authorization');
+        const token = authHeader?.startsWith('Bearer ') ? authHeader.substring(7) : authHeader;
+
+        const uatHeaders = {
+            'Cookie': incomingCookies,
+            'Host': 'eservicesuat.nws.nama.om:444',
+            'Origin': 'https://eservicesuat.nws.nama.om',
+            'Referer': 'https://eservicesuat.nws.nama.om/Validateuser',
+            'User-Agent': request.headers.get('user-agent') || 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36',
+            'Authorization': authHeader || '',
+            'Token': token || '', // Try forwarding as Token header as well
+            'Accept': 'application/json, text/plain, */*',
+            'Accept-Language': 'en-GB,en-US;q=0.9,en;q=0.8',
+        };
+
+        console.log('BranchOfficer Proxy: Outgoing Headers:', JSON.stringify({
+            CookieLength: uatHeaders.Cookie.length,
+            Authorization: !!uatHeaders.Authorization,
+            Token: !!uatHeaders.Token,
+            Host: uatHeaders.Host
+        }, null, 2));
 
         const response = await fetch(uatUrl, {
             method: 'POST',
             body: formData,
-            headers: {
-                'Cookie': incomingCookies,
-                'Host': 'eservicesuat.nws.nama.om:444',
-                'Origin': 'https://eservicesuat.nws.nama.om',
-                'Referer': 'https://eservicesuat.nws.nama.om/Validateuser',
-                'User-Agent': request.headers.get('user-agent') || 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36',
-                'Authorization': request.headers.get('authorization') || '',
-                'Accept': 'application/json, text/plain, */*',
-                'Accept-Language': 'en-GB,en-US;q=0.9,en;q=0.8',
-            }
+            headers: uatHeaders
         });
 
         console.log(`BranchOfficer Proxy: UAT status: ${response.status}`);

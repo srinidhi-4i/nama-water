@@ -84,6 +84,8 @@ export const branchOpsService = {
             formData.forEach((val, key) => { payload[key] = val })
             console.log(`validateUser Payload [${type}]:`, payload)
 
+            // Utilize uatApi for direct calls to handle cookies properly
+            // Bypass Next.js proxy to ensure HttpOnly/Session cookies are sent/received
             const response = await api.post<any>(
                 '/BranchOfficer/GetBranchOfficerCivilID',
                 formData

@@ -34,6 +34,10 @@ export async function POST(request: NextRequest) {
                 'Accept': 'application/json',
                 // Keep cookie forwarding as it might be needed for session affinity
                 'Cookie': request.headers.get('cookie') || '',
+                'Host': 'eservicesuat.nws.nama.om:444',
+                'Origin': 'https://eservicesuat.nws.nama.om',
+                'Referer': 'https://eservicesuat.nws.nama.om/BranchLogin',
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36',
             }
         });
 
@@ -55,13 +59,24 @@ export async function POST(request: NextRequest) {
         // Create response with headers
         const nextResponse = NextResponse.json(data, { status: response.status });
 
+        // Debug: Log ALL headers to see what we are getting
+        console.log('Branch Details: UAT Response Headers Dump:');
+        response.headers.forEach((val, key) => {
+            console.log(`  Header [${key}]: ${val}`);
+        });
+
         // Forward Set-Cookie header if present
         const rawCookies = (response.headers as any).getSetCookie
             ? (response.headers as any).getSetCookie()
             : [response.headers.get('set-cookie')].filter((c: string | null) => !!c);
 
+        console.log('Branch Details: Set-Cookie headers from UAT:', rawCookies);
+
         if (rawCookies.length > 0) {
+            console.log(`Branch Details: Forwarding ${rawCookies.length} cookies from UAT`);
+
             rawCookies.forEach((cookie: string) => {
+                console.log('Branch Details: Original cookie:', cookie);
                 let modifiedCookie = cookie
                     .replace(/Domain=[^;]+;?/gi, '')
                     .replace(/Path=[^;]+;?/gi, '')
@@ -70,9 +85,12 @@ export async function POST(request: NextRequest) {
 
                 modifiedCookie = modifiedCookie + '; Path=/';
 
+                console.log('Branch Details: Modified cookie:', modifiedCookie);
                 console.log('Branch Details: Forwarding cookie:', modifiedCookie);
                 nextResponse.headers.append('set-cookie', modifiedCookie);
             });
+        } else {
+            console.log('Branch Details: No Set-Cookie headers from UAT!');
         }
 
         return nextResponse;

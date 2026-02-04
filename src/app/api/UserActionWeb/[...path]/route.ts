@@ -12,15 +12,22 @@ export async function POST(
 
         const incomingCookies = request.headers.get('cookie') || '';
 
+
         // Forward FormData or JSON
         let body;
         const contentType = request.headers.get('content-type') || '';
 
         if (contentType.includes('multipart/form-data')) {
             body = await request.formData();
+
+            body = await request.formData();
         } else {
             body = await request.text();
         }
+
+        // Extract token from Authorization header if present
+        const authHeader = request.headers.get('authorization');
+        const token = authHeader?.startsWith('Bearer ') ? authHeader.substring(7) : authHeader;
 
         const response = await fetch(uatUrl, {
             method: 'POST',
@@ -31,7 +38,8 @@ export async function POST(
                 'Origin': 'https://eservicesuat.nws.nama.om',
                 'Referer': 'https://eservicesuat.nws.nama.om/Validateuser',
                 'User-Agent': request.headers.get('user-agent') || 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36',
-                'Authorization': request.headers.get('authorization') || '',
+                'Authorization': authHeader || '',
+                'Token': token || '',
                 'Accept': 'application/json, text/plain, */*',
                 'Accept-Language': 'en-GB,en-US;q=0.9,en;q=0.8',
             }

@@ -1,7 +1,13 @@
 "use client"
 
 import { useState } from "react"
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import {
+  ResponsiveModal,
+  ResponsiveModalContent,
+  ResponsiveModalHeader,
+  ResponsiveModalTitle,
+  ResponsiveModalFooter,
+} from "@/components/ui/responsive-modal"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -66,13 +72,13 @@ export function AppointmentModal({
   }
 
   return (
-    <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="sm:max-w-[500px]">
-        <DialogHeader>
-          <DialogTitle>
+    <ResponsiveModal open={open} onOpenChange={handleClose}>
+      <ResponsiveModalContent side="bottom" className="sm:max-w-[500px]">
+        <ResponsiveModalHeader>
+          <ResponsiveModalTitle>
             {language === "EN" ? "Book an Appointment" : "حجز موعد"}
-          </DialogTitle>
-        </DialogHeader>
+          </ResponsiveModalTitle>
+        </ResponsiveModalHeader>
 
         <div className="space-y-6 py-4">
           <div>
@@ -89,13 +95,13 @@ export function AppointmentModal({
             }}>
               <div className="flex items-center space-x-2 mb-3">
                 <RadioGroupItem value="new" id="new" />
-                <Label htmlFor="new" className="cursor-pointer">
+                <Label htmlFor="new" className="cursor-pointer font-semibold">
                   {language === "EN" ? "New Appointment Request" : "طلب موعد جديد"}
                 </Label>
               </div>
 
               {selectedOption === "new" && appointmentType === "Branch" && (
-                <div className="ml-6 space-y-2 mb-4">
+                <div className="ml-6 space-y-3 mb-4 p-3 bg-slate-50 rounded-lg border border-slate-100">
                   {appointmentCategories.map((category) => (
                     <div key={category.ID} className="flex items-center space-x-3">
                       <RadioGroupItem 
@@ -109,11 +115,11 @@ export function AppointmentModal({
                           ? "/Assets/Images/branchVisitIcon.png" 
                           : "/Assets/Images/videoVisitIcon.png"}
                         alt={language === "EN" ? category.NameEn : category.NameAr}
-                        width={35}
-                        height={35}
+                        width={30}
+                        height={30}
                         className="object-contain"
                       />
-                      <Label htmlFor={`visit-${category.ID}`} className="cursor-pointer">
+                      <Label htmlFor={`visit-${category.ID}`} className="cursor-pointer text-sm">
                         {language === "EN" ? category.NameEn : category.NameAr}
                       </Label>
                     </div>
@@ -123,7 +129,7 @@ export function AppointmentModal({
 
               <div className="flex items-center space-x-2">
                 <RadioGroupItem value="exist" id="exist" />
-                <Label htmlFor="exist" className="cursor-pointer">
+                <Label htmlFor="exist" className="cursor-pointer font-semibold">
                   {language === "EN" ? "Existing Appointment" : "موعد موجود"}
                 </Label>
               </div>
@@ -132,7 +138,7 @@ export function AppointmentModal({
 
           {selectedOption === "exist" && (
             <div className="space-y-2">
-              <Label htmlFor="identifier">
+              <Label htmlFor="identifier" className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
                 {appointmentType === "Branch"
                   ? language === "EN" 
                     ? "Appointment ID / GSM Number" 
@@ -140,7 +146,7 @@ export function AppointmentModal({
                   : language === "EN"
                     ? "Appointment ID / GSM Number / Email"
                     : "رقم الموعد / رقم الجوال / البريد الإلكتروني"}
-                <span className="text-red-500 ml-1">*</span>
+                <span className="text-red-500 ml-1 font-bold">*</span>
               </Label>
               <Input
                 id="identifier"
@@ -153,24 +159,25 @@ export function AppointmentModal({
                   : language === "EN"
                     ? "Enter Appointment ID, GSM Number or Email"
                     : "أدخل رقم الموعد أو رقم الجوال أو البريد الإلكتروني"}
+                className="h-11 border-slate-200 focus:ring-teal-500"
               />
             </div>
           )}
 
-          <div className="flex justify-end gap-3">
-            <Button variant="outline" onClick={handleClose}>
+          <ResponsiveModalFooter className="flex-row gap-3">
+            <Button variant="outline" onClick={handleClose} className="flex-1">
               {language === "EN" ? "Cancel" : "إلغاء"}
             </Button>
             <Button 
               onClick={handleSubmit}
               disabled={isSubmitDisabled()}
-              className="bg-teal-700 hover:bg-teal-800"
+              className="bg-teal-700 hover:bg-teal-800 flex-1 font-bold h-11"
             >
               {language === "EN" ? "Submit" : "إرسال"}
             </Button>
-          </div>
+          </ResponsiveModalFooter>
         </div>
-      </DialogContent>
-    </Dialog>
+      </ResponsiveModalContent>
+    </ResponsiveModal>
   )
 }

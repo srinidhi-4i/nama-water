@@ -4,7 +4,7 @@ import { useState, useEffect } from "react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
-import { Eye, EyeOff, Lock, User } from "lucide-react"
+import { Lock, User } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { toast } from "sonner"
 
@@ -33,7 +33,6 @@ const formSchema = z.object({
 type FormValues = z.infer<typeof formSchema>
 
 export default function LoginPage() {
-  const [showPassword, setShowPassword] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const router = useRouter()
   const [isMounted, setIsMounted] = useState(false)
@@ -193,22 +192,10 @@ const form = useForm<FormValues>({
                         <div className="relative">
                           <Lock className="absolute left-3 top-2.5 h-5 w-5 text-red-500" />
                           <Input
-                            type={showPassword ? "text" : "password"}
-                            
-                            className="pl-10 pr-10 bg-gray-50 "
+                            type="password"
+                            className="pl-10 bg-gray-50"
                             {...field}
                           />
-                          <button
-                            type="button"
-                            onClick={() => setShowPassword(!showPassword)}
-                            className="absolute right-3 top-2.5 text-gray-400 hover:text-gray-600"
-                          >
-                            {showPassword ? (
-                              <EyeOff className="h-5 w-5" />
-                            ) : (
-                              <Eye className="h-5 w-5" />
-                            )}
-                          </button>
                         </div>
                       </FormControl>
                       <FormMessage />

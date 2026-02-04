@@ -2,15 +2,16 @@
 
 import React from 'react';
 import {
-    Dialog,
-    DialogContent,
-    DialogDescription,
-    DialogFooter,
-    DialogHeader,
-    DialogTitle,
-} from "@/components/ui/dialog";
+    ResponsiveModal,
+    ResponsiveModalContent,
+    ResponsiveModalHeader,
+    ResponsiveModalTitle,
+    ResponsiveModalDescription,
+    ResponsiveModalFooter,
+} from "@/components/ui/responsive-modal";
 import { Button } from "@/components/ui/button";
-import { Info, AlertTriangle, Calendar, Loader2 } from 'lucide-react';
+import { LoadingButton } from "@/components/ui/loading-button";
+import { Info, AlertTriangle, Calendar } from 'lucide-react';
 import { WetlandHolidayListItem } from '@/types/wetland.types';
 
 interface HolidayCalendarModalsProps {
@@ -96,209 +97,212 @@ export default function HolidayCalendarModals({
     return (
         <>
             {/* Data Exists Modal */}
-            <Dialog open={showDataExistsModal} onOpenChange={setShowDataExistsModal}>
-                <DialogContent className="sm:max-w-md">
-                    <DialogHeader>
-                        <DialogTitle className="flex items-center gap-2">
+            <ResponsiveModal open={showDataExistsModal} onOpenChange={setShowDataExistsModal}>
+                <ResponsiveModalContent side="bottom" className="sm:max-w-md">
+                    <ResponsiveModalHeader>
+                        <ResponsiveModalTitle className="flex items-center gap-2">
                             <Info className="h-5 w-5 text-blue-600" />
                             Data Already Exists
-                        </DialogTitle>
-                        <DialogDescription>
+                        </ResponsiveModalTitle>
+                        <ResponsiveModalDescription>
                             Weekend Offs already exist for {yearSelected}. Do you want to view the existing data?
-                        </DialogDescription>
-                    </DialogHeader>
-                    <DialogFooter className="sm:justify-end gap-3">
-                        <Button variant="outline" onClick={onCancelExisting}>
+                        </ResponsiveModalDescription>
+                    </ResponsiveModalHeader>
+                    <ResponsiveModalFooter className="flex-row gap-3 sm:justify-end">
+                        <Button variant="outline" onClick={onCancelExisting} className="flex-1 sm:flex-none sm:w-auto">
                             No
                         </Button>
-                        <Button className="bg-teal-600 hover:bg-teal-700" onClick={onViewExisting}>
+                        <Button className="bg-teal-600 hover:bg-teal-700 flex-1 sm:flex-none sm:w-auto" onClick={onViewExisting}>
                             Yes
                         </Button>
-                    </DialogFooter>
-                </DialogContent>
-            </Dialog>
+                    </ResponsiveModalFooter>
+                </ResponsiveModalContent>
+            </ResponsiveModal>
 
             {/* WO Required Modal */}
-            <Dialog open={showWORequiredModal} onOpenChange={setShowWORequiredModal}>
-                <DialogContent className="sm:max-w-md">
-                    <DialogHeader>
-                        <DialogTitle className="flex items-center gap-2">
+            <ResponsiveModal open={showWORequiredModal} onOpenChange={setShowWORequiredModal}>
+                <ResponsiveModalContent side="bottom" className="sm:max-w-md">
+                    <ResponsiveModalHeader>
+                        <ResponsiveModalTitle className="flex items-center gap-2">
                             <Info className="h-5 w-5 text-blue-600" />
                             Weekend Off Required
-                        </DialogTitle>
-                        <DialogDescription>
+                        </ResponsiveModalTitle>
+                        <ResponsiveModalDescription>
                             Please create Weekend Offs for {yearSelected} before creating Special Holidays. Do you want to create Weekend Offs now?
-                        </DialogDescription>
-                    </DialogHeader>
-                    <DialogFooter className="sm:justify-end gap-3">
-                        <Button variant="outline" onClick={onCancelWO}>
+                        </ResponsiveModalDescription>
+                    </ResponsiveModalHeader>
+                    <ResponsiveModalFooter className="flex-row gap-3 sm:justify-end">
+                        <Button variant="outline" onClick={onCancelWO} className="flex-1 sm:flex-none sm:w-auto">
                             No
                         </Button>
-                        <Button className="bg-teal-600 hover:bg-teal-700" onClick={onCreateWO}>
+                        <Button className="bg-teal-600 hover:bg-teal-700 flex-1 sm:flex-none sm:w-auto" onClick={onCreateWO}>
                             Yes
                         </Button>
-                    </DialogFooter>
-                </DialogContent>
-            </Dialog>
+                    </ResponsiveModalFooter>
+                </ResponsiveModalContent>
+            </ResponsiveModal>
 
             {/* Delete Confirmation Modal */}
-            <Dialog open={showDeleteModal} onOpenChange={setShowDeleteModal}>
-                <DialogContent className="sm:max-w-md">
-                    <DialogHeader>
-                        <DialogTitle className="flex items-center gap-2 text-red-600">
+            <ResponsiveModal open={showDeleteModal} onOpenChange={setShowDeleteModal}>
+                <ResponsiveModalContent side="bottom" className="sm:max-w-md">
+                    <ResponsiveModalHeader>
+                        <ResponsiveModalTitle className="flex items-center gap-2 text-red-600">
                             <AlertTriangle className="h-5 w-5" />
                             Confirm Delete
-                        </DialogTitle>
-                        <DialogDescription>
+                        </ResponsiveModalTitle>
+                        <ResponsiveModalDescription>
                             Do you want to delete the special holiday '{deleteTarget?.HolidayDescriptionEn}' that occurs on{' '}
                             {deleteTarget && new Date(deleteTarget.HolidayDate).toLocaleDateString('en-GB')}?
-                        </DialogDescription>
-                    </DialogHeader>
-                    <DialogFooter className="sm:justify-end gap-3">
+                        </ResponsiveModalDescription>
+                    </ResponsiveModalHeader>
+                    <ResponsiveModalFooter className="flex-row gap-3 sm:justify-end">
                         <Button
                             variant="outline"
                             onClick={() => setShowDeleteModal(false)}
+                            className="flex-1 sm:flex-none sm:w-auto"
                         >
                             Cancel
                         </Button>
-                        <Button
+                        <LoadingButton
                             variant="destructive"
                             onClick={confirmDelete}
-                            disabled={isLoading}
+                            isLoading={isLoading}
+                            className="flex-1 sm:flex-none sm:w-auto"
                         >
-                            {isLoading && <Loader2 className="w-4 h-4 animate-spin mr-2" />}
                             Delete
-                        </Button>
-                    </DialogFooter>
-                </DialogContent>
-            </Dialog>
+                        </LoadingButton>
+                    </ResponsiveModalFooter>
+                </ResponsiveModalContent>
+            </ResponsiveModal>
 
             {/* Edit SH Modal */}
-            <Dialog open={showEditSHModal} onOpenChange={setShowEditSHModal}>
-                <DialogContent className="sm:max-w-2xl">
-                    <DialogHeader>
-                        <DialogTitle className="flex items-center gap-2 text-teal-700">
+            <ResponsiveModal open={showEditSHModal} onOpenChange={setShowEditSHModal}>
+                <ResponsiveModalContent side="bottom" className="sm:max-w-2xl">
+                    <ResponsiveModalHeader>
+                        <ResponsiveModalTitle className="flex items-center gap-2 text-teal-700 font-bold border-b pb-4">
                             <Calendar className="h-5 w-5" />
                             Edit Special Holiday
-                        </DialogTitle>
-                        <DialogDescription>
+                        </ResponsiveModalTitle>
+                        <ResponsiveModalDescription>
                             Update the details for the special holiday on {editFromDate}.
-                        </DialogDescription>
-                    </DialogHeader>
-                    <div className="grid gap-6 py-4">
-                        <div className="grid grid-cols-2 gap-4">
+                        </ResponsiveModalDescription>
+                    </ResponsiveModalHeader>
+                    <div className="grid gap-6 py-6">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <div className="space-y-2">
-                                <label className="text-sm font-medium">From Date</label>
+                                <label className="text-sm font-semibold text-slate-700">From Date</label>
                                 <input
                                     type="date"
                                     value={editFromDate}
                                     onChange={(e) => setEditFromDate(e.target.value)}
-                                    className="w-full px-3 py-2 border rounded-md"
+                                    className="w-full h-11 px-3 border border-slate-200 rounded-md bg-slate-50 focus:bg-white focus:ring-2 focus:ring-teal-500/20 transition-all outline-none"
                                 />
                             </div>
                             <div className="space-y-2">
-                                <label className="text-sm font-medium">To Date</label>
+                                <label className="text-sm font-semibold text-slate-700">To Date</label>
                                 <input
                                     type="date"
                                     value={editToDate}
                                     onChange={(e) => setEditToDate(e.target.value)}
                                     min={editFromDate}
-                                    className="w-full px-3 py-2 border rounded-md"
+                                    className="w-full h-11 px-3 border border-slate-200 rounded-md bg-slate-50 focus:bg-white focus:ring-2 focus:ring-teal-500/20 transition-all outline-none"
                                 />
                             </div>
                         </div>
                         <div className="space-y-2">
-                            <label className="text-sm font-medium">Description [English]</label>
+                            <label className="text-sm font-semibold text-slate-700">Description [English]</label>
                             <textarea
                                 value={editDescription}
                                 onChange={(e) => setEditDescription(e.target.value)}
                                 rows={3}
-                                className="w-full px-3 py-2 border rounded-md"
+                                className="w-full p-3 border border-slate-200 rounded-md bg-slate-50 focus:bg-white focus:ring-2 focus:ring-teal-500/20 transition-all outline-none"
                             />
                         </div>
                         <div className="space-y-2">
-                            <label className="text-sm font-medium text-right">Description [Arabic]</label>
+                            <label className="text-sm font-semibold text-slate-700 text-right w-full block">Description [Arabic]</label>
                             <textarea
                                 value={editDescriptionAR}
                                 onChange={(e) => setEditDescriptionAR(e.target.value)}
                                 rows={3}
                                 dir="rtl"
-                                className="w-full px-3 py-2 border rounded-md"
+                                className="w-full p-3 border border-slate-200 rounded-md bg-slate-50 focus:bg-white focus:ring-2 focus:ring-teal-500/20 transition-all outline-none"
                             />
                         </div>
                     </div>
-                    <DialogFooter>
-                        <Button variant="outline" onClick={() => setShowEditSHModal(false)}>
+                    <ResponsiveModalFooter className="flex-row gap-3 sm:justify-end">
+                        <Button variant="outline" onClick={() => setShowEditSHModal(false)} className="flex-1 sm:flex-none sm:w-auto">
                             Cancel
                         </Button>
-                        <Button 
-                            className="bg-teal-600 hover:bg-teal-700" 
+                        <LoadingButton 
+                            className="bg-teal-600 hover:bg-teal-700 text-white font-bold h-11 flex-1 sm:flex-none sm:w-auto shadow-lg shadow-teal-100" 
                             onClick={confirmEdit}
-                            disabled={isLoading || !editDescription || !editDescriptionAR}
+                            isLoading={isLoading}
+                            disabled={!editDescription || !editDescriptionAR}
+                            loadingText="Saving Changes..."
                         >
-                            {isLoading && <Loader2 className="w-4 h-4 animate-spin mr-2" />}
                             Save Changes
-                        </Button>
-                    </DialogFooter>
-                </DialogContent>
-            </Dialog>
+                        </LoadingButton>
+                    </ResponsiveModalFooter>
+                </ResponsiveModalContent>
+            </ResponsiveModal>
 
             {/* Delete All Confirmation Modal */}
-            <Dialog open={showDeleteAllModal} onOpenChange={setShowDeleteAllModal}>
-                <DialogContent className="sm:max-w-md">
-                    <DialogHeader>
-                        <DialogTitle className="flex items-center gap-2 text-red-600">
+            <ResponsiveModal open={showDeleteAllModal} onOpenChange={setShowDeleteAllModal}>
+                <ResponsiveModalContent side="bottom" className="sm:max-w-md">
+                    <ResponsiveModalHeader>
+                        <ResponsiveModalTitle className="flex items-center gap-2 text-red-600">
                             <AlertTriangle className="h-5 w-5" />
                             Confirm Delete
-                        </DialogTitle>
-                        <DialogDescription>
+                        </ResponsiveModalTitle>
+                        <ResponsiveModalDescription>
                             Are you sure you want to delete all {type === 'WO' ? 'Weekend' : 'Special'} Holidays for the year {yearSelected}? This action cannot be undone.
-                        </DialogDescription>
-                    </DialogHeader>
-                    <DialogFooter className="sm:justify-end gap-3">
+                        </ResponsiveModalDescription>
+                    </ResponsiveModalHeader>
+                    <ResponsiveModalFooter className="flex-row gap-3 sm:justify-end">
                         <Button
                             variant="outline"
                             onClick={() => setShowDeleteAllModal(false)}
+                            className="flex-1 sm:flex-none sm:w-auto"
                         >
                             No
                         </Button>
-                        <Button
+                        <LoadingButton
                             variant="destructive"
                             onClick={() => {
                                 setShowDeleteAllModal(false);
                                 onDeleteAll();
                             }}
-                            disabled={isLoading}
+                            isLoading={isLoading}
+                            className="flex-1 sm:flex-none sm:w-auto"
                         >
-                            {isLoading && <Loader2 className="w-4 h-4 animate-spin mr-2" />}
                             Yes, Delete All
-                        </Button>
-                    </DialogFooter>
-                </DialogContent>
-            </Dialog>
+                        </LoadingButton>
+                    </ResponsiveModalFooter>
+                </ResponsiveModalContent>
+            </ResponsiveModal>
 
             {/* Warning Modal (Status 606) */}
-            <Dialog open={showWarningModal} onOpenChange={setShowWarningModal}>
-                <DialogContent className="sm:max-w-md">
-                    <DialogHeader>
-                        <DialogTitle className="flex items-center gap-2 text-amber-600">
+            <ResponsiveModal open={showWarningModal} onOpenChange={setShowWarningModal}>
+                <ResponsiveModalContent side="bottom" className="sm:max-w-md">
+                    <ResponsiveModalHeader>
+                        <ResponsiveModalTitle className="flex items-center gap-2 text-amber-600">
                             <AlertTriangle className="h-5 w-5" />
                             Warning
-                        </DialogTitle>
-                        <DialogDescription>
+                        </ResponsiveModalTitle>
+                        <ResponsiveModalDescription>
                             {warningMessage}
-                        </DialogDescription>
-                    </DialogHeader>
-                    <DialogFooter className="sm:justify-end">
+                        </ResponsiveModalDescription>
+                    </ResponsiveModalHeader>
+                    <ResponsiveModalFooter className="sm:justify-end">
                         <Button
-                            className="bg-teal-600 hover:bg-teal-700"
+                            className="bg-teal-600 hover:bg-teal-700 w-full sm:w-auto mt-2 h-11 font-bold"
                             onClick={() => setShowWarningModal(false)}
                         >
                             Understood
                         </Button>
-                    </DialogFooter>
-                </DialogContent>
-            </Dialog>
+                    </ResponsiveModalFooter>
+                </ResponsiveModalContent>
+            </ResponsiveModal>
         </>
     );
 }

@@ -1,8 +1,15 @@
 import { useState } from "react"
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog"
+import {
+  ResponsiveModal,
+  ResponsiveModalContent,
+  ResponsiveModalHeader,
+  ResponsiveModalTitle,
+  ResponsiveModalDescription,
+  ResponsiveModalFooter,
+} from "@/components/ui/responsive-modal"
 import { Button } from "@/components/ui/button"
 import { waterShutdownService } from "@/services/watershutdown.service"
-import { Loader2 } from "lucide-react"
+import { LoadingButton } from "@/components/ui/loading-button"
 
 interface CompletionModalProps {
     open: boolean
@@ -34,29 +41,29 @@ export function CompletionModal({
     }
 
     return (
-        <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="max-w-[500px]">
-                <DialogHeader>
-                    <DialogTitle className="bg-[#006A72] text-white p-3 -mx-6 -mt-6 rounded-t-lg">
+        <ResponsiveModal open={open} onOpenChange={onOpenChange}>
+            <ResponsiveModalContent side="bottom" className="sm:max-w-[500px]">
+                <ResponsiveModalHeader>
+                    <ResponsiveModalTitle className="bg-[#006A72] text-white p-3 -mx-6 -mt-6 rounded-t-lg">
                         Send Completion Notification
-                    </DialogTitle>
-                     <DialogDescription className="py-6 text-center text-lg text-black font-medium">
+                    </ResponsiveModalTitle>
+                     <ResponsiveModalDescription className="py-6 text-center text-lg text-black font-medium">
                         Are you sure to send completion notification?
-                    </DialogDescription>
-                </DialogHeader>
+                    </ResponsiveModalDescription>
+                </ResponsiveModalHeader>
 
-                <DialogFooter className="justify-center sm:justify-center gap-2">
-                    <Button variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
-                    <Button 
-                        className="bg-[#006A72] text-white hover:bg-[#00555b]" 
+                <ResponsiveModalFooter className="flex-row gap-2 sm:justify-center">
+                    <Button variant="outline" onClick={() => onOpenChange(false)} className="flex-1 sm:flex-none sm:w-auto">Cancel</Button>
+                    <LoadingButton 
+                        className="bg-[#006A72] text-white hover:bg-[#00555b] flex-1 sm:flex-none sm:w-auto" 
                         onClick={handleConfirm}
-                        disabled={isLoading}
+                        isLoading={isLoading}
+                        loadingText="Sending..."
                     >
-                        {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                         Send
-                    </Button>
-                </DialogFooter>
-            </DialogContent>
-        </Dialog>
+                    </LoadingButton>
+                </ResponsiveModalFooter>
+            </ResponsiveModalContent>
+        </ResponsiveModal>
     )
 }
