@@ -34,14 +34,23 @@ export interface ROPUserDetails {
 }
 
 export interface CustomerInfo {
-    UserID: string
-    FullNameEn: string
-    FullNameAr: string
+    UserID?: string
+    FullNameEn?: string
+    FullNameAr?: string
     EmailID: string
     MobileNumber: string
-    CivilID: string
+    CivilID?: string
     ExpiryDate?: string
     CustomerType?: string
+    // Account specific fields
+    AccountName?: string
+    AccountStatus?: string
+    OutstandingAmount?: string
+    BillDate?: string
+    DeferredAmount?: string
+    LastPaymentAmount?: string
+    LastPaymentDate?: string
+    DisconnectionStatus?: string
     [key: string]: any
 }
 

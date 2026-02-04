@@ -1,6 +1,7 @@
 "use client"
 
 
+import { useRouter } from "next/navigation"
 import { Bell, LogOut, Menu } from "lucide-react"
 import { useState, useEffect } from "react"
 import { authService } from "@/services/auth.service"
@@ -27,6 +28,7 @@ interface HeaderProps {
 }
 
 export function Header({ language = "EN", onLanguageChange, userDetails, onMenuClick }: HeaderProps) {
+  const router = useRouter()
   const [mounted, setMounted] = useState(false)
 
   useEffect(() => {
@@ -47,8 +49,9 @@ export function Header({ language = "EN", onLanguageChange, userDetails, onMenuC
   const displayName = userDetails?.BranchuserNameEn || "User"
   const initials = getUserInitials(displayName)
 
-  const handleLogout = () => {
-    authService.branchLogout()
+  const handleLogout = async () => {
+    await authService.branchLogout()
+    router.push("/branch-login")
   }
 
   if (!mounted) return null

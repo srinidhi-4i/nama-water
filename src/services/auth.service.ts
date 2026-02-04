@@ -1,6 +1,7 @@
 import { api } from '@/lib/axios';
 import { LoginRequest, LoginResponse, BranchUser } from '@/types/auth.types';
 import { encryptString, encryptData, decryptData, STORAGE_KEYS } from '@/lib/crypto';
+import { loginAction } from '@/app/actions/auth/login';
 
 export const authService = {
     loginBranchOps: async (
@@ -9,108 +10,60 @@ export const authService = {
         loginName: string
     ): Promise<BranchUser | null> => {
         try {
-            console.log('Step 1: LDAP Validation');
-            console.log('Username (plain):', loginData.username);
+            console.log('Using Server Action for Login...');
 
-            // STEP 1: LDAP Validation with encrypted credentials
-            const encryptedUsername = encryptString(loginData.username);
-            const encryptedPassword = encryptString(loginData.password);
+            // Call Server Action
+            const result = await loginAction(loginData);
 
-            const ldapFormData = new FormData();
-            ldapFormData.append('UserName', encryptedUsername);
-            ldapFormData.append('Password', encryptedPassword);
-
-            // Proxy call to Next.js API
-            const ldapResponse = await api.post<any>('/api/auth/validate', ldapFormData);
-
-            console.log('LDAP Response:', ldapResponse.data);
-
-            // Check for failure - API returns StatusCode 606 for failure, 605 for success
-            if (!ldapResponse.data || ldapResponse.data.StatusCode === 606) {
+            if (!result.success || !result.data) {
                 throw {
-                    message: ldapResponse.data?.Data?.ErrMessage || 'Invalid username or password',
+                    message: result.message || 'Login failed',
                     statusCode: 'Failure',
                 };
             }
 
-            // Check if StatusCode is 605 (success) and Data.StatusCode is "Success"
-            if (ldapResponse.data.StatusCode !== 605 || ldapResponse.data.Data?.StatusCode !== 'Success') {
-                throw {
-                    message: ldapResponse.data?.Data?.ErrMessage || 'LDAP validation failed',
-                    statusCode: ldapResponse.data.StatusCode,
-                };
-            }
+            const apiData = result.data;
 
-            // Capture token from LDAP response (it's returned here, not in branch details)
-            const ldapToken = ldapResponse.data?.Data?.Token;
-            console.log('LDAP Token captured:', ldapToken ? 'Yes' : 'No');
+            console.log('Login Server Action Success:', apiData);
 
-            console.log('Step 2: Getting branch details');
-            console.log('Using plain UserADId:', loginData.username);
+            // Structure the user data to match React app format
+            const userData = {
+                BranchUserDetails: apiData.BranchUserDetails || [],
+                BranchUserMenuDetails: apiData.BranchUserMenuDetails || [],
+                BranchUserRoleDetails: apiData.BranchUserRoleDetails || []
+            };
 
-            // STEP 2: Get Branch Details with PLAIN username (not encrypted)
-            const branchFormData = new FormData();
-            branchFormData.append('UserADId', loginData.username);
+            if (typeof window !== 'undefined') {
+                console.log('Processing user data on client');
+                // Save the complete user data structure
+                const encryptedUser = encryptData(userData);
+                localStorage.setItem(STORAGE_KEYS.BRANCH_USER_DATA, encryptedUser);
 
-            const branchResponse = await api.post<any>('/api/auth/details', branchFormData);
-
-            console.log('Branch Response:', branchResponse.data);
-
-            if (branchResponse.data && branchResponse.data.StatusCode === 605) {
-                const apiData = branchResponse.data.Data;
-
-                if (apiData && apiData.UserID === 0) {
-                    throw {
-                        message: apiData.Outmessage || 'Invalid user',
-                        statusCode: 605,
-                    };
+                if (rememberMe) {
+                    const encryptedUsername = encryptData(loginName);
+                    localStorage.setItem('b\\u//n\\', encryptedUsername);
                 }
 
-                // Structure the user data to match React app format
-                const userData = {
-                    BranchUserDetails: apiData.BranchUserDetails || [],
-                    BranchUserMenuDetails: apiData.BranchUserMenuDetails || [],
-                    BranchUserRoleDetails: apiData.BranchUserRoleDetails || []
-                };
+                // Use the token returned by action
+                const tokenToUse = result.token || apiData.Token || 'branch-authenticated';
 
-                if (typeof window !== 'undefined' && apiData) {
-                    console.log('Login successful, processing user data');
-                    // Save the complete user data structure
-                    const encryptedUser = encryptData(userData);
-                    localStorage.setItem(STORAGE_KEYS.BRANCH_USER_DATA, encryptedUser);
+                // Store auth token (for middleware/API calls)
+                sessionStorage.setItem(STORAGE_KEYS.AUTH_TOKEN, tokenToUse);
+                localStorage.setItem(STORAGE_KEYS.AUTH_TOKEN, tokenToUse);
 
-                    if (rememberMe) {
-                        const encryptedUsername = encryptData(loginName);
-                        localStorage.setItem('b\\u//n\\', encryptedUsername);
-                    }
-
-                    // Use the token from LDAP response
-                    const realToken = ldapToken || apiData.Token || apiData.token || apiData.Data?.Token || apiData.Data?.token;
-                    const tokenToUse = realToken || 'branch-authenticated';
-
-                    if (realToken) {
-                        console.log('Real token found, storing it');
-                    } else {
-                        console.warn('No real token found, using dummy token');
-                    }
-
-                    // Store auth token (for middleware/API calls)
-                    sessionStorage.setItem(STORAGE_KEYS.AUTH_TOKEN, tokenToUse);
-                    localStorage.setItem(STORAGE_KEYS.AUTH_TOKEN, tokenToUse);
-
-                    // Also set a cookie for middleware (fallback if httpOnly cookie fails)
-                    document.cookie = `auth_token=${tokenToUse}; path=/; max-age=86400; SameSite=Lax`;
-                }
-
-                return apiData;
-            } else {
-                throw {
-                    message: branchResponse.data?.Data?.ErrMessage || 'Failed to get branch details',
-                    statusCode: branchResponse.data.StatusCode,
-                };
+                // Also set a fallback cookie on client just in case (server action sets httpOnly ones)
+                document.cookie = `auth_token=${tokenToUse}; path=/; max-age=86400; SameSite=Lax`;
             }
+
+            return apiData;
+
         } catch (error: any) {
-            console.error('Branch Ops Login Error:', error);
+            console.error('[UPDATE_CHECK_1] Branch Ops Login Error - Full Details:', {
+                message: error?.message,
+                response: error?.response?.data,
+                status: error?.response?.status,
+                stack: error?.stack
+            });
             throw error;
         }
     },
