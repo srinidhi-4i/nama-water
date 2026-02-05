@@ -26,7 +26,7 @@ export default function NotificationTemplateView({ id, mode }: NotificationTempl
       try {
         const response = await notificationService.getTemplates()
         const templates = response.Notifications || []
-        const found = templates.find((t: NotificationTemplate) => t.NotificationCategory === id)
+        const found = templates.find((t: NotificationTemplate) => t.NotificationId === Number(id))
         
         if (found) {
           setTemplate(found)
@@ -81,7 +81,7 @@ export default function NotificationTemplateView({ id, mode }: NotificationTempl
           { labelEn: mode === "edit" ? "Edit" : "View", labelAr: mode === "edit" ? "تحرير" : "عرض" }
         ]}
       />
-      <div className="px-6">
+      <div className="p-4">
         <TemplateViewEdit
           template={template}
           mode={mode}

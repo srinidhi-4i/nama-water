@@ -9,6 +9,8 @@ import { notificationService } from "@/services/notification.service"
 import { CustomNotification } from "@/types/notification.types"
 import { toast } from "sonner"
 import { format } from "date-fns"
+import PageHeader from "@/components/layout/PageHeader"
+import { useLanguage } from "@/components/providers/LanguageProvider"
 
 interface EditNotificationProps {
   notification: CustomNotification
@@ -23,6 +25,7 @@ export function EditNotification({ notification, onBack }: EditNotificationProps
     format(new Date(notification.ScheduledDateTime), 'HH:mm')
   )
   const [isUpdating, setIsUpdating] = useState(false)
+  const { language } = useLanguage()
 
   const handleUpdate = async () => {
     if (!scheduledDate || !scheduledTime) {
@@ -35,7 +38,7 @@ export function EditNotification({ notification, onBack }: EditNotificationProps
       const scheduledDateTime = `${scheduledDate}T${scheduledTime}:00`
       
       await notificationService.updateNotification({
-        NotificationID: notification.NotificationID,
+        NotificationId: notification.NotificationId,
         ScheduledDateTime: scheduledDateTime,
         ModifiedBy: "current_user" // TODO: Get from auth context
       })
@@ -51,7 +54,18 @@ export function EditNotification({ notification, onBack }: EditNotificationProps
   }
 
   return (
-    <div className="bg-white rounded-lg shadow-sm border p-6">
+    <>
+      <div className="-mx-6 border-b mb-6">
+        <PageHeader
+          language={language}
+          titleEn="Edit Custom Notification"
+          titleAr="تعديل إشعار مخصص"
+          breadcrumbEn="Edit Notification"
+          breadcrumbAr="تعديل إشعار"
+          showShadow={false}
+        />
+      </div>
+      <div className="bg-white rounded-lg shadow-sm border p-6">
       <div className="space-y-8">
         {/* Notification Details Section */}
         <div className="space-y-6">
@@ -146,5 +160,6 @@ export function EditNotification({ notification, onBack }: EditNotificationProps
         </div>
       </div>
     </div>
+    </>
   )
 }

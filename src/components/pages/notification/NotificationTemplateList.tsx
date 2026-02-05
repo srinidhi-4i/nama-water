@@ -38,11 +38,11 @@ export default function NotificationTemplateList() {
   }
 
   const handleView = async (template: NotificationTemplate) => {
-    router.push(`/notification-center/templates/${template.NotificationCategory}?mode=view`)
+    router.push(`/notification-center/templates/${template.NotificationId}?mode=view`)
   }
 
   const handleEdit = async (template: NotificationTemplate) => {
-    router.push(`/notification-center/templates/${template.NotificationCategory}?mode=edit`)
+    router.push(`/notification-center/templates/${template.NotificationId}?mode=edit`)
   }
 
 
@@ -58,7 +58,7 @@ export default function NotificationTemplateList() {
         breadcrumbAr="قائمة قوالب الإشعارات"
       />
 
-      <div className="px-6">
+      <div className="px-4 pt-4">
         <DataTable 
           data={templates}
           columns={columns}

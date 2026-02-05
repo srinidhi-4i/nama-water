@@ -63,9 +63,9 @@ const ResponsiveModalContent = React.forwardRef<
       ref={ref}
       className={cn(
         // Desktop styles (Centered Dialog)
-        "lg:left-[50%] lg:top-[50%] lg:grid lg:w-full lg:max-w-lg lg:translate-x-[-50%] lg:translate-y-[-50%] lg:border lg:duration-200 lg:data-[state=open]:animate-in lg:data-[state=closed]:animate-out lg:data-[state=closed]:fade-out-0 lg:data-[state=open]:fade-in-0 lg:data-[state=closed]:zoom-out-95 lg:data-[state=open]:zoom-in-95 lg:data-[state=closed]:slide-out-to-left-1/2 lg:data-[state=closed]:slide-out-to-top-[48%] lg:data-[state=open]:slide-in-from-left-1/2 lg:data-[state=open]:slide-in-from-top-[48%] lg:rounded-xl",
+        "md:left-[50%] md:top-[50%] md:grid md:w-full md:max-w-lg md:translate-x-[-50%] md:translate-y-[-50%] md:border md:duration-200 md:data-[state=open]:animate-in md:data-[state=closed]:animate-out md:data-[state=closed]:fade-out-0 md:data-[state=open]:fade-in-0 md:data-[state=closed]:zoom-out-95 md:data-[state=open]:zoom-in-95 md:data-[state=closed]:slide-out-to-left-1/2 md:data-[state=closed]:slide-out-to-top-[48%] md:data-[state=open]:slide-in-from-left-1/2 md:data-[state=open]:slide-in-from-top-[48%] md:rounded-xl",
         // Animation for desktop
-        "lg:data-[state=open]:slide-in-from-top lg:data-[state=closed]:slide-out-to-top",
+        "md:data-[state=open]:slide-in-from-top md:data-[state=closed]:slide-out-to-top",
         // Mobile styles (Bottom Sheet)
         side === "bottom" && "data-[state=open]:slide-in-from-bottom data-[state=closed]:slide-out-to-bottom",
         ResponsiveModalVariants({ side }),

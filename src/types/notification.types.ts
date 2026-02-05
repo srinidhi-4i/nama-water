@@ -1,6 +1,6 @@
 // Notification Template Types
 export interface NotificationTemplate {
-    NotificationID?: number
+    NotificationId?: number
     EventCode: string
     EventTypeEn: string
     EventTypeAr: string
@@ -18,7 +18,7 @@ export interface NotificationTemplate {
 
 // Event Type
 export interface EventType {
-    EventTypeID: number
+    EventTypeId: number
     EventTypeCode: string
     EventTypeEn: string
     EventTypeAr: string
@@ -36,7 +36,7 @@ export interface NotificationCategory {
 
 // Custom Notification
 export interface CustomNotification {
-    NotificationID: number
+    NotificationId: number
     EventTypeCode: string
     EventTypeEn: string
     EventTypeAr: string
@@ -60,6 +60,7 @@ export interface TemplateResponse {
     EventType: EventType[]
     Category: NotificationCategory[]
     Notifications: NotificationTemplate[]
+    UserType?: any[]
 }
 
 // Notification Filters
@@ -80,7 +81,7 @@ export interface NotificationListResponse {
 
 // Create Notification Request
 export interface CreateNotificationRequest {
-    NotificationID?: number
+    NotificationId?: number
     EventTypeCode: string
     NotificationCategory: string
     UserType: 'REGISTERED' | 'ALL'
@@ -90,14 +91,14 @@ export interface CreateNotificationRequest {
 
 // Update Notification Request
 export interface UpdateNotificationRequest {
-    NotificationID: number
+    NotificationId: number
     ScheduledDateTime: string
     ModifiedBy: string
 }
 
 // Save Template Request
-export interface SaveTemplateRequest {
-    NotificationID?: number
+export interface SaveTemplateRequest extends Partial<NotificationTemplate> {
+    NotificationId: number
     EventCode: string
     NotificationCategory: string
     TemplateEn: string

@@ -12,6 +12,8 @@ import { notificationService } from "@/services/notification.service"
 import { EventType, NotificationTemplate } from "@/types/notification.types"
 import { toast } from "sonner"
 import { useAuth } from "@/components/providers/AuthProvider"
+import PageHeader from "@/components/layout/PageHeader"
+import { useLanguage } from "@/components/providers/LanguageProvider"
 
 interface CreateNotificationProps {
   onBack: () => void
@@ -31,6 +33,7 @@ export function CreateNotification({ onBack }: CreateNotificationProps) {
   const [messageAr, setMessageAr] = useState("")
   const [isCreating, setIsCreating] = useState(false)
   const { userDetails } = useAuth()
+  const { language } = useLanguage()
 
   useEffect(() => {
     loadData()
@@ -66,7 +69,7 @@ export function CreateNotification({ onBack }: CreateNotificationProps) {
       setEventTypes(response.EventType || [])
       setTemplates(response.Notifications || [])
     } catch (error) {
-      console.error('Error loading data:', error)
+      console.error('CreateNotification: Error loading data:', error)
     }
   }
 
@@ -90,7 +93,7 @@ export function CreateNotification({ onBack }: CreateNotificationProps) {
       const scheduledDateTime = `${scheduledDate} ${scheduledTime}:00`
       
       const payload = {
-        NotificationID: 0,
+        NotificationId: 0,
         EventTypeCode: selectedEventType,
         NotificationCategory: selectedTemplate,
         UserType: userType as 'REGISTERED' | 'ALL',
@@ -98,11 +101,7 @@ export function CreateNotification({ onBack }: CreateNotificationProps) {
         CreatedBy: userDetails?.EmpID?.toString() || "current_user"
       }
 
-      console.log('Creating notification with payload:', payload)
-      
-      const response = await notificationService.createNotification(payload)
-      console.log('Create response:', response)
-      
+      await notificationService.createNotification(payload)
       toast.success("Notification created successfully")
       onBack()
     } catch (error: any) {
@@ -114,7 +113,18 @@ export function CreateNotification({ onBack }: CreateNotificationProps) {
   }
 
   return (
-    <div className="bg-white rounded-lg shadow-sm border p-6">
+    <>
+      <div className="-mx-6 border-b mb-4">
+        <PageHeader
+          language={language}
+          titleEn="Create Custom Notification"
+          titleAr="إنشاء إشعار مخصص"
+          breadcrumbEn="Create Notification"
+          breadcrumbAr="إنشاء إشعار"
+          showShadow={false}
+        />
+      </div>
+      <div className="bg-white rounded-lg shadow-sm border p-4">
       <div className="space-y-8">
         {/* Notification Details Section */}
         <div className="space-y-6">
@@ -263,5 +273,6 @@ export function CreateNotification({ onBack }: CreateNotificationProps) {
         </div>
       </div>
     </div>
+    </>
   )
 }

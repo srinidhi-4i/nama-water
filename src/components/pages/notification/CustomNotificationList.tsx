@@ -125,13 +125,6 @@ export default function CustomNotificationList() {
   if (showCreate) {
     return (
       <div className="flex-1 bg-slate-100 overflow-x-hidden ">
-        <PageHeader
-        language={language}
-        titleEn="Custom Notification"
-        titleAr="الإشعار المخصص"
-        breadcrumbEn="Custom Notification List"
-        breadcrumbAr="قائمة الإشعارات المخصصة"
-      />
         <div className="px-6">
           <CreateNotification onBack={handleBack} />
         </div>
@@ -142,13 +135,6 @@ export default function CustomNotificationList() {
   if (showEdit && selectedNotification) {
     return (
       <div className="flex-1 bg-slate-100 overflow-x-hidden ">
-       <PageHeader
-        language={language}
-        titleEn="Custom Notification"
-        titleAr="الإشعار المخصص"
-        breadcrumbEn="Custom Notification List"
-        breadcrumbAr="قائمة الإشعارات المخصصة"
-      />
         <div className="px-6">
           <EditNotification notification={selectedNotification} onBack={handleBack} />
         </div>
@@ -168,7 +154,7 @@ export default function CustomNotificationList() {
       />
 
 
-      <div className="px-6">
+      <div className="px-6 mt-6">
         <div className="bg-white p-6 rounded-lg shadow-sm border mb-6">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
             <div className="relative">

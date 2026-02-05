@@ -8,6 +8,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { notificationService } from "@/services/notification.service"
 import { NotificationTemplate, EventType } from "@/types/notification.types"
+import { useAuth } from "@/components/providers/AuthProvider"
 import { toast } from "sonner"
 
 interface TemplateViewEditProps {
@@ -18,6 +19,7 @@ interface TemplateViewEditProps {
 }
 
 export function TemplateViewEdit({ template, mode, onBack, language }: TemplateViewEditProps) {
+  const { userDetails } = useAuth()
   const [eventTypes, setEventTypes] = useState<EventType[]>([])
   const [arabicText, setArabicText] = useState(template.TemplateAr || "")
   const [englishText, setEnglishText] = useState(template.TemplateEn || "")
@@ -45,13 +47,12 @@ export function TemplateViewEdit({ template, mode, onBack, language }: TemplateV
     setIsSaving(true)
     try {
       await notificationService.saveTemplate({
-        NotificationID: template.NotificationID,
-        EventCode: template.EventCode,
-        NotificationCategory: template.NotificationCategory,
+        ...template,
+        NotificationId: template.NotificationId!,
         TemplateEn: englishText,
         TemplateAr: arabicText,
-        ModifiedBy: "current_user" // TODO: Get from auth context
-      })
+        ModifiedBy: userDetails?.EmpID?.toString() || userDetails?.userId?.toString() || "1"
+      } as any)
       toast.success("Template saved successfully")
       onBack()
     } catch (error) {

@@ -562,11 +562,6 @@ export default function ValidateCustomerPage() {
       {/* User Not Found Alert Dialog */}
       <ResponsiveModal open={showUserNotFound} onOpenChange={setShowUserNotFound}>
           <ResponsiveModalContent side="bottom" className="max-w-md bg-white border-2 border-teal-800 p-0 overflow-hidden sm:rounded-xl">
-              <div className="flex justify-end p-2 relative z-10">
-                <Button variant="ghost" size="icon" onClick={() => setShowUserNotFound(false)} className="h-8 w-8 hover:bg-teal-50">
-                  <span className="text-xl">×</span>
-                </Button>
-              </div>
               <div className="p-8 pt-0 flex flex-col items-center text-center space-y-6">
                   <div className="h-16 w-16 rounded-full border-4 border-teal-800 flex items-center justify-center">
                     <span className="text-teal-800 text-4xl font-bold">!</span>
