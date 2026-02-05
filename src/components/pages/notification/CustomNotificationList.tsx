@@ -14,6 +14,8 @@ import { CreateNotification } from "@/components/notification/create-notificatio
 import { EditNotification } from "@/components/notification/edit-notification"
 import { getCustomNotificationColumns } from "@/app/(dashboard)/notification-center/custom/columns"
 import { useLanguage } from "@/components/providers/LanguageProvider"
+import { toast } from "sonner"
+import { useSearchParams } from "next/navigation"
 import Link from "next/link"
 import PageHeader from "@/components/layout/PageHeader"
 
@@ -33,12 +35,53 @@ export default function CustomNotificationList() {
   // View states
   const [showCreate, setShowCreate] = useState(false)
   const [showEdit, setShowEdit] = useState(false)
+  const [showView, setShowView] = useState(false)
   const [selectedNotification, setSelectedNotification] = useState<CustomNotification | null>(null)
+
+  const searchParams = useSearchParams()
+  const mode = searchParams.get('mode')
+  const notificationId = searchParams.get('id')
 
   useEffect(() => {
     loadEventTypes()
     loadNotifications()
   }, [])
+
+  useEffect(() => {
+    if (mode === 'edit' || mode === 'view') {
+      if (notificationId && notifications.length > 0) {
+        const found = notifications.find(n => {
+          let idValue = (n as any).NotificationId ?? 
+                          (n as any).NotificationID ?? 
+                          (n as any).NotificationRquestID ?? 
+                          (n as any).id ?? 
+                          (n as any).ID ??
+                          (n as any).EventId ??
+                          (n as any).EventID ??
+                          (n as any).NotificationUniqueId;
+          
+          if (!idValue) {
+            const idKey = Object.keys(n).find(k => k.toLowerCase().includes('id'));
+            if (idKey) idValue = (n as any)[idKey];
+          }
+
+          return idValue?.toString() === notificationId;
+        })
+        if (found) {
+          setSelectedNotification(found)
+          setShowEdit(mode === 'edit')
+          setShowView(mode === 'view')
+        }
+      }
+    } else if (mode === 'create') {
+      setShowCreate(true)
+    } else {
+      setShowCreate(false)
+      setShowEdit(false)
+      setShowView(false)
+      setSelectedNotification(null)
+    }
+  }, [mode, notificationId, notifications])
 
   const loadEventTypes = async () => {
     try {
@@ -80,43 +123,110 @@ export default function CustomNotificationList() {
     setTimeout(() => loadNotifications(), 100)
   }
 
-  const handleExport = async () => {
+  const handleExport = () => {
     try {
-      const filters = {
-        fromDate: fromDate ? format(fromDate, 'yyyy-MM-dd') : undefined,
-        toDate: toDate ? format(toDate, 'yyyy-MM-dd') : undefined,
-        eventCode: selectedEventType !== "ALL" ? selectedEventType : undefined,
-        searchQuery: searchQuery || undefined,
-      }
+      // Use SpreadsheetML (Excel XML) format for a real Excel experience without external libraries
+      const headers = [
+        "Event Type",
+        "Status",
+        "Created Date and Time",
+        "Scheduled Date and Time",
+        "User Type"
+      ];
 
-      const blob = await notificationService.exportToExcel(filters)
-      const url = window.URL.createObjectURL(blob)
-      const a = document.createElement('a')
-      a.href = url
-      a.download = `custom-notifications-${format(new Date(), 'yyyy-MM-dd')}.xlsx`
-      document.body.appendChild(a)
-      a.click()
-      window.URL.revokeObjectURL(url)
-      document.body.removeChild(a)
-    } catch (error) {
-      console.error('Error exporting to Excel:', error)
-      alert('Export functionality is not yet available')
+      // Map data to rows with fallbacks
+      const rows = notifications.map(item => {
+        const eventType = item.EventTypeEn || (item as any).EventTypeName || (item as any).EventName || '';
+        const status = item.Status || (item as any).StatusCode || '';
+        
+        // Robust date fallbacks
+        const createdDateVal = item.CreatedDateTime || (item as any).CreatedDate || (item as any).CreationDate;
+        const createdDateStr = createdDateVal ? format(new Date(createdDateVal), 'dd/MM/yyyy HH:mm') : '';
+        
+        const scheduledDateVal = item.ScheduledDateTime || (item as any).NotificationScheduledDatetime || (item as any).NotificationScheduledDate || (item as any).ScheduledDate;
+        const scheduledDateStr = scheduledDateVal ? format(new Date(scheduledDateVal), 'dd/MM/yyyy HH:mm') : '';
+        
+        const userType = item.UserType === 'REGISTERED' || (item as any).UserType === 'RGUSR' ? 'Registered Users' : 'All Users';
+
+        return [eventType, status, createdDateStr, scheduledDateStr, userType];
+      });
+
+      // Build XML for Excel
+      let xml = `<?xml version="1.0"?><?mso-application progid="Excel.Sheet"?>
+<Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet" xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet" xmlns:html="http://www.w3.org/TR/REC-html40">
+<Worksheet ss:Name="Notifications">
+<Table>
+<Column ss:AutoFitWidth="1" ss:Width="150"/>
+<Column ss:AutoFitWidth="1" ss:Width="100"/>
+<Column ss:AutoFitWidth="1" ss:Width="130"/>
+<Column ss:AutoFitWidth="1" ss:Width="130"/>
+<Column ss:AutoFitWidth="1" ss:Width="100"/>
+<Row ss:StyleID="Header">
+${headers.map(h => `<Cell><Data ss:Type="String">${h}</Data></Cell>`).join('\n')}
+</Row>
+${rows.map(row => `
+<Row>
+${row.map(cell => `<Cell><Data ss:Type="String">${String(cell || '').replace(/</g, '&lt;').replace(/>/g, '&gt;')}</Data></Cell>`).join('\n')}
+</Row>`).join('\n')}
+</Table>
+</Worksheet>
+</Workbook>`;
+
+      const blob = new Blob([xml], { type: 'application/vnd.ms-excel' });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `custom-notifications-${format(new Date(), 'yyyy-MM-dd')}.xlsx`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+      
+      toast.success("Excel exported successfully");
+    } catch (error: any) {
+      console.error('Error exporting to Excel:', error);
+      toast.error('Failed to export data');
     }
   }
 
   const handleView = (notification: CustomNotification) => {
-    console.log('View notification:', notification)
+    let id = notification.NotificationId ?? 
+             (notification as any).NotificationID ?? 
+             (notification as any).NotificationRquestID ?? 
+             (notification as any).id ?? 
+             (notification as any).ID ??
+             (notification as any).EventId ??
+             (notification as any).EventID ??
+             (notification as any).NotificationUniqueId;
+
+    if (!id) {
+      const idKey = Object.keys(notification).find(k => k.toLowerCase().includes('id'));
+      if (idKey) id = (notification as any)[idKey];
+    }
+
+    router.push(`/notification-center/custom?mode=view&id=${id}`)
   }
 
   const handleEdit = (notification: CustomNotification) => {
-    setSelectedNotification(notification)
-    setShowEdit(true)
+    let id = notification.NotificationId ?? 
+             (notification as any).NotificationID ?? 
+             (notification as any).NotificationRquestID ?? 
+             (notification as any).id ?? 
+             (notification as any).ID ??
+             (notification as any).EventId ??
+             (notification as any).EventID ??
+             (notification as any).NotificationUniqueId;
+
+    if (!id) {
+      const idKey = Object.keys(notification).find(k => k.toLowerCase().includes('id'));
+      if (idKey) id = (notification as any)[idKey];
+    }
+    
+    router.push(`/notification-center/custom?mode=edit&id=${id}`)
   }
 
   const handleBack = () => {
-    setShowCreate(false)
-    setShowEdit(false)
-    setSelectedNotification(null)
+    router.push('/notification-center/custom')
     loadNotifications()
   }
 
@@ -132,11 +242,23 @@ export default function CustomNotificationList() {
     )
   }
 
-  if (showEdit && selectedNotification) {
+  if ((mode === 'edit' || mode === 'view') && !selectedNotification && isLoading) {
+    return (
+      <div className="flex-1 bg-slate-100 flex items-center justify-center min-h-[400px]">
+        <div className="text-[#1F4E58] font-medium animate-pulse">Loading notification...</div>
+      </div>
+    )
+  }
+
+  if ((showEdit || showView) && selectedNotification) {
     return (
       <div className="flex-1 bg-slate-100 overflow-x-hidden ">
         <div className="px-6">
-          <EditNotification notification={selectedNotification} onBack={handleBack} />
+          <EditNotification 
+            notification={selectedNotification} 
+            onBack={handleBack} 
+            isViewOnly={showView} 
+          />
         </div>
       </div>
     )
@@ -149,13 +271,15 @@ export default function CustomNotificationList() {
         language={language}
         titleEn="Custom Notification"
         titleAr="الإشعار المخصص"
-        breadcrumbEn="Custom Notification List"
-        breadcrumbAr="قائمة الإشعارات المخصصة"
+        breadcrumbItems={[
+          { labelEn: "Home", labelAr: "الرئيسية", href: "/branchhome" },
+          { labelEn: "Custom Notification", labelAr: "الإشعار المخصص" }
+        ]}
       />
 
 
-      <div className="px-6 mt-6">
-        <div className="bg-white p-6 rounded-lg shadow-sm border mb-6">
+      <div className="px-4 mt-4">
+        <div className="bg-white p-4 rounded-lg shadow-sm border mb-4">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
             <div className="relative">
               <FloatingLabelInput 
@@ -178,9 +302,20 @@ export default function CustomNotificationList() {
               />
             </div>
 
+            <div className="flex items-end gap-2 lg:col-start-4">
+              <Button onClick={handleSearch} className="flex-1 bg-[#1F4E58] hover:bg-[#163a42] text-white">
+                Search
+              </Button>
+              <Button variant="outline" onClick={handleClearFilters} className="flex-1 text-[#1F4E58]  hover:bg-teal-50 ">
+                Clear Filter
+              </Button>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 pt-4">
             <div className="relative">
               <Select value={selectedEventType} onValueChange={setSelectedEventType}>
-                <SelectTrigger id="eventType" className="bg-white w-full h-[50px] pt-4">
+                <SelectTrigger id="eventType" className="bg-white w-full">
                   <SelectValue placeholder=" " />
                 </SelectTrigger>
                 <SelectContent>
@@ -202,29 +337,21 @@ export default function CustomNotificationList() {
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
-                className="bg-white w-full h-[50px]"
+                className="bg-white w-full "
               />
             </div>
-          </div>
 
-          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4">
-            <div className="flex items-end gap-2 pb-[1px]">
-              <Button onClick={handleSearch} className="bg-[#1F4E58] hover:bg-[#163a42] text-white px-6">
-                Search
-              </Button>
-              <Button variant="outline" onClick={handleClearFilters} className="text-[#1F4E58] border-[#1F4E58] hover:bg-teal-50 px-6">
-                Clear Filter
-              </Button>
-            </div>
-
-            <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+            <div className="flex flex-col sm:flex-row gap-2 w-full lg:col-span-2 items-end justify-end ">
               {notifications.length > 0 && (
-                <Button variant="outline" onClick={handleExport} className="w-full sm:w-auto text-[#1F4E58] border-[#1F4E58]">
+                <Button variant="outline" onClick={handleExport} className="w-full sm:w-auto text-black ">
                   <FileSpreadsheet className="h-4 w-4 mr-2" />
                   Export Excel
                 </Button>
               )}
-              <Button onClick={() => setShowCreate(true)} className="bg-[#E54B4B] hover:bg-[#d03b3b] text-white w-full sm:w-auto px-6">
+              <Button 
+                onClick={() => router.push('/notification-center/custom?mode=create')} 
+                className="bg-[#E54B4B] hover:bg-[#d03b3b] text-white w-full sm:w-auto "
+              >
                 Create New Notification
               </Button>
             </div>

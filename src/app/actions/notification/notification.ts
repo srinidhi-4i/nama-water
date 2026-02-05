@@ -14,23 +14,31 @@ import {
 /**
  * Common helper to get cookies for server-side requests
  */
-async function getCookieHeader() {
+async function getAuthHeaders() {
     const cookieStore = await cookies()
     const allCookies = cookieStore.getAll()
-    return allCookies.map(c => `${c.name}=${c.value}`).join('; ')
+    const cookieHeader = allCookies.map(c => `${c.name}=${c.value}`).join('; ')
+
+    // Check if the specific auth token cookie exists
+    const tokenCookie = cookieStore.get('AU/@/#/TO/#/VA')
+    const headers: any = {
+        "Cookie": cookieHeader
+    }
+
+    if (tokenCookie?.value) {
+        headers.Authorization = `Bearer ${tokenCookie.value}`
+    }
+
+    return headers
 }
 
 export async function getTemplatesAction(): Promise<{ success: boolean; data?: TemplateResponse; message?: string }> {
     try {
-        const cookieHeader = await getCookieHeader()
+        const headers = await getAuthHeaders()
         const response = await axiosInstance.post(
             "PushNotification/NewGetTemplates",
             {},
-            {
-                headers: {
-                    "Cookie": cookieHeader
-                }
-            }
+            { headers }
         )
         return { success: true, data: response.data }
     } catch (error: any) {
@@ -41,31 +49,34 @@ export async function getTemplatesAction(): Promise<{ success: boolean; data?: T
 
 export async function saveTemplateAction(data: SaveTemplateRequest): Promise<{ success: boolean; data?: any; message?: string }> {
     try {
-        const cookieHeader = await getCookieHeader()
-        const isEdit = !!data.NotificationId && data.NotificationId !== 0
+        const authHeaders = await getAuthHeaders()
 
         const formData = new FormData()
-        formData.append("UpdateType", isEdit ? "UPDATE" : "CREATE")
-        formData.append("NotificationID", (data.NotificationId || 0).toString())
-        formData.append("EventCode", data.EventCode)
         formData.append("NotificationCategory", data.NotificationCategory)
         formData.append("TemplateEn", data.TemplateEn)
         formData.append("TemplateAr", data.TemplateAr)
-        formData.append("ModifiedBy", data.ModifiedBy)
-        formData.append("UserID", data.ModifiedBy)
 
         const response = await axiosInstance.post(
             "PushNotification/InsertUpdateTemplate",
             formData,
             {
                 headers: {
-                    "Cookie": cookieHeader,
+                    ...authHeaders,
                     'Origin': 'https://eservicesuat.nws.nama.om',
                     'Referer': 'https://eservicesuat.nws.nama.om/',
                 }
             }
         )
-        return { success: true, data: response.data }
+
+        // UAT may return results in an array or a wrapper object. 
+        const responseData = response.data;
+        const mainObj = Array.isArray(responseData) ? responseData[0] : responseData;
+
+        if (mainObj?.Status === "fail" || mainObj?.StatusCode === 606) {
+            return { success: false, message: mainObj?.ResponseMessage || "Failed to save template" }
+        }
+
+        return { success: true, data: responseData }
     } catch (error: any) {
         console.error("saveTemplateAction error:", error.message)
         return { success: false, message: error.message }
@@ -74,7 +85,7 @@ export async function saveTemplateAction(data: SaveTemplateRequest): Promise<{ s
 
 export async function getNotificationsAction(filters: NotificationFilters): Promise<{ success: boolean; data?: NotificationListResponse; message?: string }> {
     try {
-        const cookieHeader = await getCookieHeader()
+        const authHeaders = await getAuthHeaders()
         const payload = {
             FromDate: filters.fromDate || '',
             ToDate: filters.toDate || '',
@@ -84,11 +95,7 @@ export async function getNotificationsAction(filters: NotificationFilters): Prom
         const response = await axiosInstance.post(
             "PushNotification/NewGetNotificationScreen",
             payload,
-            {
-                headers: {
-                    "Cookie": cookieHeader
-                }
-            }
+            { headers: authHeaders }
         )
         return { success: true, data: response.data }
     } catch (error: any) {
@@ -97,31 +104,54 @@ export async function getNotificationsAction(filters: NotificationFilters): Prom
     }
 }
 
-export async function createNotificationAction(data: CreateNotificationRequest): Promise<{ success: boolean; data?: any; message?: string }> {
+export async function createNotificationAction(data: any): Promise<{ success: boolean; data?: any; message?: string }> {
     try {
-        const cookieHeader = await getCookieHeader()
+        const authHeaders = await getAuthHeaders()
 
         const formData = new FormData()
-        formData.append("UpdateType", "CREATE")
-        formData.append("NotificationID", (data.NotificationId || 0).toString())
-        formData.append("EventTypeCode", data.EventTypeCode)
+        // ... same logic for create ...
+        // Using existing createNotificationAction body but with authHeaders
+        formData.append("NotificationEn", data.NotificationEn)
+        formData.append("NotificationAr", data.NotificationAr || "")
         formData.append("NotificationCategory", data.NotificationCategory)
-        formData.append("UserType", data.UserType)
-        formData.append("ScheduledDateTime", data.ScheduledDateTime)
-        formData.append("CreatedBy", data.CreatedBy)
-        formData.append("UserID", data.CreatedBy)
+        formData.append("NotificationType", "Read_Only")
+        formData.append("UserID", data.UserID || "")
+        formData.append("NotificationSend", "0")
+        formData.append("NotificationResponse", "")
+        formData.append("NotificationSubject", data.NotificationSubject)
+        formData.append("NotificationSubjectAr", data.NotificationSubjectAr || "")
+        formData.append("IsRead", "0")
+        formData.append("ActionName", "")
+        formData.append("ActionURL", "")
+        formData.append("JsonData", JSON.stringify({
+            NotificationCategory: data.NotificationCategory,
+            StartTime: "",
+            EndTime: ""
+        }))
+        formData.append("NotificationRquestID", "0")
+        formData.append("IsAdminScreen", "1")
+        formData.append("NotificationScheduledDatetime", data.NotificationScheduledDatetime)
+        formData.append("UserType", data.UserType === "ALL" ? "GUSR" : "RGUSR")
+        formData.append("IsDataMandatory", data.IsDataMandatory?.toString() === "false" ? "false" : "true")
+        formData.append("StartTime", "")
+        formData.append("EndTime", "")
 
         const response = await axiosInstance.post(
-            "PushNotification/InsertUpdatePushNotification",
+            "PushNotification/InsertUpdateScreen",
             formData,
             {
                 headers: {
-                    "Cookie": cookieHeader,
+                    ...authHeaders,
                     'Origin': 'https://eservicesuat.nws.nama.om',
                     'Referer': 'https://eservicesuat.nws.nama.om/',
                 }
             }
         )
+
+        if (response.data?.Status === "fail" || response.data?.StatusCode === 606) {
+            return { success: false, message: response.data?.ResponseMessage || "Failed to create notification" }
+        }
+
         return { success: true, data: response.data }
     } catch (error: any) {
         console.error("createNotificationAction error:", error.message)
@@ -129,37 +159,65 @@ export async function createNotificationAction(data: CreateNotificationRequest):
     }
 }
 
-export async function updateNotificationAction(data: UpdateNotificationRequest): Promise<{ success: boolean; data?: any; message?: string }> {
+export async function updateNotificationAction(data: any): Promise<{ success: boolean; data?: any; message?: string }> {
     try {
-        const cookieHeader = await getCookieHeader()
+        const authHeaders = await getAuthHeaders()
 
         const formData = new FormData()
-        formData.append("UpdateType", "UPDATE")
-        formData.append("NotificationID", data.NotificationId.toString())
-        formData.append("ScheduledDateTime", data.ScheduledDateTime)
-        formData.append("ModifiedBy", data.ModifiedBy)
-        formData.append("UserID", data.ModifiedBy)
+        // Update uses the same InsertUpdateScreen endpoint as Create
+        // but with the actual NotificationId passed as NotificationRquestID
+        formData.append("NotificationEn", data.NotificationEn || "")
+        formData.append("NotificationAr", data.NotificationAr || "")
+        formData.append("NotificationCategory", data.NotificationCategory)
+        formData.append("NotificationType", "Read_Only")
+        formData.append("UserID", data.UserID || "")
+        formData.append("NotificationSend", "0")
+        formData.append("NotificationResponse", "")
+        formData.append("NotificationSubject", data.NotificationSubject || "")
+        formData.append("NotificationSubjectAr", data.NotificationSubjectAr || "")
+        formData.append("IsRead", "0")
+        formData.append("ActionName", "")
+        formData.append("ActionURL", "")
+        formData.append("UpdateType", "Update")
+        formData.append("JsonData", JSON.stringify({
+            NotificationCategory: data.NotificationCategory,
+            StartTime: "",
+            EndTime: ""
+        }))
+        formData.append("NotificationRquestID", (data.NotificationId || data.NotificationRquestID || "0").toString())
+        formData.append("IsAdminScreen", "1")
+        formData.append("NotificationScheduledDatetime", data.ScheduledDateTime || data.NotificationScheduledDatetime)
+        formData.append("UserType", data.UserType === "ALL" ? "GUSR" : "RGUSR")
+        formData.append("IsDataMandatory", data.IsDataMandatory?.toString() === "false" ? "false" : "true")
+        formData.append("StartTime", "")
+        formData.append("EndTime", "")
 
         const response = await axiosInstance.post(
-            "PushNotification/InsertUpdatePushNotification",
+            "PushNotification/InsertUpdateScreen",
             formData,
             {
                 headers: {
-                    "Cookie": cookieHeader,
+                    ...authHeaders,
                     'Origin': 'https://eservicesuat.nws.nama.om',
                     'Referer': 'https://eservicesuat.nws.nama.om/',
                 }
             }
         )
+
+        if (response.data?.Status === "fail" || response.data?.StatusCode === 606) {
+            return { success: false, message: response.data?.ResponseMessage || "Failed to update notification" }
+        }
+
         return { success: true, data: response.data }
     } catch (error: any) {
+        console.error("updateNotificationAction error:", error.message)
         return { success: false, message: error.message }
     }
 }
 
 export async function exportToExcelAction(filters: NotificationFilters): Promise<{ success: boolean; data?: string; message?: string }> {
     try {
-        const cookieHeader = await getCookieHeader()
+        const authHeaders = await getAuthHeaders()
         const payload = {
             FromDate: filters.fromDate || '',
             ToDate: filters.toDate || '',
@@ -170,9 +228,7 @@ export async function exportToExcelAction(filters: NotificationFilters): Promise
             "PushNotification/ExportNotifications",
             payload,
             {
-                headers: {
-                    "Cookie": cookieHeader
-                },
+                headers: { ...authHeaders },
                 responseType: 'arraybuffer'
             }
         )

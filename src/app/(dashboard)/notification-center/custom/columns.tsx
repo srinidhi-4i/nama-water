@@ -22,11 +22,22 @@ export const getCustomNotificationColumns = (
   }),
   columnHelper.accessor('CreatedDateTime', {
     header: 'Created Date and Time',
-    cell: info => format(new Date(info.getValue()), 'dd/MM/yyyy HH:mm')
+    cell: info => {
+      const val = info.getValue()
+      if (!val) return 'N/A'
+      const date = new Date(val)
+      return isNaN(date.getTime()) ? 'N/A' : format(date, 'dd/MM/yyyy HH:mm')
+    }
   }),
   columnHelper.accessor('ScheduledDateTime', {
     header: 'Scheduled Date and Time',
-    cell: info => format(new Date(info.getValue()), 'dd/MM/yyyy HH:mm')
+    cell: info => {
+      const row = info.row.original as any
+      const val = row.ScheduledDateTime || row.NotificationScheduledDatetime || row.NotificationScheduledDate
+      if (!val) return 'N/A'
+      const date = new Date(val)
+      return isNaN(date.getTime()) ? 'N/A' : format(date, 'dd/MM/yyyy HH:mm')
+    }
   }),
   columnHelper.display({
     id: 'actions',

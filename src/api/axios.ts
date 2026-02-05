@@ -12,7 +12,6 @@ console.log('Server Axios BaseURL:', baseURL);
 export const axiosInstance = axios.create({
     baseURL: baseURL,
     headers: {
-        "Content-Type": "application/json",
         "Accept": "application/json, text/plain, */*",
     },
     // Allow self-signed certs for UAT environment

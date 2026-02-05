@@ -27,8 +27,14 @@ export function CreateNotification({ onBack }: CreateNotificationProps) {
   const [selectedEventType, setSelectedEventType] = useState("")
   const [selectedTemplate, setSelectedTemplate] = useState("")
   const [userType, setUserType] = useState<"REGISTERED" | "ALL">("REGISTERED")
-  const [scheduledDate, setScheduledDate] = useState("")
-  const [scheduledTime, setScheduledTime] = useState("")
+  const [scheduledDate, setScheduledDate] = useState(() => {
+    const now = new Date()
+    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`
+  })
+  const [scheduledTime, setScheduledTime] = useState(() => {
+    const now = new Date()
+    return `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`
+  })
   const [messageEn, setMessageEn] = useState("")
   const [messageAr, setMessageAr] = useState("")
   const [isCreating, setIsCreating] = useState(false)
@@ -63,6 +69,22 @@ export function CreateNotification({ onBack }: CreateNotificationProps) {
     }
   }
 
+  // Auto-fill date and time when user type is selected
+  const handleUserTypeChange = (value: string) => {
+    setUserType(value as "REGISTERED" | "ALL")
+    
+    // Auto-fetch current local date and time
+    const now = new Date()
+    const year = now.getFullYear()
+    const month = String(now.getMonth() + 1).padStart(2, '0')
+    const day = String(now.getDate()).padStart(2, '0')
+    const hours = String(now.getHours()).padStart(2, '0')
+    const minutes = String(now.getMinutes()).padStart(2, '0')
+    
+    setScheduledDate(`${year}-${month}-${day}`)
+    setScheduledTime(`${hours}:${minutes}`)
+  }
+
   const loadData = async () => {
     try {
       const response = await notificationService.getTemplates()
@@ -89,16 +111,20 @@ export function CreateNotification({ onBack }: CreateNotificationProps) {
 
     setIsCreating(true)
     try {
-      // Use space instead of T for better backend compatibility with FormData
-      const scheduledDateTime = `${scheduledDate} ${scheduledTime}:00`
-      
+      const template = templates.find(t => t.NotificationCategory === selectedTemplate)
+      if (!template) throw new Error("Template not found")
+
+      // Match the payload structure from the successful UAT sample
       const payload = {
-        NotificationId: 0,
-        EventTypeCode: selectedEventType,
+        NotificationEn: messageEn,
+        NotificationAr: messageAr,
         NotificationCategory: selectedTemplate,
+        UserID: userDetails?.EmpID?.toString() || userDetails?.userId?.toString() || "1",
+        NotificationSubject: template.NotificationTitleEn,
+        NotificationSubjectAr: template.NotificationTitleAr || "",
+        NotificationScheduledDatetime: `${scheduledDate} ${scheduledTime}:00`, // Use space instead of T
         UserType: userType as 'REGISTERED' | 'ALL',
-        ScheduledDateTime: scheduledDateTime,
-        CreatedBy: userDetails?.EmpID?.toString() || "current_user"
+        IsDataMandatory: template.IsActive === true // Adjust based on template property
       }
 
       await notificationService.createNotification(payload)
@@ -119,18 +145,21 @@ export function CreateNotification({ onBack }: CreateNotificationProps) {
           language={language}
           titleEn="Create Custom Notification"
           titleAr="إنشاء إشعار مخصص"
-          breadcrumbEn="Create Notification"
-          breadcrumbAr="إنشاء إشعار"
+          breadcrumbItems={[
+            { labelEn: "Home", labelAr: "الرئيسية", href: "/branchhome" },
+            { labelEn: "Custom Notification", labelAr: "إشعار مخصص", href: "/notification-center/custom" },
+            { labelEn: "Create Notification", labelAr: "إنشاء إشعار" }
+          ]}
           showShadow={false}
         />
       </div>
-      <div className="bg-white rounded-lg shadow-sm border p-4">
-      <div className="space-y-8">
+      <div className="bg-white rounded-lg shadow-sm border p-4 mb-4">
+      <div >
         {/* Notification Details Section */}
-        <div className="space-y-6">
-          <h2 className="text-xl font-bold text-[#1F4E58] border-b pb-2">Notification Details</h2>
+        <div>
+          <h2 className="text-xl font-bold text-[#1F4E58]  pb-2">Notification Details</h2>
           
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8">
             {/* Event Type */}
             <div className="space-y-2">
               <Label htmlFor="eventType" className="text-sm font-semibold text-gray-700">
@@ -151,7 +180,7 @@ export function CreateNotification({ onBack }: CreateNotificationProps) {
             </div>
 
             {/* Template Name */}
-            <div className="space-y-2">
+            <div className="space-y-2 pt-2">
               <Label htmlFor="templateName" className="text-sm font-semibold text-gray-700">
                 Template Name <span className="text-red-500">*</span>
               </Label>
@@ -175,11 +204,11 @@ export function CreateNotification({ onBack }: CreateNotificationProps) {
           </div>
 
           {/* User Type */}
-          <div className="space-y-3">
+          <div className="space-y-2 py-2">
             <Label className="text-sm font-semibold text-gray-700">
               User Type <span className="text-red-500">*</span>
             </Label>
-            <RadioGroup value={userType} onValueChange={(value) => setUserType(value as "REGISTERED" | "ALL")}>
+            <RadioGroup value={userType} onValueChange={handleUserTypeChange}>
               <div className="flex items-center space-x-8">
                 <div className="flex items-center space-x-2">
                   <RadioGroupItem value="REGISTERED" id="registered" className="text-[#006A72] border-gray-300" />
@@ -199,9 +228,9 @@ export function CreateNotification({ onBack }: CreateNotificationProps) {
 
           {/* Notification Messages - Only show when template is selected */}
           {selectedTemplate && (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8 animate-in fade-in slide-in-from-top-2 duration-300">
-              <div className="space-y-2">
-                <Label className="text-sm font-semibold text-gray-700">
+            <div className="grid grid-cols-1 md:grid-cols-2 animate-in fade-in slide-in-from-top-2 duration-300">
+              <div >
+                <Label className="text-sm font-semibold pb-2 text-gray-700">
                   Notification Message (English):
                 </Label>
                 <Textarea 
@@ -211,7 +240,7 @@ export function CreateNotification({ onBack }: CreateNotificationProps) {
                   placeholder="Message will appear here"
                 />
               </div>
-              <div className="space-y-2">
+              <div className="space-y-2 pt-2">
                 <Label className="text-sm font-semibold text-gray-700">
                   Notification Message (Arabic):
                 </Label>
@@ -228,8 +257,8 @@ export function CreateNotification({ onBack }: CreateNotificationProps) {
         </div>
 
         {/* Event Details Section */}
-        <div className="space-y-6">
-          <h2 className="text-xl font-bold text-[#1F4E58] border-b pb-2">Event Details</h2>
+        <div className="space-y-2 pt-2">
+          <h2 className="text-xl font-bold text-[#1F4E58]">Event Details</h2>
           
           <div className="space-y-2">
             <Label htmlFor="scheduledDate" className="text-sm font-semibold text-gray-700">
@@ -255,7 +284,7 @@ export function CreateNotification({ onBack }: CreateNotificationProps) {
         </div>
 
         {/* Action Buttons */}
-        <div className="flex justify-end gap-4 pt-6 mt-8 border-t">
+        <div className="flex justify-between pt-4">
           <Button 
             variant="outline" 
             onClick={onBack}

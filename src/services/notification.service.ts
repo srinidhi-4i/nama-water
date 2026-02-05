@@ -6,110 +6,87 @@ import {
     UpdateNotificationRequest,
     SaveTemplateRequest
 } from '@/types/notification.types'
-import { api } from '@/lib/axios'
+import {
+    getTemplatesAction,
+    saveTemplateAction,
+    getNotificationsAction,
+    createNotificationAction,
+    updateNotificationAction,
+    exportToExcelAction
+} from '@/app/actions/notification/notification'
 
 export const notificationService = {
     /**
      * Get all templates, event types, and categories
      */
     async getTemplates(): Promise<TemplateResponse> {
-        const response = await api.post('/api/PushNotification/NewGetTemplates', {})
-        const data = response.data?.Data || response.data
-        return data
+        const result = await getTemplatesAction()
+        if (!result.success || !result.data) {
+            throw new Error(result.message || "Failed to load templates")
+        }
+        return (result.data as any).Data || result.data
     },
 
     /**
      * Save or update a notification template
      */
     async saveTemplate(data: SaveTemplateRequest): Promise<any> {
-        const formData = new FormData()
-        // Simple payload as per working UAT sample
-        formData.append("NotificationCategory", data.NotificationCategory)
-        formData.append("TemplateEn", data.TemplateEn)
-        formData.append("TemplateAr", data.TemplateAr)
-
-        const response = await api.post('/api/PushNotification/InsertUpdateTemplate', formData)
-
-        // Based on UAT log, 605 is success. 
-        // We only throw if status is explicitly "fail" or error code 606
-        if (response.data?.Status === "fail" || response.data?.StatusCode === 606) {
-            throw new Error(response.data?.ResponseMessage || "Failed to save template")
+        const result = await saveTemplateAction(data)
+        if (!result.success) {
+            throw new Error(result.message || "Failed to save template")
         }
-
-        return response.data?.Data || response.data
+        return (result.data as any).Data || result.data
     },
 
     /**
      * Get custom notifications with filters
      */
     async getNotifications(filters: NotificationFilters): Promise<NotificationListResponse> {
-        const payload = {
-            FromDate: filters.fromDate || '',
-            ToDate: filters.toDate || '',
-            EventCode: filters.eventCode || '',
-            SearchQuery: filters.searchQuery || ''
+        const result = await getNotificationsAction(filters)
+        if (!result.success || !result.data) {
+            return { Table: [], TotalCount: 0 }
         }
-        const response = await api.post('/api/PushNotification/NewGetNotificationScreen', payload)
-        const data = response.data?.Data || response.data
-        return data || { Table: [], TotalCount: 0 }
+        return (result.data as any).Data || result.data
     },
 
     /**
      * Create a new custom notification
      */
-    async createNotification(data: CreateNotificationRequest): Promise<any> {
-        const formData = new FormData()
-        formData.append("UpdateType", "CREATE")
-        formData.append("NotificationID", (data.NotificationId || 0).toString())
-        formData.append("EventTypeCode", data.EventTypeCode)
-        formData.append("NotificationCategory", data.NotificationCategory)
-        formData.append("UserType", data.UserType)
-        formData.append("ScheduledDateTime", data.ScheduledDateTime)
-        formData.append("CreatedBy", data.CreatedBy)
-        formData.append("UserID", data.CreatedBy)
-
-        const response = await api.post('/api/PushNotification/InsertUpdatePushNotification', formData)
-
-        if (response.data?.StatusCode === 606 || response.data?.Status === "fail") {
-            throw new Error(response.data?.ResponseMessage || "Failed to create notification")
+    async createNotification(data: any): Promise<any> {
+        const result = await createNotificationAction(data)
+        if (!result.success) {
+            throw new Error(result.message || "Failed to create notification")
         }
-
-        return response.data?.Data || response.data
+        return (result.data as any).Data || result.data
     },
 
     /**
      * Update an existing custom notification
      */
     async updateNotification(data: UpdateNotificationRequest): Promise<any> {
-        const formData = new FormData()
-        formData.append("UpdateType", "UPDATE")
-        formData.append("NotificationID", data.NotificationId.toString())
-        formData.append("ScheduledDateTime", data.ScheduledDateTime)
-        formData.append("ModifiedBy", data.ModifiedBy)
-        formData.append("UserID", data.ModifiedBy)
-
-        const response = await api.post('/api/PushNotification/InsertUpdatePushNotification', formData)
-
-        if (response.data?.StatusCode === 606 || response.data?.Status === "fail") {
-            throw new Error(response.data?.ResponseMessage || "Failed to update notification")
+        const result = await updateNotificationAction(data)
+        if (!result.success) {
+            throw new Error(result.message || "Failed to update notification")
         }
-
-        return response.data?.Data || response.data
+        return (result.data as any).Data || result.data
     },
 
     /**
      * Export notifications to Excel
      */
     async exportToExcel(filters: NotificationFilters): Promise<Blob> {
-        const payload = {
-            FromDate: filters.fromDate || '',
-            ToDate: filters.toDate || '',
-            EventCode: filters.eventCode || '',
-            SearchQuery: filters.searchQuery || ''
+        const result = await exportToExcelAction(filters)
+        if (!result.success || !result.data) {
+            throw new Error(result.message || "Failed to export to Excel")
         }
-        const response = await api.post('/api/PushNotification/ExportNotifications', payload, {
-            responseType: 'blob'
-        })
-        return response.data
+
+        // Convert base64 back to blob
+        const byteCharacters = atob(result.data)
+        const byteNumbers = new Array(byteCharacters.length)
+        for (let i = 0; i < byteCharacters.length; i++) {
+            byteNumbers[i] = byteCharacters.charCodeAt(i)
+        }
+        const byteArray = new Uint8Array(byteNumbers)
+        return new Blob([byteArray], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' })
     }
 }
