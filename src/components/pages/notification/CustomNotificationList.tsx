@@ -227,7 +227,10 @@ ${row.map(cell => `<Cell><Data ss:Type="String">${String(cell || '').replace(/</
 
   const handleBack = () => {
     router.push('/notification-center/custom')
-    loadNotifications()
+    setNotifications([]) // Force visible refresh
+    setTimeout(() => {
+      loadNotifications()
+    }, 100)
   }
 
   const columns = getCustomNotificationColumns(handleEdit, handleView);

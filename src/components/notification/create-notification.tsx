@@ -140,7 +140,7 @@ export function CreateNotification({ onBack }: CreateNotificationProps) {
 
   return (
     <>
-      <div className="-mx-6 border-b mb-4">
+       <div className="flex-1 bg-slate-100 overflow-x-hidden">
         <PageHeader
           language={language}
           titleEn="Create Custom Notification"
@@ -150,10 +150,11 @@ export function CreateNotification({ onBack }: CreateNotificationProps) {
             { labelEn: "Custom Notification", labelAr: "إشعار مخصص", href: "/notification-center/custom" },
             { labelEn: "Create Notification", labelAr: "إنشاء إشعار" }
           ]}
-          showShadow={false}
+        
         />
       </div>
-      <div className="bg-white rounded-lg shadow-sm border p-4 mb-4">
+      <div className="my-4 ">
+      <div className="bg-white rounded-lg  p-4 ">
       <div >
         {/* Notification Details Section */}
         <div>
@@ -300,6 +301,7 @@ export function CreateNotification({ onBack }: CreateNotificationProps) {
             {isCreating ? "Creating..." : "Create"}
           </Button>
         </div>
+      </div>
       </div>
     </div>
     </>

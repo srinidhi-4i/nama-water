@@ -81,7 +81,7 @@ export default function NotificationTemplateView({ id, mode }: NotificationTempl
           { labelEn: mode === "edit" ? "Edit" : "View", labelAr: mode === "edit" ? "تحرير" : "عرض" }
         ]}
       />
-      <div className="p-4">
+      <div className="p-4 ">
         <TemplateViewEdit
           template={template}
           mode={mode}

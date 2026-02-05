@@ -54,7 +54,10 @@ export function TemplateViewEdit({ template, mode, onBack, language }: TemplateV
         ModifiedBy: userDetails?.EmpID?.toString() || userDetails?.userId?.toString() || "1"
       } as any)
       toast.success("Template saved successfully")
-      onBack()
+      // Increase delay to ensure DB sync before back
+      setTimeout(() => {
+        onBack()
+      }, 2000)
     } catch (error) {
       console.error('Error saving template:', error)
       toast.error("Failed to save template")

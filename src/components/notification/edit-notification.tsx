@@ -149,10 +149,10 @@ export function EditNotification({ notification, onBack, isViewOnly = false }: E
       } as any)
       
       toast.success("Notification updated successfully")
-      // Small delay to ensure DB sync before refresh
+      // Extension: 2s delay to ensure backend 'UPDATE' procedure finish
       setTimeout(() => {
         onBack()
-      }, 1000)
+      }, 2000)
     } catch (error) {
       console.error('Error updating notification:', error)
       toast.error("Failed to update notification")
@@ -166,7 +166,7 @@ export function EditNotification({ notification, onBack, isViewOnly = false }: E
 
   return (
     <>
-      <div className="-mx-6 border-b mb-6">
+      <div className="flex-1 bg-slate-100 overflow-x-hidden shadow-sm ">
         <PageHeader
           language={language}
           titleEn={titleEn}
@@ -176,14 +176,15 @@ export function EditNotification({ notification, onBack, isViewOnly = false }: E
             { labelEn: "Custom Notification", labelAr: "إشعار مخصص", href: "/notification-center/custom" },
             { labelEn: isViewOnly ? "View Notification" : "Edit Notification", labelAr: isViewOnly ? "عرض الإشعار" : "تعديل الإشعار" }
           ]}
-          showShadow={false}
+         
         />
       </div>
-      <div className="bg-white rounded-lg shadow-sm border p-6">
+         <div className=" mt-4">
+      <div className="bg-white rounded-lg shadow-sm border p-4">
       <div className="space-y-8">
         {/* Notification Details Section */}
         <div className="space-y-6">
-          <h2 className="text-xl font-bold text-[#1F4E58] border-b pb-2">Notification Details</h2>
+          <h2 className="text-xl font-bold text-[#1F4E58] pb-2">Notification Details</h2>
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
             <div className="space-y-2">
@@ -244,7 +245,7 @@ export function EditNotification({ notification, onBack, isViewOnly = false }: E
         </div>
 
         <div className="space-y-6">
-          <h2 className="text-xl font-bold text-[#1F4E58] border-b pb-2">Notification Messages</h2>
+          <h2 className="text-xl font-bold text-[#1F4E58] pb-2">Notification Messages</h2>
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
             <div className="space-y-2">
@@ -272,7 +273,7 @@ export function EditNotification({ notification, onBack, isViewOnly = false }: E
         </div>
 
         <div className="space-y-6">
-          <h2 className="text-xl font-bold text-[#1F4E58] border-b pb-2">Event Details</h2>
+          <h2 className="text-xl font-bold text-[#1F4E58] pb-2">Event Details</h2>
           
           <div className="space-y-2">
             <Label htmlFor="scheduledDate" className="text-sm font-semibold text-gray-700">
@@ -299,7 +300,7 @@ export function EditNotification({ notification, onBack, isViewOnly = false }: E
           </div>
         </div>
 
-        <div className="flex justify-end gap-4 pt-6 mt-8 border-t">
+        <div className="flex justify-end gap-4 pt-6 mt-8 ">
           <Button 
             variant="outline" 
             onClick={onBack}
@@ -317,6 +318,7 @@ export function EditNotification({ notification, onBack, isViewOnly = false }: E
             </Button>
           )}
         </div>
+      </div>
       </div>
     </div>
     </>
