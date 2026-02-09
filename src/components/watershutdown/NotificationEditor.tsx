@@ -633,9 +633,9 @@ export function NotificationEditor({ notificationId, onBack, onSaveSuccess }: No
 
     return (
         <div className="bg-slate-100">
-            <div className="max-w-[1200px] mx-auto pt-6 px-4">
+            <div className="">
                 {/* Header */}
-                <div className="flex items-center justify-between mb-6">
+                <div className="flex items-center justify-between mb-2">
                     <div className="flex items-center gap-4">
                         <Button variant="ghost" size="icon" onClick={onBack} className="rounded-full hover:bg-white transition-colors">
                             <ChevronLeft className="w-6 h-6 text-[#123756]" />
@@ -650,8 +650,8 @@ export function NotificationEditor({ notificationId, onBack, onSaveSuccess }: No
                     if (isEdit) setActiveTab(val);
                     else if (val === "location" && isStep1Valid()) setActiveTab(val);
                     else if (val === "event" && isStep1Valid() && isStep2Valid()) setActiveTab(val);
-                }} className="space-y-6">
-                    <TabsList className="bg-transparent border-b w-full justify-start rounded-none h-auto p-0 gap-4 overflow-x-auto flex-nowrap shrink-0">
+                }} className="space-y-2">
+                    <TabsList className="bg-transparent border-b w-full justify-start rounded-none h-auto gap-4 overflow-x-auto flex-nowrap shrink-0">
                         <TabsTrigger value="notification" className="data-[state=active]:border-[#42777c] data-[state=active]:text-[#42777c] border-b-2 border-transparent rounded-none px-4 py-3 text-sm font-semibold transition-all whitespace-nowrap">
                             Notification Details
                         </TabsTrigger>
@@ -666,8 +666,8 @@ export function NotificationEditor({ notificationId, onBack, onSaveSuccess }: No
                     {/* Step 1: Notification Details */}
                     <TabsContent value="notification">
                         <Card className="border-none shadow-md overflow-hidden">
-                            <CardContent className="p-6 space-y-8">
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                            <CardContent className="">
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                     <div className="space-y-2">
                                         <label className="text-sm font-bold text-gray-700 flex items-center gap-1">
                                             Notification Title <span className="text-red-500 font-bold">*</span>
@@ -799,7 +799,7 @@ export function NotificationEditor({ notificationId, onBack, onSaveSuccess }: No
                     {/* Step 2: Location Details */}
                     <TabsContent value="location">
                         <Card className="border-none shadow-md overflow-hidden">
-                            <CardContent className="p-6 space-y-6">
+                            <CardContent className="space-y-2">
                                 <div className="max-w-md space-y-2">
                                     <label className="text-sm font-bold text-gray-700 flex items-center gap-1">
                                         Region <span className="text-red-500 font-bold">*</span>
@@ -819,7 +819,7 @@ export function NotificationEditor({ notificationId, onBack, onSaveSuccess }: No
                                 </div>
 
                                 {/* Location Details Input */}
-                                <div className="max-w-2xl space-y-2">
+                                <div className=" space-y-2">
                                     <label className="text-sm font-bold text-gray-700 flex items-center gap-1">
                                         Location Details <span className="text-red-500 font-bold">*</span>
                                     </label>

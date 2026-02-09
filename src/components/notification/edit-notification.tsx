@@ -104,7 +104,6 @@ export function EditNotification({ notification, onBack, isViewOnly = false }: E
     try {
       const scheduledDateTime = `${scheduledDate} ${scheduledTime}:00`
       
-      // Find current template metadata for subjects
       const currentTemplate = filteredTemplates.find(t => t.NotificationCategory === selectedTemplate)
 
       let resolvedId: any = notification.NotificationId ?? 
@@ -179,14 +178,14 @@ export function EditNotification({ notification, onBack, isViewOnly = false }: E
          
         />
       </div>
-         <div className=" mt-4">
+         <div className=" mt-4 px-4 mb-4">
       <div className="bg-white rounded-lg shadow-sm border p-4">
       <div className="space-y-8">
         {/* Notification Details Section */}
-        <div className="space-y-6">
-          <h2 className="text-xl font-bold text-[#1F4E58] pb-2">Notification Details</h2>
+        <div className="space-y-2">
+          <h2 className="text-xl font-bold text-[#1F4E58] ">Notification Details</h2>
           
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4">
             <div className="space-y-2">
               <Label className="text-sm font-semibold text-gray-700">Event Type</Label>
               <Input 
@@ -244,10 +243,10 @@ export function EditNotification({ notification, onBack, isViewOnly = false }: E
           </div>
         </div>
 
-        <div className="space-y-6">
-          <h2 className="text-xl font-bold text-[#1F4E58] pb-2">Notification Messages</h2>
+        <div className="space-y-2">
+          <h2 className="text-xl font-bold text-[#1F4E58] ">Notification Messages</h2>
           
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4">
             <div className="space-y-2">
               <Label className="text-sm font-semibold text-gray-700">Message (English) <span className="text-red-500">*</span></Label>
               <Textarea 
@@ -272,8 +271,8 @@ export function EditNotification({ notification, onBack, isViewOnly = false }: E
           </div>
         </div>
 
-        <div className="space-y-6">
-          <h2 className="text-xl font-bold text-[#1F4E58] pb-2">Event Details</h2>
+        <div className="space-y-2">
+          <h2 className="text-xl font-bold text-[#1F4E58] ">Event Details</h2>
           
           <div className="space-y-2">
             <Label htmlFor="scheduledDate" className="text-sm font-semibold text-gray-700">
@@ -286,7 +285,7 @@ export function EditNotification({ notification, onBack, isViewOnly = false }: E
                 value={scheduledDate}
                 onChange={(e) => setScheduledDate(e.target.value)}
                 disabled={isViewOnly}
-                className="h-11 border-gray-300 focus:ring-[#006A72] flex-1"
+                className="border-gray-300 focus:ring-[#006A72] flex-1"
               />
               <Input
                 id="scheduledTime"
@@ -294,17 +293,17 @@ export function EditNotification({ notification, onBack, isViewOnly = false }: E
                 value={scheduledTime}
                 onChange={(e) => setScheduledTime(e.target.value)}
                 disabled={isViewOnly}
-                className="h-11 border-gray-300 focus:ring-[#006A72] flex-1 bg-white"
+                className="border-gray-300 focus:ring-[#006A72] flex-1 bg-white"
               />
             </div>
           </div>
         </div>
 
-        <div className="flex justify-end gap-4 pt-6 mt-8 ">
+        <div className="flex justify-between ">
           <Button 
             variant="outline" 
             onClick={onBack}
-            className="px-8 h-11 border-[#1F4E58] text-[#1F4E58] hover:bg-teal-50"
+            className=" border-[#1F4E58] text-[#1F4E58] hover:bg-teal-50"
           >
             {isViewOnly ? "Back" : "Previous"}
           </Button>
@@ -312,7 +311,7 @@ export function EditNotification({ notification, onBack, isViewOnly = false }: E
             <Button 
               onClick={handleUpdate} 
               disabled={isUpdating}
-              className="px-8 h-11 bg-[#1F4E58] hover:bg-[#163a42] text-white min-w-[120px]"
+              className=" bg-[#1F4E58] hover:bg-[#163a42] text-white min-w-[120px]"
             >
               {isUpdating ? "Updating..." : "Update"}
             </Button>

@@ -18,7 +18,7 @@ interface TemplateViewEditProps {
   language: "EN" | "AR"
 }
 
-export function TemplateViewEdit({ template, mode, onBack, language }: TemplateViewEditProps) {
+export function TemplateViewEdit({ template, mode, onBack }: TemplateViewEditProps) {
   const { userDetails } = useAuth()
   const [eventTypes, setEventTypes] = useState<EventType[]>([])
   const [arabicText, setArabicText] = useState(template.TemplateAr || "")
@@ -110,32 +110,31 @@ export function TemplateViewEdit({ template, mode, onBack, language }: TemplateV
           </div>
 
           {/* Arabic Text */}
-          {language === "AR" ? (
-            <div>
-              <Label htmlFor="arabicText" className="mb-2">Write your arabic text here:</Label>
-              <Textarea
-                id="arabicText"
-                value={arabicText}
-                onChange={(e) => setArabicText(e.target.value)}
-                disabled={isReadOnly}
-                className="min-h-[200px] text-right"
-                dir="rtl"
-                placeholder="اكتب النص العربي هنا..."
-              />
-            </div>
-          ) : (
-            <div>
-              <Label htmlFor="englishText" className="mb-2">Write your english text here:</Label>
-              <Textarea
-                id="englishText"
-                value={englishText}
-                onChange={(e) => setEnglishText(e.target.value)}
-                disabled={isReadOnly}
-                className="min-h-[200px]"
-                placeholder="Write English text here..."
-              />
-            </div>
-          )}
+          <div>
+            <Label htmlFor="arabicText" className="mb-2">Write your arabic text here:</Label>
+            <Textarea
+              id="arabicText"
+              value={arabicText}
+              onChange={(e) => setArabicText(e.target.value)}
+              disabled={isReadOnly}
+              className="min-h-[200px] text-right"
+              dir="rtl"
+              placeholder="اكتب النص العربي هنا..."
+            />
+          </div>
+
+          {/* English Text */}
+          <div>
+            <Label htmlFor="englishText" className="mb-2">Write your english text here:</Label>
+            <Textarea
+              id="englishText"
+              value={englishText}
+              onChange={(e) => setEnglishText(e.target.value)}
+              disabled={isReadOnly}
+              className="min-h-[200px]"
+              placeholder="Write English text here..."
+            />
+          </div>
 
           {/* Action Buttons */}
           <div className="flex justify-between">

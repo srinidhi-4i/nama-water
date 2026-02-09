@@ -19,7 +19,9 @@ import { useSearchParams } from "next/navigation"
 import Link from "next/link"
 import PageHeader from "@/components/layout/PageHeader"
 
+
 export default function CustomNotificationList() {
+  
   const router = useRouter()
   const { language } = useLanguage()
   const [notifications, setNotifications] = useState<CustomNotification[]>([])
@@ -256,7 +258,7 @@ ${row.map(cell => `<Cell><Data ss:Type="String">${String(cell || '').replace(/</
   if ((showEdit || showView) && selectedNotification) {
     return (
       <div className="flex-1 bg-slate-100 overflow-x-hidden ">
-        <div className="px-6">
+        <div >
           <EditNotification 
             notification={selectedNotification} 
             onBack={handleBack} 
@@ -268,7 +270,7 @@ ${row.map(cell => `<Cell><Data ss:Type="String">${String(cell || '').replace(/</
   }
 
   return (
-    <div className="flex-1 bg-slate-100 overflow-x-hidden ">
+    <div className="flex-1 bg-slate-100 overflow-x-hidden  ">
       
       <PageHeader
         language={language}
@@ -351,12 +353,13 @@ ${row.map(cell => `<Cell><Data ss:Type="String">${String(cell || '').replace(/</
                   Export Excel
                 </Button>
               )}
-              <Button 
+             <Button 
                 onClick={() => router.push('/notification-center/custom?mode=create')} 
                 className="bg-[#E54B4B] hover:bg-[#d03b3b] text-white w-full sm:w-auto "
               >
                 Create New Notification
               </Button>
+
             </div>
           </div>
         </div>

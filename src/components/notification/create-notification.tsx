@@ -140,7 +140,7 @@ export function CreateNotification({ onBack }: CreateNotificationProps) {
 
   return (
     <>
-       <div className="flex-1 bg-slate-100 overflow-x-hidden">
+       <div className="flex-1 bg-slate-100 overflow-x-hidden " >
         <PageHeader
           language={language}
           titleEn="Create Custom Notification"

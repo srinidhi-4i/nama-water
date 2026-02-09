@@ -1,5 +1,19 @@
-import { api } from '@/lib/axios';
-import { apiClient } from '@/lib/api-client';
+
+import {
+    getWaterShutdownMasterDataAction,
+    getWaterShutdownUserListAction,
+    getNotificationsAction,
+    getNotificationByIdAction,
+    saveNotificationAction,
+    deleteNotificationAction,
+    getTemplatesAction,
+    saveTemplateAction,
+    exportToExcelAction,
+    getIntermediateHistoryAction,
+    resendIntermediateNotificationsAction,
+    sendIntermediateSMSAction,
+    sendCompletionNotificationAction
+} from '@/app/actions/water-shutdown/water-shutdown';
 import {
     WaterShutdownNotification,
     WaterShutdownTemplate,
@@ -24,13 +38,13 @@ export const waterShutdownService = {
     // Master Data
     getWaterShutdownMasterData: async (): Promise<WaterShutdownMasterData> => {
         try {
-            const formData = new FormData();
-            formData.append('masterType', '');
+            const result = await getWaterShutdownMasterDataAction();
+            if (!result.success || !result.data) {
+                return { regions: [], eventTypes: [], templateTypes: [] };
+            }
+            const data = result.data?.Data || result.data || {};
 
-            const response = await api.post<any>('/WaterShutdown/GetWaterShutdown', formData);
-            const data = response.data?.Data || response.data || {};
-
-            console.log('GetWaterShutdown Master Data Response:', response.data);
+            console.log('GetWaterShutdown Master Data Response:', data);
 
             let regions: any[] = [];
             let eventTypes: any[] = [];
@@ -155,10 +169,11 @@ export const waterShutdownService = {
     // Get User List (Requested by user)
     getWaterShutdownUserList: async (): Promise<any[]> => {
         try {
-            const formData = new FormData();
-            const response = await api.post<any>('/WaterShutdown/GetWaterShutDownUserList', formData);
-            // Assume similar structure or direct array
-            const data = response.data?.Data || response.data;
+            const result = await getWaterShutdownUserListAction();
+            if (!result.success || !result.data) {
+                return [];
+            }
+            const data = result.data?.Data || result.data;
             if (Array.isArray(data)) return data;
             if (data?.Table && Array.isArray(data.Table)) return data.Table;
             return [];
@@ -171,19 +186,17 @@ export const waterShutdownService = {
     getNotificationById: async (id: string): Promise<WaterShutdownNotification> => {
         try {
             console.log(`Fetching notification by ID: ${id}`);
-            const formData = new FormData();
-            formData.append('EventID', id);
-            // Fallback for some APIs that might expect EventUniqueId
-            formData.append('EventUniqueId', id);
-            // Fallback for some APIs that might expect internal ID as id
-            formData.append('id', id);
+            const result = await getNotificationByIdAction(id);
+            if (!result.success || !result.data) {
+                throw new Error(result.message || 'Failed to fetch notification details');
+            }
 
-            const response = await api.post<any>('/WaterShutdown/GetWaterShutDownEventDetailsSingle', formData);
             console.log('=== GET NOTIFICATION DETAIL RAW RESPONSE ===');
-            console.log('Full response.data:', JSON.stringify(response.data, null, 2));
+            const resData = result.data;
+            console.log('Full response.data:', JSON.stringify(resData, null, 2));
 
-            if (response.data && (response.data.StatusCode === 605 || response.data.Table || response.data.Data?.Table)) {
-                const dataRoot = response.data.Data || response.data;
+            if (resData && (resData.StatusCode === 605 || resData.Table || resData.Data?.Table)) {
+                const dataRoot = resData.Data || resData;
                 console.log('dataRoot:', dataRoot);
                 console.log('dataRoot.Table:', dataRoot.Table);
                 console.log('dataRoot.Table1:', dataRoot.Table1);
@@ -350,17 +363,17 @@ export const waterShutdownService = {
 
     getNotifications: async (filters?: WaterShutdownFilters): Promise<WaterShutdownListResponse> => {
         try {
-            const formData = new FormData();
-            formData.append('region', filters?.region === "ALL" ? "" : filters?.region || "");
-            formData.append('eventType', filters?.eventType === "ALL" ? "" : filters?.eventType || "");
-            formData.append('fromDate', filters?.fromDate || "");
-            formData.append('toDate', filters?.toDate || "");
+            const result = await getNotificationsAction(filters || {});
 
-            const response = await api.post<any>('/WaterShutdown/GetEventDetails', formData);
+            if (!result.success) {
+                throw new Error(result.message || 'Failed to fetch notifications');
+            }
 
-            console.log('Water Shutdown List Response Raw:', response.data);
-            if (response.data && (response.data.StatusCode === 605 || response.data.Table)) {
-                const notifications = response.data.Table || response.data.Data?.Table || [];
+            const resData = result.data;
+            console.log('Water Shutdown List Response Raw:', resData);
+
+            if (resData && (resData.StatusCode === 605 || resData.Table)) {
+                const notifications = resData.Table || resData.Data?.Table || [];
 
                 const mappedNotifications: WaterShutdownNotification[] = notifications.map((item: any) => {
                     // Log keys to find Apology Date
@@ -400,7 +413,7 @@ export const waterShutdownService = {
                     pageSize: filters?.pageSize || 10,
                 };
             }
-            throw new Error(response.data?.Status || 'Failed to fetch notifications');
+            throw new Error(resData?.Status || 'Failed to fetch notifications');
         } catch (error: any) {
             throw error;
         }
@@ -428,7 +441,8 @@ export const waterShutdownService = {
 
     _submitHelper: async (id: string, data: CreateNotificationRequest, endpoint: string, isEdit: boolean = false, isCancel: boolean = false) => {
         try {
-            const formData = new FormData();
+            // Reconstruct data object for server action instead of built-in FormData
+            const payloadData: any = {};
 
             const formatDateString = (date: Date | string, type: '24h' | '12h' | 'iso' | 'uat-special' = '24h') => {
                 if (!date) return "";
@@ -465,93 +479,88 @@ export const waterShutdownService = {
 
             // "UpdateType" - Only for Edit or Cancel
             if (isCancel) {
-                formData.append("UpdateType", "CANCELLED"); // For cancellation
-                formData.append("Comments", data.comments || ""); // Add comments for cancellation
+                payloadData["UpdateType"] = "CANCELLED"; // For cancellation
+                payloadData["Comments"] = data.comments || ""; // Add comments for cancellation
             } else if (isEdit) {
-                formData.append("UpdateType", ""); // Changed to empty string to match UAT Payload
+                payloadData["UpdateType"] = ""; // Changed to empty string to match UAT Payload
             }
 
             // ID Mapping: 
             // - EventID: The record identifier (for Edit/Cancel)
             // - EventUniqueId/NotifyID/id: Fallback ID fields
             if (isEdit || isCancel) {
-                formData.append("EventID", id);
-                formData.append("EventUniqueId", id);
-                formData.append("NotifyID", id);
-                formData.append("id", id);
+                payloadData["EventID"] = id;
+                payloadData["EventUniqueId"] = id;
+                payloadData["NotifyID"] = id;
+                payloadData["id"] = id;
                 // CRITICAL DISCOVERY: UAT sends the Event's Record ID in EventTypeID field for updates
-                formData.append("EventTypeID", id);
+                payloadData["EventTypeID"] = id;
             } else {
-                formData.append("EventTypeID", data.eventTypeId.toString());
+                payloadData["EventTypeID"] = data.eventTypeId.toString();
             }
 
             // "EventType" - Category
             // In Phase 7, we send the full category name (e.g., "Unplanned Shutdown Leakage")
             // as shortening it to just "Unplanned" might fail backend validation.
             const etCategory = data.eventTypeCategory || data.eventType || "";
-            formData.append("EventType", etCategory);
+            payloadData["EventType"] = etCategory;
 
             // "NotificationTitle"
-            formData.append("NotificationTitle", data.notificationTitle);
-
-            // ... (omitted intermediate lines to keep context, but replace_file_content handles contiguous block. 
-            // Wait, I need contiguous block. I will include everything between the two changes or make two calls?
-            // UserID is further down at line 583. Multi_replace is better.
-
+            payloadData["NotificationTitle"] = data.notificationTitle;
 
             // "RegionCode"
-            formData.append("RegionCode", data.regionCode || data.regionId || "MCT");
+            payloadData["RegionCode"] = data.regionCode || data.regionId || "MCT";
 
             // "PipeLineTypeID"
             let pipeId = "1";
             if (data.typeOfPipeline && data.typeOfPipeline.toLowerCase().includes("transmission")) {
                 pipeId = "2";
             }
-            formData.append("PipeLineTypeID", pipeId);
+            payloadData["PipeLineTypeID"] = pipeId;
 
             // "LocationCode"
-            formData.append("LocationCode", data.locationDetails || "");
+            payloadData["LocationCode"] = data.locationDetails || "";
 
             // Dates
             // CRITICAL: FromDate in UAT uses 'T' separator and no seconds/ms
-            formData.append("FromDate", formatDateString(data.startDateTime, 'iso'));
-            formData.append("ToDate", formatDateString(data.endDateTime));
+            payloadData["FromDate"] = formatDateString(data.startDateTime, 'iso');
+            payloadData["ToDate"] = formatDateString(data.endDateTime);
 
             // Schedule/Reminder
             const isUnplanned = etCategory === "Unplanned";
             if (isUnplanned) {
-                formData.append("ScheduleNotificationDate", "");
-                formData.append("RemainderNotificationDate", "");
+                payloadData["ScheduleNotificationDate"] = "";
+                payloadData["RemainderNotificationDate"] = "";
             } else {
                 const scheduleVal = data.apologyNotificationDate || "";
                 const remainderVal = data.reminderNotificationDate || data.apologyNotificationDate || "";
                 // UAT uses 15:00 PM for schedule
-                formData.append("ScheduleNotificationDate", formatDateString(scheduleVal, 'uat-special'));
-                formData.append("RemainderNotificationDate", formatDateString(remainderVal));
+                payloadData["ScheduleNotificationDate"] = formatDateString(scheduleVal, 'uat-special');
+                payloadData["RemainderNotificationDate"] = formatDateString(remainderVal);
             }
 
             // ValveLock
             let vLock = data.valveLock;
             if (vLock === "Yes") vLock = "0";
             else if (vLock === "No") vLock = "1";
-            formData.append("ValveLock", vLock);
+            payloadData["ValveLock"] = vLock;
 
             // Status Code (1 for active, 2 for cancelled)
-            formData.append("StatusCode", isCancel ? "2" : "1");
+            payloadData["StatusCode"] = isCancel ? "2" : "1";
 
             // Contractors
             const contractors = Array.isArray(data.contractors)
                 ? data.contractors.map((c: any) => ({ contractorName: c.contractorName || c.name }))
                 : [{ contractorName: data.contractors }];
-            formData.append("ContractorName", JSON.stringify(contractors));
+            payloadData["ContractorName"] = JSON.stringify(contractors);
 
-            formData.append("ReasonForShutDown", data.reasonForShutdown);
-            formData.append("NotificationDetails", data.notificationDetails);
-            formData.append("PipelineSize", data.sizeOfPipeline);
-            formData.append("TypeOfPipeline", data.typeOfPipeline || "");
-            formData.append("FocalPointDetails", JSON.stringify(data.focalPoints || []));
-            formData.append("EventFilepath", "");
-            formData.append("EventNotificationDetails", JSON.stringify(data.eventNotificationDetails || []));
+            payloadData["ReasonForShutDown"] = data.reasonForShutdown;
+            payloadData["NotificationDetails"] = data.notificationDetails;
+            payloadData["PipelineSize"] = data.sizeOfPipeline;
+            payloadData["TypeOfPipeline"] = data.typeOfPipeline || "";
+            payloadData["FocalPointDetails"] = JSON.stringify(data.focalPoints || []);
+            payloadData["EventFilepath"] = "";
+            payloadData["EventNotificationDetails"] = JSON.stringify(data.eventNotificationDetails || []);
 
             // EventLocationDetails
             let locationPayload = { RegionData: [{ RegionCode: data.regionCode || "MCT", Regions: [] }] } as any;
@@ -579,24 +588,25 @@ export const waterShutdownService = {
             } catch (e) { }
 
 
-            formData.append("EventLocationDetails", JSON.stringify(locationPayload));
+            payloadData["EventLocationDetails"] = JSON.stringify(locationPayload);
 
             // UserID
-            formData.append("UserID", "undefined");
-
-            formData.append("EventJsonData", data.eventJsonData);
+            payloadData["UserID"] = "undefined";
+            payloadData["EventJsonData"] = data.eventJsonData;
 
             // Dummy PDF - Mandatory
             const dummyPdf = "JVBERi0xLjQKJcOkw7zDtsOfCjIgMCBvYmoKPDwvTGVuZ3RoIDMgMCBSL0ZpbHRlci9GbGF0ZURlY29kZT4+CnN0cmVhbQp4nCXCwQ0AIAgDwP8v7h84oK95wF4C50Wb2L2s6wu38Q4yCmVuZHN0cmVhbQplbmRvYmoKMyAwIG9iago0NAplbmRvYmoKNSAwIG9iago8PC9QYXJlbnQgNCAwIFIvTWVkaWFCb3hbMCAwIDU5NSA4NDJdL1R5cGUvUGFnZS9Db250ZW50cyAyIDAgUj4+CmVuZG9YmoKNCAwIG9iago8PC9UeXBlL1BhZ2VzL0NvdW50IDEvS2lkc1s1IDAgUl0+PgplbmRvYmoKMSAwIG9iago8PC9UeXBlL0NhdGFsb2cvUGFnZXMgNCAwIFI+PgplbmRvYmoKNiAwIG9iago8PC9Qcm9kdWNlcihpVGV4dCA1LjUuNiAqMjAwMC0yMDE1IGlUZXh0IEdyb3VwIE5WIFwoQUdHUEwpKS9Nb2REYXRlKEQ6MjAyMTAxMjgwOTM5MDBaKS9DcmVhdGlvbkRhdGUoRDoyMDIxMDEyODA5MzkwMFopPj4KZW5kb2JqCnhyZWYKMCA3CjAwMDAwMDAwMDAgNjU1MzUgZgwwMDAwMDAwMjE2IDAwMDAwIG4KMDAwMDAwMDAxNSAwMDAw0IG4KMDAwMDAwMDA5NSAwMDAw0IG4KMDAwMDAwMDE1NyAwMDAw0IG4KMDAwMDAwMDEwNCAwMDAw0IG4KMDAwMDAwMDI2NiAwMDAw0IG4B0cmFpbGVyCjw8L1NpemUgNy9JbmZvIDYgMCBSL1Jvb3QgMSAwIFIvSUQgWzwyNjQ5MzMyNTY2MzE2NjY1MzgzNTMwMzk2MTMyMzY2Mj4gPDI2NDkzMzI1NjYzMTY2NjUzODM1MzAzOTYxMzIzNjYyPl0+PgpzdGFydHhyZWYKNTAwCiUlRU9GCg==";
-            formData.append("EventPdfTemplate", dummyPdf);
+            payloadData["EventPdfTemplate"] = dummyPdf;
 
             // Ensure hours is a clean integer string (UAT doesn't use .00)
             const hoursVal = Math.round(parseFloat(data.numberOfHours || "0")).toString();
-            formData.append("EventHours", hoursVal);
+            payloadData["EventHours"] = hoursVal;
 
             console.log(`[Submit] Final Endpoint: ${endpoint}`);
-            console.log('[Submit] FormData Contents:');
-            formData.forEach((value, key) => {
+            console.log('[Submit] Payload Data:');
+            // Log payload keys
+            Object.keys(payloadData).forEach(key => {
+                let value = payloadData[key];
                 let displayValue = value;
                 if (typeof value === 'string' && value.length > 100) {
                     displayValue = value.substring(0, 100) + '... (truncated, len:' + value.length + ')';
@@ -604,8 +614,14 @@ export const waterShutdownService = {
                 console.log(`  ${key}:`, displayValue);
             });
 
-            const response = await api.post<any>(endpoint, formData);
+            const result = await saveNotificationAction(payloadData, endpoint);
 
+            if (!result.success) {
+                console.log('[Submit] Server action failed:', result.message);
+                throw { message: result.message || 'Failed to submit notification' };
+            }
+
+            const response = { data: result.data }; // Wrap to match previous structure
             console.log('[Submit] API Response Raw:', response.data);
 
             const resData = response.data;
@@ -661,10 +677,9 @@ export const waterShutdownService = {
 
     deleteNotification: async (id: string): Promise<void> => {
         try {
-            const response = await api.delete<any>(`/WaterShutdown/notifications/${id}`);
-
-            if (response.data && response.data.StatusCode !== 605) {
-                throw new Error(response.data?.Status || 'Failed to delete notification');
+            const result = await deleteNotificationAction(id);
+            if (!result.success) {
+                throw new Error(result.message || 'Failed to delete notification');
             }
         } catch (error: any) {
             throw error;
@@ -673,34 +688,33 @@ export const waterShutdownService = {
 
     exportToExcel: async (filters?: WaterShutdownFilters): Promise<Blob> => {
         try {
-            const params = new URLSearchParams();
+            const result = await exportToExcelAction(filters || {});
+            if (!result.success || !result.data) {
+                throw new Error(result.message || "Failed to export to Excel");
+            }
 
-            if (filters?.region) params.append('region', filters.region);
-            if (filters?.eventType) params.append('eventType', filters.eventType);
-            if (filters?.status) params.append('status', filters.status);
-            if (filters?.fromDate) params.append('fromDate', filters.fromDate);
-            if (filters?.toDate) params.append('toDate', filters.toDate);
-            if (filters?.searchQuery) params.append('search', filters.searchQuery);
-
-            const response = await api.get(`/WaterShutdown/notifications/export?${params.toString()}`, {
-                responseType: 'blob',
-            });
-
-            return response.data;
+            // Convert base64 back to blob
+            const byteCharacters = atob(result.data);
+            const byteNumbers = new Array(byteCharacters.length);
+            for (let i = 0; i < byteCharacters.length; i++) {
+                byteNumbers[i] = byteCharacters.charCodeAt(i);
+            }
+            const byteArray = new Uint8Array(byteNumbers);
+            return new Blob([byteArray], { type: 'application/octet-stream' });
         } catch (error: any) {
             throw error;
         }
     },
 
     // Template Operations
+    // Template Operations
     getTemplates: async (): Promise<WaterShutdownTemplate[]> => {
         try {
-            const formData = new FormData();
-            formData.append('TemplateDetailsID', '');
-
-            const response = await api.post<any>('/WaterShutdown/GetEventTemplateDetails', formData);
-
-            const data = response.data?.Data || response.data || {};
+            const result = await getTemplatesAction();
+            if (!result.success || !result.data) {
+                return [];
+            }
+            const data = result.data?.Data || result.data || {};
             const table = data.Table || data.Data?.Table || (Array.isArray(data) ? data : []);
 
             return table.map((item: any) => ({
@@ -720,12 +734,34 @@ export const waterShutdownService = {
 
     getTemplateById: async (id: string): Promise<WaterShutdownTemplate> => {
         try {
-            const formData = new FormData();
-            formData.append('TemplateDetailsID', id);
+            // We reuse the list action since it gets all or single depending on args
+            // But since getTemplatesAction takes no ID argument in the current implementation,
+            // we will fetch all and find, OR we'd need to update the action.
+            // The existing getTemplatesAction hardcodes empty ID.
+            // However, getTemplateById implementation used: formData.append('TemplateDetailsID', id);
+            // This suggests we need a specific action or update getTemplatesAction.
+            // For now, let's assume getTemplatesAction can be used if we fix it or create a new one.
+            // Actually, best to fetch all and filter client side if the list is small, OR 
+            // since I can't easily change the action signature confirmedly without checking,
+            // I'll stick to the pattern: The action file has `saveTemplateAction`, `getTemplatesAction`.
+            // Let's rely on fetching all for now or create another action helper if needed.
+            // Wait, looking at water-shutdown.ts again, getTemplatesAction sends '';
 
-            const response = await api.post<any>('/WaterShutdown/GetEventTemplateDetails', formData);
-            const data = response.data?.Data || response.data || {};
-            const item = (data.Table && data.Table[0]) || data;
+            // To properly refactor, I should rely on the server action. 
+            // If the list is huge, this is inefficient, but for templates it's likely fine.
+            // BUT, to be safer, I will continue to use `getTemplatesAction` which returns the list.
+
+            const result = await getTemplatesAction();
+            if (!result.success || !result.data) {
+                throw new Error("Failed to load templates");
+            }
+
+            const data = result.data?.Data || result.data || {};
+            const table = data.Table || data.Data?.Table || (Array.isArray(data) ? data : []);
+
+            const item = table.find((t: any) => (t.TemplateDetailsID?.toString() === id || t.id?.toString() === id));
+
+            if (!item) throw { message: 'Template not found' };
 
             // Decode Email template if it exists
             let decodedEmail = "";
@@ -754,24 +790,30 @@ export const waterShutdownService = {
 
     createTemplate: async (data: any): Promise<WaterShutdownTemplate> => {
         try {
-            const formData = new FormData();
-            formData.append('UpdateType', 'CREATE');
-            formData.append('TemplateDetailsID', '');
-            formData.append('EventTypeID', data.eventType);
-            formData.append('TemplateTypeID', data.templateType);
-            formData.append('EmailTemplateEn', data.emailBody || '');
-            formData.append('EmailTemplateAr', '');
-            formData.append('SMSTemplateEn', data.body);
-            formData.append('SMSTemplateAr', data.bodyAr || '');
-            formData.append('UserID', '');
+            // Refactor to use server action
+            const payload: any = {};
+            payload.UpdateType = 'CREATE'; // Mapped from service logic
+            // Service used 'CREATE', but backend might need "" or specific value. 
+            // Assuming 'CREATE' works based on previous service code.
+            // However, previous service code used `CreateEvent` or `InsertEventTemplateDetails`?
+            // Line 792 used `/WaterShutdown/InsertEventTemplateDetails`.
 
-            const response = await api.post<any>('/WaterShutdown/InsertEventTemplateDetails', formData);
+            payload.TemplateDetailsID = '';
+            payload.EventTypeID = data.eventType;
+            payload.TemplateTypeID = data.templateType;
+            payload.EmailTemplateEn = data.emailBody || '';
+            payload.EmailTemplateAr = '';
+            payload.SMSTemplateEn = data.body;
+            payload.SMSTemplateAr = data.bodyAr || '';
+            payload.UserID = '';
 
-            if (response.data && (response.data.IsSuccess === 1 || response.data.Status === "Success")) {
-                return response.data.Data || response.data;
+            const result = await saveTemplateAction(payload);
+
+            if (result.success && result.data && (result.data.IsSuccess === 1 || result.data.Status === "Success")) {
+                return result.data.Data || result.data;
             }
 
-            throw { message: response.data?.Status || 'Failed to create template' };
+            throw { message: result.message || result.data?.Status || 'Failed to create template' };
         } catch (error: any) {
             throw error;
         }
@@ -779,24 +821,24 @@ export const waterShutdownService = {
 
     updateTemplate: async (id: string, data: any): Promise<WaterShutdownTemplate> => {
         try {
-            const formData = new FormData();
-            formData.append('UpdateType', 'UPDATE');
-            formData.append('TemplateDetailsID', id);
-            formData.append('EventTypeID', data.eventType);
-            formData.append('TemplateTypeID', data.templateType);
-            formData.append('EmailTemplateEn', data.emailBody || '');
-            formData.append('EmailTemplateAr', '');
-            formData.append('SMSTemplateEn', data.body);
-            formData.append('SMSTemplateAr', data.bodyAr || '');
-            formData.append('UserID', '');
+            const payload: any = {};
+            payload.UpdateType = 'UPDATE';
+            payload.TemplateDetailsID = id;
+            payload.EventTypeID = data.eventType;
+            payload.TemplateTypeID = data.templateType;
+            payload.EmailTemplateEn = data.emailBody || '';
+            payload.EmailTemplateAr = '';
+            payload.SMSTemplateEn = data.body;
+            payload.SMSTemplateAr = data.bodyAr || '';
+            payload.UserID = '';
 
-            const response = await api.post<any>('/WaterShutdown/InsertEventTemplateDetails', formData);
+            const result = await saveTemplateAction(payload);
 
-            if (response.data && (response.data.IsSuccess === 1 || response.data.Status?.toLowerCase() === "success" || response.data.StatusCode === 605)) {
-                return response.data.Data || response.data;
+            if (result.success && result.data && (result.data.IsSuccess === 1 || result.data.Status?.toLowerCase() === "success" || result.data.StatusCode === 605)) {
+                return result.data.Data || result.data;
             }
 
-            throw new Error(response.data?.Status || 'Failed to update template');
+            throw new Error(result.message || result.data?.Status || 'Failed to update template');
         } catch (error: any) {
             console.error('Error updating template:', error);
             throw error;
@@ -805,25 +847,25 @@ export const waterShutdownService = {
 
     deleteTemplate: async (id: string): Promise<void> => {
         try {
-            const formData = new FormData();
-            formData.append('UpdateType', 'DELETE');
-            formData.append('TemplateDetailsID', id);
+            const payload: any = {};
+            payload.UpdateType = 'DELETE';
+            payload.TemplateDetailsID = id;
             // Required placeholders
-            formData.append('EventTypeID', '');
-            formData.append('TemplateTypeID', '');
-            formData.append('EmailTemplateEn', '');
-            formData.append('EmailTemplateAr', '');
-            formData.append('SMSTemplateEn', '');
-            formData.append('SMSTemplateAr', '');
-            formData.append('UserID', '');
+            payload.EventTypeID = '';
+            payload.TemplateTypeID = '';
+            payload.EmailTemplateEn = '';
+            payload.EmailTemplateAr = '';
+            payload.SMSTemplateEn = '';
+            payload.SMSTemplateAr = '';
+            payload.UserID = '';
 
-            const response = await api.post<any>('/WaterShutdown/InsertEventTemplateDetails', formData);
+            const result = await saveTemplateAction(payload);
 
-            if (response.data && (response.data.IsSuccess === 1 || response.data.Status === "Success" || response.data.StatusCode === 605)) {
+            if (result.success && result.data && (result.data.IsSuccess === 1 || result.data.Status === "Success" || result.data.StatusCode === 605)) {
                 return;
             }
 
-            throw new Error(response.data?.Status || 'Failed to delete template');
+            throw new Error(result.message || result.data?.Status || 'Failed to delete template');
         } catch (error: any) {
             console.error('Error deleting template:', error);
             throw error;
@@ -834,11 +876,11 @@ export const waterShutdownService = {
     // Intermediate SMS Operations
     getIntermediateHistory: async (eventId: string): Promise<any[]> => {
         try {
-            const formData = new FormData();
-            formData.append('EventId', eventId);
-
-            const response = await api.post<any>('/WaterShutdown/GetIntermediateHistory', formData);
-            return response.data?.Data || response.data || [];
+            const result = await getIntermediateHistoryAction(eventId);
+            if (!result.success || !result.data) {
+                return [];
+            }
+            return result.data?.Data || result.data || [];
         } catch (error: any) {
             console.error('Error fetching intermediate history:', error);
             return [];
@@ -847,8 +889,16 @@ export const waterShutdownService = {
 
     async resendIntermediateNotifications(eventId: string | null): Promise<any> {
         if (!eventId) return;
-        const response = await api.post<any>(`/WaterShutdown/ResendIntermediateNotifications?EventUniqueId=${eventId}`);
-        return response.data;
+        try {
+            const result = await resendIntermediateNotificationsAction(eventId);
+            if (!result.success) {
+                throw new Error(result.message || 'Failed to resend notifications');
+            }
+            return result.data;
+        } catch (error: any) {
+            console.error('Error resending intermediate notifications:', error);
+            throw error;
+        }
     },
 
     sendIntermediateSMS: async (eventId: string, data: {
@@ -858,22 +908,17 @@ export const waterShutdownService = {
         templateAr: string;
     }): Promise<void> => {
         try {
-            const formData = new FormData();
-            formData.append('UpdateType', 'INTERMEDIATE TRIGGERED');
-            formData.append('EventId', eventId);
-            formData.append('UserId', ''); // UserID handled by interceptor or optional
-            formData.append('FromHour', data.fromHour);
-            formData.append('ToHour', data.toHour);
-            formData.append('TemplateEn', data.templateEn);
-            formData.append('TemplateAr', data.templateAr);
-            formData.append('Lang', 'EN');
+            const result = await sendIntermediateSMSAction(eventId, data);
 
-            const response = await api.post<any>('/WaterShutdown/IntermediateSmsEvent', formData);
+            if (!result.success) {
+                throw new Error(result.message || 'Failed to send SMS');
+            }
 
-            if (response.data && (response.data.IsSuccess === 1 || response.data.Status === 'Success')) {
+            // Check response data for success indicators
+            if (result.data && (result.data.IsSuccess === 1 || result.data.Status === 'Success')) {
                 return;
             }
-            throw new Error(response.data?.Status || 'Failed to send SMS');
+            throw new Error(result.data?.Status || 'Failed to send SMS');
         } catch (error: any) {
             console.error('Error sending intermediate SMS:', error);
             throw error;
@@ -883,19 +928,17 @@ export const waterShutdownService = {
     // Completion Notification
     sendCompletionNotification: async (eventId: string): Promise<void> => {
         try {
-            const formData = new FormData();
-            formData.append('UpdateType', 'COMPLETION TRIGGERED');
-            formData.append('EventId', eventId);
-            formData.append('UserId', ''); // UserID handled by interceptor
-            formData.append('Comments', 'Completion Success');
-            formData.append('Lang', 'EN');
+            const result = await sendCompletionNotificationAction(eventId);
 
-            const response = await api.post<any>('/WaterShutdown/CompletionNotificationEvent', formData);
+            if (!result.success) {
+                throw new Error(result.message || 'Failed to send completion notification');
+            }
 
-            if (response.data && (response.data.IsSuccess === 1 || response.data.Status === 'Success')) {
+            // Check response data for success indicators
+            if (result.data && (result.data.IsSuccess === 1 || result.data.Status === 'Success')) {
                 return;
             }
-            throw new Error(response.data?.Status || 'Failed to send completion notification');
+            throw new Error(result.data?.Status || 'Failed to send completion notification');
         } catch (error: any) {
             console.error('Error sending completion notification:', error);
             throw error;
