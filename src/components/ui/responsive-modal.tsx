@@ -37,7 +37,7 @@ const ResponsiveModalVariants = cva(
       side: {
         top: "inset-x-0 top-0 border-b rounded-b-xl max-h-[90%] lg:h-fit data-[state=closed]:slide-out-to-top data-[state=open]:slide-in-from-top",
         bottom:
-          "bottom-0 left-1/2 -translate-x-1/2 border-t lg:h-fit max-h-[90%] rounded-t-xl data-[state=closed]:slide-out-to-bottom data-[state=open]:slide-in-from-bottom w-[95%] sm:w-[90%] md:w-[600px] lg:w-[700px]",
+          "inset-x-0 bottom-0 border-t max-h-[90%] rounded-t-xl data-[state=closed]:slide-out-to-bottom data-[state=open]:slide-in-from-bottom md:inset-x-auto md:bottom-auto md:left-1/2 md:top-1/2 md:-translate-x-1/2 md:-translate-y-1/2 md:rounded-xl md:max-w-lg md:w-full md:max-h-[85vh]",
         left: "inset-y-0 left-0 h-full lg:h-fit w-3/4 border-r rounded-r-xl data-[state=closed]:slide-out-to-left data-[state=open]:slide-in-from-left sm:max-w-sm",
         right:
           "inset-y-0 right-0 h-full lg:h-fit w-3/4 border-l rounded-l-xl data-[state=closed]:slide-out-to-right data-[state=open]:slide-in-from-right sm:max-w-sm",

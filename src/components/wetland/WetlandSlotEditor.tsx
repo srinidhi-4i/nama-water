@@ -153,7 +153,7 @@ export function WetlandSlotEditor({ date, onBack }: WetlandSlotEditorProps) {
         const formattedSlots: SlotData[] = dateSlots.map((slot: any) => ({
           SlotID: slot.id,
           SlotDuration: slot.duration?.toString() || calculateDuration(slot.startTime, slot.endTime),
-          MaximumVisitors: slot.capacity.toString(),
+          MaximumVisitors: (slot.capacity && slot.capacity !== '0') ? slot.capacity.toString() : '25',
           StartTime: moment(slot.startTime, ['HH:mm', 'hh:mm A']).format('HH:mm'), // Ensure 24h format for input
           EndTime: moment(slot.endTime, ['HH:mm', 'hh:mm A']).format('hh:mm A'), // Display format for read-only
           IsDeleted: '',
@@ -305,8 +305,23 @@ export function WetlandSlotEditor({ date, onBack }: WetlandSlotEditorProps) {
       
       // Combine active slots and deleted slots
       const allSlotsToSubmit = [
-          ...slots.map(s => ({ ...s, IsDeleted: '' })),
-          ...deletedSlots
+          ...slots.map(s => {
+              // Check if ID is a generated random one (contains decimal)
+              // If so, send '0' to treat as new insert instead of invalid update ID
+              const cleanId = (s.SlotID && s.SlotID.includes('.')) ? '0' : s.SlotID;
+              
+              return { 
+                  ...s, 
+                  SlotID: cleanId,
+                  IsDeleted: '',
+                  // Ensure capacity is valid
+                  MaximumVisitors: (s.MaximumVisitors && s.MaximumVisitors !== '0') ? s.MaximumVisitors : '25'
+              };
+          }),
+          ...deletedSlots.map(s => {
+               const cleanId = (s.SlotID && s.SlotID.includes('.')) ? '0' : s.SlotID;
+               return { ...s, SlotID: cleanId };
+          })
       ]
 
       const slotData = [{
@@ -318,10 +333,8 @@ export function WetlandSlotEditor({ date, onBack }: WetlandSlotEditorProps) {
       await wetlandService.updateSlot('', slotData)
       toast.success('Slots updated successfully!')
       
-      // Refresh data
-      setDeletedSlots([])
-      await loadSlotsForDate(selectedDate)
-      await loadMonthData(selectedDate) 
+      // Navigate back to slot creation page
+      router.push('/wetland-visit/slot-creation')
       
     } catch (error: any) {
       toast.error(error.message || 'Failed to update slots')

@@ -23,8 +23,13 @@ export default function WetlandSlotEditorPage({ date }: WetlandSlotEditorPagePro
         language={language}
         titleEn="Edit Slot"
         titleAr="تعديل الفترة"
-        breadcrumbEn="Edit Slot"
-        breadcrumbAr="تعديل الفترة"
+        breadcrumbEn="Edit Slot" // Fallback
+        breadcrumbAr="تعديل الفترة" // Fallback
+        breadcrumbItems={[
+            { labelEn: "Home", labelAr: "الرئيسية", href: "/branchhome" },
+            { labelEn: "Slot Creation", labelAr: "إنشاء الفترة", href: "/wetland-visit/slot-creation" },
+            { labelEn: "Edit", labelAr: "تعديل", href: "" }
+        ]}
       />
       <WetlandSlotEditor date={date} onBack={handleBack} />
     </div>

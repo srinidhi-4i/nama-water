@@ -1,4 +1,15 @@
-import { api } from '@/lib/axios';
+import {
+    getSlotsAction,
+    createSlotAction,
+    updateSlotAction,
+    deleteSlotAction,
+    getHolidaysAction,
+    createHolidayAction,
+    deleteHolidayAction,
+    getMasterDataAction,
+    getHolidayDatesAction,
+    insertWetlandHolidayAction
+} from '@/app/actions/wetland/wetland';
 import { toast } from 'sonner';
 import {
     WetlandSlot,
@@ -16,137 +27,129 @@ import {
     WetlandHolidayListItem,
     InsertHolidayRequest,
 } from '@/types/wetland.types';
+import moment from 'moment';
 
 export const wetlandService = {
     // Slot Operations
     getSlots: async (month: number, year: number): Promise<WetlandSlotsResponse> => {
         try {
-            const formData = new FormData();
-            // Use 'GetSlotsInformationCreateSlotScreen' to fetch existing slots
-            formData.append('type', 'GetSlotsInformationCreateSlotScreen');
-            formData.append('branchID', '1');
+            const result = await getSlotsAction(month, year);
+            const response = result.data;
 
-            // Use a wider date range like the reference app (1 year ago to 1 year later)
-            // This ensures we get all slots, not just for the current month
-            const now = new Date();
-            const oneYearAgo = new Date(now.getFullYear() - 1, now.getMonth(), now.getDate());
-            const oneYearLater = new Date(now.getFullYear() + 1, now.getMonth(), now.getDate());
+            console.log(`getSlots response for ${month}/${year}:`, response);
 
-            const fromDate = oneYearAgo.toISOString().split('T')[0];
-            const toDate = oneYearLater.toISOString().split('T')[0];
-
-            formData.append('fromDate', fromDate);
-            formData.append('toDate', toDate);
-
-            console.log('Fetching slots with date range:', { fromDate, toDate });
-
-            const response = await api.post<any>('/WetLand/CheckAvailableTimeSlotsByType', formData);
-
-            console.log('CheckAvailableTimeSlotsByType Full Response:', response.data);
-            console.log('response.data.Table1:', response.data?.Table1);
-            console.log('response.data.Data:', response.data?.Data);
-            console.log('response.data.Data.Table1:', response.data?.Data?.Table1);
-            console.log('response.data.Table:', response.data?.Table);
-
-            if (response.data && response.data.StatusCode === 605) {
+            // Check if response validates as success (StatusCode 605)
+            // Also be lenient if data exists even with different status codes for debugging
+            if (response && (response.StatusCode === 605 || result.success)) {
                 // The API might return slots in different locations, check all possibilities
-                const rawSlots = response.data.Data?.Table1 ||
-                    response.data.Table1 ||
-                    response.data.Data?.Table ||
-                    response.data.Table ||
+                const rawSlots = response.Data?.Table1 ||
+                    response.Table1 ||
+                    response.Data?.Table ||
+                    response.Table ||
+                    response.data?.Table1 || // Check lowercase data
                     [];
 
-                console.log('Raw slots from API:', rawSlots);
-                console.log('First slot sample:', rawSlots[0]);
+                console.log(`Found ${rawSlots.length} raw slots from API`);
 
-                // Filter slots for the requested month/year
-                const mappedSlots: WetlandSlot[] = rawSlots
-                    .map((item: any) => {
-                        const mappedSlot = {
-                            id: item.SlotID?.toString() || item.BranchWiseSlotID?.toString() || item.id?.toString() || Math.random().toString(),
-                            date: item.AppointmentDate?.split('T')[0] || item.SlotDate?.split('T')[0] || item.date || '',
-                            startTime: item.StartTime || item.TimeSlotStart || item.startTime || '',
-                            endTime: item.EndTime || item.endTime || '',
-                            capacity: item.MaximumVisitors || item.TotalAppointmentsForSlot || item.capacity || 0,
-                            bookedCount: item.BookedCount || item.AppoitmentsBooked || item.bookedCount || 0,
-                            isActive: item.IsActive !== undefined ? item.IsActive : true,
-                        };
-                        return mappedSlot;
-                    })
-                    .filter((slot: WetlandSlot) => {
-                        // Filter to only include slots for the requested month/year
-                        if (!slot.date) {
-                            console.log('Slot has no date:', slot);
-                            return false;
-                        }
-                        const slotDate = new Date(slot.date);
-                        const slotMonth = slotDate.getMonth() + 1;
-                        const slotYear = slotDate.getFullYear();
-                        const matches = slotMonth === month && slotYear === year;
+                if (rawSlots.length > 0) {
 
-                        if (!matches && rawSlots.indexOf(rawSlots.find((s: any) => s.SlotID === slot.id)) < 5) {
-                            console.log('Slot filtered out:', {
-                                slotDate: slot.date,
-                                slotMonth,
-                                slotYear,
-                                requestedMonth: month,
-                                requestedYear: year
-                            });
-                        }
+                    // Filter slots for the requested month/year
+                    const mappedSlots: WetlandSlot[] = rawSlots
+                        .map((item: any) => {
+                            // Robust date parsing
+                            const rawDate = item.AppointmentDate || item.SlotDate || item.date;
+                            let dateStr = '';
 
-                        // Also filter out any slots with empty start or end times (ghost slots)
-                        return matches && slot.startTime && slot.endTime;
-                    });
+                            if (rawDate) {
+                                // Try parsing with moment to handle various formats
+                                const mDate = moment(rawDate);
+                                if (mDate.isValid()) {
+                                    dateStr = mDate.format('YYYY-MM-DD');
+                                } else {
+                                    // Fallback to simple split if moment fails or specific format
+                                    dateStr = rawDate.split('T')[0];
+                                }
+                            }
 
-                console.log('Mapped and filtered slots for month', month, 'year', year, ':', mappedSlots);
+                            // Try to find any ID field - check multiple casing variations
+                            const slotId = item.SlotID || item.SlotId || item.slotID || item.slotId ||
+                                item.BranchWiseSlotID || item.BranchWiseSlotId ||
+                                item.id || item.ID;
 
-                return {
-                    slots: mappedSlots,
-                    month,
-                    year,
-                };
+                            // If no ID found, log it clearly for debugging
+                            if (!slotId) {
+                                console.warn('No ID found for slot item:', item);
+                            }
+
+                            return {
+                                id: slotId?.toString() || Math.random().toString(),
+                                date: dateStr,
+                                startTime: item.StartTime || item.TimeSlotStart || item.startTime || '',
+                                endTime: item.EndTime || item.endTime || '',
+                                capacity: item.MaximumVisitors || item.TotalAppointmentsForSlot || item.capacity || 0,
+                                bookedCount: item.BookedCount || item.AppoitmentsBooked || item.bookedCount || 0,
+                                isActive: item.IsActive !== undefined ? item.IsActive : true,
+                            };
+                        })
+                        .filter((slot: WetlandSlot) => {
+                            // Filter to only include slots for the requested month/year
+                            if (!slot.date) return false;
+
+                            const slotDate = moment(slot.date);
+                            const slotMonth = slotDate.month() + 1; // month() is 0-indexed
+                            const slotYear = slotDate.year();
+
+                            // Check match
+                            const matches = slotMonth === month && slotYear === year;
+
+                            // Debug log for first few non-matches to checking
+                            // First check if date matches
+                            if (!matches) return false;
+
+                            // Then ensure not a ghost slot (valid times)
+                            const sTime = slot.startTime ? String(slot.startTime).trim() : '';
+                            const eTime = slot.endTime ? String(slot.endTime).trim() : '';
+
+                            return sTime.length > 0 && eTime.length > 0;
+                        });
+
+                    console.log(`Mapped ${mappedSlots.length} slots for ${month}/${year}`);
+                    return {
+                        slots: mappedSlots,
+                        month,
+                        year,
+                    };
+                }
             }
 
-            throw { message: response.data?.Status || 'Failed to fetch slots' };
+            // If we got a valid response but no data found or status code mismatch
+            console.warn('API returned valid structure but no slots found or status mismatch', response);
+
+            // If status is 605 but no data structure found, or if status is 'fail'/other
+            // We should just return empty instead of throwing to avoid console errors
+            // The API might be returning 'fail' when no slots exist for the month
+            return { slots: [], month, year };
+
         } catch (error: any) {
-            // Silently fallback to mock data for development if needed, 
-            // but don't log error to console to avoid overlays.
-            return wetlandService.getMockSlots(month, year);
+            console.error('getSlots Exception:', error);
+            // Return empty slots on crash to avoid UI breakage
+            return { slots: [], month, year };
         }
     },
 
     createSlot: async (data: CreateSlotRequest): Promise<WetlandSlot> => {
         try {
-            // Note: The reference app sends an array of dates with slots
-            // For single slot creation, we'll wrap it in the expected format
-            const slotData = [{
-                SlotDate: data.date,
-                SlotCount: 1,
-                Slots: [{
-                    SlotID: '',
-                    SlotDuration: '1',
-                    MaximumVisitors: data.capacity.toString(),
-                    StartTime: data.startTime,
-                    EndTime: data.endTime,
-                    IsDeleted: '',
-                    Reason: ''
-                }]
-            }];
+            const result = await createSlotAction(data);
 
-            const formData = new FormData();
-            formData.append('GovernorateID', '1'); // Default values - should be from user context
-            formData.append('WillayatID', '1');
-            formData.append('BranchId', '1');
-            formData.append('UserId', '1');
-            formData.append('Lang', 'En');
-            formData.append('JsonSlotData', JSON.stringify(slotData));
+            if (!result.success || !result.data) {
+                throw { message: result.message || 'Failed to create slot' };
+            }
 
-            const response = await api.post<any>('/WetLand/CreateWetlandSlots', formData);
-
-            console.log('CreateWetlandSlots Response:', response.data);
+            const response = result.data;
+            console.log('CreateWetlandSlots Response:', response);
 
             // IsSuccess: 0 means SUCCESS in this API (0 = success, 1 = failure)
-            if (response.data && response.data.StatusCode === 605 && response.data.Data?.IsSuccess === 0) {
+            if (response && response.StatusCode === 605 && response.Data?.IsSuccess === 0) {
                 return {
                     id: Math.random().toString(),
                     date: data.date,
@@ -158,7 +161,7 @@ export const wetlandService = {
                 };
             }
 
-            throw { message: response.data?.Data?.ResponseMessage || response.data?.ResponseMessage || 'Failed to create slot' };
+            throw { message: response?.Data?.ResponseMessage || response?.ResponseMessage || 'Failed to create slot' };
         } catch (error: any) {
             // Re-throw standardized error without noisy console.error
             throw error;
@@ -170,27 +173,23 @@ export const wetlandService = {
 
     updateSlot: async (id: string, slotData: any): Promise<WetlandSlot> => {
         try {
-            const formData = new FormData();
-            formData.append('GovernorateID', '1'); // Should be from user context
-            formData.append('WillayatID', '1');
-            formData.append('BranchId', '1');
-            formData.append('UserId', '1');
-            formData.append('Lang', 'En');
-            formData.append('JsonSlotData', JSON.stringify(slotData));
+            const result = await updateSlotAction(id, slotData);
 
-            const response = await api.post<any>('/WetLand/EditWetlandSlots', formData);
+            if (!result.success || !result.data) {
+                throw { message: result.message || 'Failed to update slots' };
+            }
 
-            console.log('EditWetlandSlots Response:', response.data);
+            const response = result.data;
+            console.log('EditWetlandSlots Response:', response);
 
             // The response structure is { Status: "success", StatusCode: 605, Data: { IsSuccess: 0, ResponseMessage: "..." } }
             // IsSuccess: 0 means SUCCESS
-            // IsSuccess: 0 means SUCCESS
-            if (response.data && response.data.Data && response.data.Data.IsSuccess === 0) {
+            if (response && response.Data && response.Data.IsSuccess === 0) {
                 // Toast handled in component
                 return {} as WetlandSlot;
             }
 
-            throw { message: response.data?.Data?.ResponseMessage || response.data?.ResponseMessage || 'Failed to update slots' };
+            throw { message: response?.Data?.ResponseMessage || response?.ResponseMessage || 'Failed to update slots' };
         } catch (error: any) {
             // Re-throw standardized error without noisy console.error
             throw error;
@@ -199,26 +198,22 @@ export const wetlandService = {
 
     deleteSlot: async (id: string, slotData: any): Promise<void> => {
         try {
-            // For delete, we set IsDeleted: 1 in the slot data
-            const formData = new FormData();
-            formData.append('GovernorateID', '1');
-            formData.append('WillayatID', '1');
-            formData.append('BranchId', '1');
-            formData.append('UserId', '1');
-            formData.append('Lang', 'En');
-            formData.append('JsonSlotData', JSON.stringify(slotData));
+            const result = await deleteSlotAction(id, slotData);
 
-            const response = await api.post<any>('/WetLand/EditWetlandSlots', formData);
+            if (!result.success || !result.data) {
+                throw { message: result.message || 'Failed to delete slots' };
+            }
 
-            console.log('DeleteSlots Response:', response.data);
+            const response = result.data;
+            console.log('DeleteSlots Response:', response);
 
             // IsSuccess: 0 means SUCCESS
-            if (response.data && response.data.IsSuccess === 0) {
-                toast.success(response.data.ResponseMessage || 'Slot(s) deleted successfully!');
+            if (response && response.IsSuccess === 0) {
+                toast.success(response.ResponseMessage || 'Slot(s) deleted successfully!');
                 return;
             }
 
-            throw { message: response.data?.ResponseMessage || 'Failed to delete slots' };
+            throw { message: response?.ResponseMessage || 'Failed to delete slots' };
         } catch (error: any) {
             // Re-throw standardized error without noisy console.error
             throw error;
@@ -228,27 +223,25 @@ export const wetlandService = {
     // Holiday Operations
     getHolidays: async (year: number): Promise<WetlandHolidaysResponse> => {
         try {
-            const fromDate = `${year}-01-01`;
-            const toDate = `${year}-12-31`;
+            const result = await getHolidaysAction(year);
 
-            // Reuse the working GetHolidayDates endpoint
-            const formData = new FormData();
-            formData.append('fromDate', fromDate);
-            formData.append('toDate', toDate);
+            if (!result.success || !result.data) {
+                return { holidays: [], year };
+            }
 
-            const response = await api.post<any>('/Wetland/GetHolidayDates', formData);
+            const response = result.data;
 
-            if (response.data && response.data.StatusCode === 605) {
+            if (response && response.StatusCode === 605) {
                 // The GetHolidayDates endpoint returns a list of holidays
                 // We need to map it to the expected structure if necessary, 
                 // but for now the component seems to expect what GetHolidayDates returns
                 return {
-                    holidays: response.data.Data || [],
+                    holidays: response.Data || [],
                     year,
                 };
             }
 
-            throw { message: response.data?.Status || 'Failed to fetch holidays' };
+            throw { message: response?.Status || 'Failed to fetch holidays' };
         } catch (error: any) {
             // Return empty array on error to prevent UI crash
             return { holidays: [], year };
@@ -257,21 +250,19 @@ export const wetlandService = {
 
     createHoliday: async (data: CreateHolidayRequest): Promise<WetlandHoliday> => {
         try {
-            const formData = new FormData();
-            formData.append('holidayType', data.holidayType);
-            formData.append('year', data.year.toString());
-            formData.append('date', data.date);
-            if (data.name) formData.append('name', data.name);
-            if (data.nameAr) formData.append('nameAr', data.nameAr);
-            if (data.description) formData.append('description', data.description);
+            const result = await createHolidayAction(data);
 
-            const response = await api.post<any>('/Wetland/holidays', formData);
-
-            if (response.data && response.data.StatusCode === 605) {
-                return response.data.Data;
+            if (!result.success || !result.data) {
+                throw { message: result.message || 'Failed to create holiday' };
             }
 
-            throw { message: response.data?.Status || 'Failed to create holiday' };
+            const response = result.data;
+
+            if (response && response.StatusCode === 605) {
+                return response.Data;
+            }
+
+            throw { message: response?.Status || 'Failed to create holiday' };
         } catch (error: any) {
             throw error;
         }
@@ -279,10 +270,10 @@ export const wetlandService = {
 
     deleteHoliday: async (id: string): Promise<void> => {
         try {
-            const response = await api.delete<any>(`/Wetland/holidays/${id}`);
+            const result = await deleteHolidayAction(id);
 
-            if (response.data && response.data.StatusCode !== 605) {
-                throw { message: response.data?.Status || 'Failed to delete holiday' };
+            if (!result.success) {
+                throw { message: result.message || 'Failed to delete holiday' };
             }
         } catch (error: any) {
             throw error;
@@ -292,16 +283,19 @@ export const wetlandService = {
     // Holiday Calendar Operations
     getMasterData: async (keyType: string): Promise<any> => {
         try {
-            const formData = new FormData();
-            formData.append('keyType', keyType);
+            const result = await getMasterDataAction(keyType);
 
-            const response = await api.post<any>('/Wetland/GetMasterData', formData);
-
-            if (response.data && response.data.StatusCode === 605) {
-                return response.data.Data?.Table || response.data.Table || [];
+            if (!result.success || !result.data) {
+                throw { message: result.message || 'Failed to fetch master data' };
             }
 
-            throw { message: response.data?.Status || 'Failed to fetch master data' };
+            const response = result.data;
+
+            if (response && response.StatusCode === 605) {
+                return response.Data?.Table || response.Table || [];
+            }
+
+            throw { message: response?.Status || 'Failed to fetch master data' };
         } catch (error: any) {
             throw error;
         }
@@ -309,17 +303,19 @@ export const wetlandService = {
 
     getHolidayDates: async (fromDate: string, toDate: string): Promise<WetlandHolidayListItem[]> => {
         try {
-            const formData = new FormData();
-            formData.append('fromDate', fromDate);
-            formData.append('toDate', toDate);
+            const result = await getHolidayDatesAction(fromDate, toDate);
 
-            const response = await api.post<any>('/Wetland/GetHolidayDates', formData);
-
-            if (response.data && response.data.StatusCode === 605) {
-                return response.data.Data || response.data || [];
+            if (!result.success || !result.data) {
+                throw { message: result.message || 'Failed to fetch holiday dates' };
             }
 
-            throw { message: response.data?.Status || 'Failed to fetch holiday dates' };
+            const response = result.data;
+
+            if (response && response.StatusCode === 605) {
+                return response.Data || response || [];
+            }
+
+            throw { message: response?.Status || 'Failed to fetch holiday dates' };
         } catch (error: any) {
             throw error;
         }
@@ -327,26 +323,13 @@ export const wetlandService = {
 
     insertWetlandHoliday: async (data: InsertHolidayRequest): Promise<any> => {
         try {
-            const formData = new FormData();
-            formData.append('Lang', data.Lang);
-            formData.append('Action', data.Action);
-            formData.append('HolidayType', data.HolidayType);
-            formData.append('StartDate', data.StartDate);
-            formData.append('EndDate', data.EndDate);
-            formData.append('InternalUserID', data.InternalUserID as any);
-            formData.append('HolidayDesriptionEN', data.HolidayDesriptionEN);
-            formData.append('HolidayDesriptionAR', data.HolidayDesriptionAR);
+            const result = await insertWetlandHolidayAction(data);
 
-            if (data.Weekends) {
-                formData.append('Weekends', data.Weekends);
+            if (!result.success || !result.data) {
+                throw { message: result.message || 'Failed to process holiday' };
             }
 
-            if (data.Year) {
-                formData.append('Year', data.Year.toString());
-            }
-
-            const response = await api.post<any>('/Wetland/InsertWetlandHoliday', formData);
-            const responseData = response.data;
+            const responseData = result.data;
 
             // Success is ONLY when StatusCode is 605 AND (IsBlock is 0 either at top level or inside Data)
             const isSuccess = responseData &&
