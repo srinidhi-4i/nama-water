@@ -32,6 +32,9 @@ export async function loginAction(loginData: LoginRequest): Promise<{ success: b
         console.log("Login Action: LDAP Response Status:", ldapResponse.status)
         const ldapData = ldapResponse.data
 
+        // Debug: log full LDAP response to diagnose validation issues
+        console.log("Login Action: LDAP Full Response:", JSON.stringify(ldapData, null, 2))
+
         if (ldapData.StatusCode === 612) {
             return { success: false, message: "Session expired" }
         }

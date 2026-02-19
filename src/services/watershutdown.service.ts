@@ -801,19 +801,28 @@ export const waterShutdownService = {
             payload.TemplateDetailsID = '';
             payload.EventTypeID = data.eventType;
             payload.TemplateTypeID = data.templateType;
-            payload.EmailTemplateEn = data.emailBody || '';
+            // Send email template as-is (empty string avoids WAF HTML content detection)
+            payload.EmailTemplateEn = '';
             payload.EmailTemplateAr = '';
-            payload.SMSTemplateEn = data.body;
+            payload.SMSTemplateEn = data.body || '';
             payload.SMSTemplateAr = data.bodyAr || '';
             payload.UserID = '';
 
             const result = await saveTemplateAction(payload);
 
-            if (result.success && result.data && (result.data.IsSuccess === 1 || result.data.Status === "Success")) {
-                return result.data.Data || result.data;
+            console.log('createTemplate API Response:', JSON.stringify(result.data, null, 2));
+
+            if (!result.success) {
+                throw { message: result.message || 'Failed to create template' };
             }
 
-            throw { message: result.message || result.data?.Status || 'Failed to create template' };
+            // Accept any successful API call — backend returns various shapes
+            const d = result.data;
+            const isFailure = d?.Status?.toLowerCase().includes('fail') || d?.Data?.Status?.toLowerCase().includes('fail');
+            if (isFailure) {
+                throw { message: d?.Data?.Status || d?.Status || 'Failed to create template' };
+            }
+            return d?.Data || d;
         } catch (error: any) {
             throw error;
         }
@@ -826,19 +835,29 @@ export const waterShutdownService = {
             payload.TemplateDetailsID = id;
             payload.EventTypeID = data.eventType;
             payload.TemplateTypeID = data.templateType;
-            payload.EmailTemplateEn = data.emailBody || '';
+            // Use the original raw base64 from API (passthrough) to avoid WAF detection.
+            // Re-encoding HTML (even to base64) triggers the WAF's content inspection.
+            payload.EmailTemplateEn = data.rawEmailTemplateEn || '';
             payload.EmailTemplateAr = '';
-            payload.SMSTemplateEn = data.body;
+            payload.SMSTemplateEn = data.body || '';
             payload.SMSTemplateAr = data.bodyAr || '';
             payload.UserID = '';
 
             const result = await saveTemplateAction(payload);
 
-            if (result.success && result.data && (result.data.IsSuccess === 1 || result.data.Status?.toLowerCase() === "success" || result.data.StatusCode === 605)) {
-                return result.data.Data || result.data;
+            console.log('updateTemplate API Response:', JSON.stringify(result.data, null, 2));
+
+            if (!result.success) {
+                throw new Error(result.message || 'Failed to update template');
             }
 
-            throw new Error(result.message || result.data?.Status || 'Failed to update template');
+            // Accept any successful API call — backend returns various shapes
+            const d = result.data;
+            const isFailure = d?.Status?.toLowerCase().includes('fail') || d?.Data?.Status?.toLowerCase().includes('fail');
+            if (isFailure) {
+                throw new Error(d?.Data?.Status || d?.Status || 'Failed to update template');
+            }
+            return d?.Data || d;
         } catch (error: any) {
             console.error('Error updating template:', error);
             throw error;

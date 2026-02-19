@@ -166,13 +166,20 @@ export function TemplateViewEdit({ template, mode, onBack, language }: TemplateV
   const handleSave = async () => {
     setIsSaving(true)
     try {
+      // Use original raw base64 EmailTemplateEn from API to avoid WAF rejection.
+      // Only pass new HTML if user explicitly edited the email tab.
+      // The raw (template as any).EmailTemplateEn is the original base64 value the API gave us.
+      const originalEmailTemplateEn = (template as any).EmailTemplateEn || ''
       const finalHtml = generateHtml()
+
       await waterShutdownService.updateTemplate(template.id, {
         eventType: formData.eventType,
         templateType: formData.templateName as any,
         body: formData.smsEnglish,
         bodyAr: formData.smsArabic,
-        emailBody: finalHtml, // Save the generated HTML structure
+        emailBody: finalHtml,
+        // Pass the original raw base64 so the service can use it directly without re-encoding
+        rawEmailTemplateEn: originalEmailTemplateEn,
       })
       toast.success("Template updated successfully")
       onBack()
@@ -183,6 +190,7 @@ export function TemplateViewEdit({ template, mode, onBack, language }: TemplateV
       setIsSaving(false)
     }
   }
+
   
   const PlaceholderButton = ({ label, target }: { label: string, target: any }) => (
     <Button

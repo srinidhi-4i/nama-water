@@ -1,16 +1,11 @@
 import axios from "axios";
 import https from "https";
 
-// Ensure the baseURL includes the /api prefix since it's common for all UAT calls
-const envBaseUrl = process.env.NEXT_PUBLIC_UAT_BASE_URL;
-const baseURL = envBaseUrl
-    ? (envBaseUrl.endsWith('/api') ? envBaseUrl : `${envBaseUrl}/api`)
-    : 'https://eservicesuat.nws.nama.om:444/api';
-
-console.log('Server Axios BaseURL:', baseURL);
+// Base URL from env - must include /api suffix (e.g. https://eservicesuat.nws.nama.om:444/api)
+const envBaseUrl = process.env.NEXT_PUBLIC_UAT_BASE_URL || 'https://eservicesuat.nws.nama.om:444/api';
 
 export const axiosInstance = axios.create({
-    baseURL: baseURL,
+    baseURL: envBaseUrl,
     headers: {
         "Accept": "application/json, text/plain, */*",
     },

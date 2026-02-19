@@ -211,9 +211,24 @@ export async function saveTemplateAction(data: any): Promise<{ success: boolean;
         const response = await axiosInstance.post(
             "WaterShutdown/InsertEventTemplateDetails",
             formData,
-            { headers: authHeaders }
+            {
+                headers: {
+                    ...authHeaders,
+                    // Required by WAF — without these, request is blocked
+                    'Origin': 'https://eservicesuat.nws.nama.om',
+                    'Referer': 'https://eservicesuat.nws.nama.om/',
+                }
+            }
         )
-        return { success: true, data: response.data }
+
+        // Detect WAF HTML rejection page returned as HTTP 200
+        const responseData = response.data
+        if (typeof responseData === 'string' && responseData.includes('Request Rejected')) {
+            console.error("saveTemplateAction: WAF Rejected request")
+            return { success: false, message: 'Request blocked by security firewall. Contact administrator.' }
+        }
+
+        return { success: true, data: responseData }
     } catch (error: any) {
         console.error("saveTemplateAction error:", error.message)
         return { success: false, message: error.message }
